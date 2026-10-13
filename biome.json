@@ -3,7 +3,14 @@
 	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**", "!**/*.css", "!**/design/**", "!**/.worktrees/**", "!**/public/mediapipe/**"]
+		"includes": [
+			"**",
+			"!**/*.css",
+			"!**/design/**",
+			"!**/.worktrees/**",
+			"!**/public/mediapipe/**",
+			"!**/vendor/**"
+		]
 	},
 	"formatter": {
 		"enabled": true,

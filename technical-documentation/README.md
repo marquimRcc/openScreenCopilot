@@ -1,5 +1,9 @@
 # Technical documentation
 
+For the openScreenCopilot fork's **proposed integration**, implementation stages
+and current status, start at [project/README.md](../project/README.md).
+The reference below describes the inherited OpenScreen implementation, not the plan.
+
 Reference documentation for how OpenScreen is built. It describes the system **as it is on this
 branch** — not how it got here. Product direction lives in [`../ROADMAP.md`](../ROADMAP.md),
 day-to-day contributor rules in [`../AGENTS.md`](../AGENTS.md) and

@@ -17,5 +17,13 @@ CMakeLists.txt text eol=lf
 *.md   text eol=lf
 *.mdx  text eol=lf
 
+# Fork development: Biome requires LF for these files on Windows too; workflow
+# text tests also inspect exact newlines. No runtime behavior is changed.
+*.json text eol=lf
+*.cjs  text eol=lf
+*.js   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
 # Adopted measurement manifests hash exact bytes; keep their artifacts unchanged.
 workbench/measurements/** -text
