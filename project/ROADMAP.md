@@ -46,6 +46,8 @@ aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 - Overlay retangular em monitor único, crop GPU e validação DPI.
 - Indicador persistente: borda vermelha discreta e pontilhada da área efetivamente
   capturada, fora do vídeo final, inclusive com HUD oculto; pedido de 2026-10-13.
+- Confirmação pós-gravação com caminho/nome do MP4 e "Abrir local salvo" acessível
+  no editor; usar o arquivo efetivo da sessão, não apenas a pasta padrão.
 - Seletor de endpoint de saída, microfone independente e medidor de nível.
 - Tratamento de fechamento de janela, desconexão e mudança de formato.
 - Fixar contrato do relógio de sessão e das pausas antes de adicionar ASR.

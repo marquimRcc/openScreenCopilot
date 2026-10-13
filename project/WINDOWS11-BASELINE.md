@@ -195,3 +195,21 @@ fala e playback neutro capturados pelo HUD, pós-transcrição pela interface,
 estabilidade 30/60 minutos,
 sincronia sob carga, DPI misto, segundo monitor, troca de dispositivos, RegataOS,
 assinatura/distribuição. Nada disso é aprovado por um simples build ou mock de CI.
+
+## Captura encerrada pelo usuário — observação adicional
+
+O usuário operou o pacote local, gravou uma janela Chrome e encerrou a tomada.
+Arquivo localizado na pasta própria de recordings: 90.424.882 bytes, 421,502533 s,
+1480×940, H.264 High, BT.709 limited, média próxima de 60 fps. Decodificação
+integral aprovada; 25.286 packets, nenhum PTS não crescente, maior intervalo
+86,017 ms. O usuário aprovou a aparência; não foi feita comparação objetiva de qualidade.
+
+**Sem áudio:** o MP4 contém somente vídeo e o log confirma sistema/mic desligados.
+Não aprovar áudio, ASR ou lip sync por essa tomada. Não foram completados os 10
+minutos pedidos, nem realizado stress controlado. O helper do pacote é o corrigido
+da etapa 01, SHA256 `d28621a0222aa93dd373b73affcdb5411a3f4034f317bba4069120ffcdfd1ed9`.
+Detalhes e hash da mídia em [STATUS.md](STATUS.md); gravação permanece local.
+
+Feedback: local salvo não ficou descobrível ao finalizar; especificada confirmação
+com caminho/nome e "Abrir local salvo" para 02B. Infraestrutura existente da
+exportação não constitui implementação/aceite desse novo fluxo pós-gravação.

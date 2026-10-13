@@ -169,6 +169,30 @@ Requisito e aceite registrados na etapa 02B em [WINDOWS11-REGION-DEVICES.md](WIN
 **Só planejamento:** nenhum código/runtime foi modificado, nenhuma gravação foi
 reiniciada ou interrompida e o pacote atual ainda não possui esse indicador.
 
+## Captura manual localizada e descoberta do arquivo — 2026-10-13
+
+O usuário iniciou/encerrou uma captura de janela no pacote local e informou
+que a imagem estava boa, mas não conseguiu descobrir onde o MP4 foi salvo.
+Localização efetiva confirmada: `%APPDATA%/openScreenCopilot/recordings`.
+Não houve cópia/upload da mídia nem modificação do aplicativo neste checkpoint.
+
+- MP4: 90.424.882 bytes (90,4 MB decimais), 421,502533 s (7min01,5s), H.264 High,
+  1480×940, BT.709 limited, taxa média aproximadamente 60 fps.
+- Decodificação integral do vídeo aprovada; 25.286 packets, PTS estritamente
+  crescentes, maior intervalo entre frames 86,017 ms, nenhum intervalo > 100 ms.
+- **Nenhuma faixa de áudio**. O log da captura confirma sistema e microfone
+  desativados; não é evidência de falha WASAPI, nem passe de áudio/transcrição/sincronia.
+- Hash da mídia local: `a47f057aa5e24bf3b45f5c3ef347dfeebd9c82f84e98b3b1b9cbdfe9cb286658`.
+- Pacote `0.1.0-alpha.1` com WGC `d28621a0…ed9` (correção da etapa 01), não o
+  helper posterior com crop 02A. Captura encerrada pelo usuário, não teste automatizado
+  de 10 minutos sob carga. Não foram medidos qualidade objetiva, congelamentos,
+  uso de recursos, exportação dessa tomada ou áudio/vídeo sincronizados.
+
+Pedido registrado para 02B: confirmação "Gravação salva", nome/caminho do MP4 e
+ação persistente "Abrir local salvo" no editor. Requisitos e critérios em
+[REQUIREMENTS.md](REQUIREMENTS.md), [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md)
+e [TESTING.md](TESTING.md). Só especificado; nenhum botão novo foi implementado.
+
 ## Regra de atualização
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

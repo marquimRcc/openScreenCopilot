@@ -99,6 +99,19 @@ em [REQUIREMENTS.md](REQUIREMENTS.md) e [TESTING.md](TESTING.md).
 Este checkpoint registra o pedido, sem reiniciar ou alterar a gravação de teste
 que o usuário já iniciou. Nenhum overlay persistente está disponível no pacote atual.
 
+### Confirmação de arquivo salvo — solicitado após a primeira captura do usuário
+
+Ainda não implementado no fluxo pós-gravação. Ao terminar, exibir confirmação
+persistente com nome/caminho do MP4 original e botão "Abrir local salvo". Abrir
+o Explorador com esse arquivo selecionado; manter ação acessível no editor e
+não confundir com salvar projeto ou exportar uma edição.
+
+Já existe infraestrutura `revealInFolder` no preload/IPC e uso na exportação;
+a existência desse código não aprova a descoberta do arquivo após gravar.
+A integração deve usar o arquivo da sessão validado no main e tratar arquivo
+ausente/erro do shell sem apresentar sucesso falso. Critérios em
+[REQUIREMENTS.md](REQUIREMENTS.md) e [TESTING.md](TESTING.md).
+
 ## 02C — saída de áudio, microfone e falhas
 
 Proposto, **ainda não implementado**:

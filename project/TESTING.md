@@ -69,6 +69,20 @@ benchmark offline AV1 para captura + ASR concorrentes.
 Somente especificado em 2026-10-13, não executado nem homologado. A gravação
 em curso do usuário não valida um recurso que ainda não foi implementado.
 
+## Arquivo salvo e descoberta — aceite pendente da etapa 02B
+
+- Finalizar captura na pasta padrão e em pasta personalizada, inclusive caminho
+  Unicode: confirmação mostra nome/caminho corretos; "Abrir local salvo" seleciona
+  o MP4 original no Explorador, sem duplicação ou reexportação.
+- Reabrir sessão e mudar a pasta de futuras tomadas: a ação continua apontando
+  ao arquivo da sessão atual, não ao destino de uma gravação posterior.
+- Cobrir gravação cancelada/falha, arquivo movido/apagado e erro do shell. Não
+  anunciar "Gravação salva" nem "pasta aberta" sem resultado correspondente.
+- Distinguir MP4 capturado, projeto e MP4 exportado. Conferir que captura sem
+  sistema e sem mic é identificada claramente como "Sem áudio".
+- Testes de wiring/erro automatizados e verificação real no Explorador; ainda
+  não executados. Não considerar o botão da exportação como passe pós-gravação.
+
 ## Camadas automatizadas
 
 1. Rust unit: resampling, VAD, máxima duração, dedup, fonte/época, cancelamento.

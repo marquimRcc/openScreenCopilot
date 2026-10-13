@@ -38,6 +38,23 @@ Pedido do usuário em 2026-10-13 para a próxima versão; **ainda não implement
   incluindo DPI misto; não presumir isso só porque o HUD já possui proteção.
 - Não alterar ou reiniciar a gravação em curso para entregar este ajuste futuro.
 
+## Confirmação de salvamento e acesso ao arquivo
+
+Pedido do usuário em 2026-10-13 após encerrar uma captura e não encontrar o MP4;
+**ainda não implementado no fluxo pós-gravação do fork**.
+
+- Ao finalizar com sucesso, mostrar "Gravação salva", nome do arquivo e caminho
+  completo, com ação explícita "Abrir local salvo" / "Abrir pasta da gravação".
+- A ação abre o Explorador com o MP4 efetivo selecionado, sem mover, renomear,
+  exportar novamente ou duplicar o vídeo. Deve continuar acessível no editor,
+  não apenas em uma notificação que desaparece rapidamente.
+- Usar o caminho persistido da sessão, não a pasta padrão ou a pasta configurada
+  posteriormente. Distinguir o MP4 original do projeto e de uma exportação editada.
+- Informar falha de gravação/salvamento sem anunciar sucesso; se o arquivo tiver
+  sido movido/apagado ou o Explorador falhar, mostrar erro claro, sem recriar dados.
+- Exibir estado de áudio sem ambiguidade: vídeo intencionalmente sem áudio continua
+  permitido, mas não pode parecer que áudio do sistema/mic está sendo capturado.
+
 ## Seleção de áudio é independente da seleção visual
 
 Selecionar a janela do Teams **não** significa capturar somente o Teams. No MVP,
