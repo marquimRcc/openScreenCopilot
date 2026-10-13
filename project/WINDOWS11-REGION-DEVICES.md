@@ -79,6 +79,26 @@ herdados. Otimização por qualidade/tamanho pertence à etapa 03.
    Até essa parte existir, não habilitar região com editable-overlay no HUD.
 5. Testar bordas por imagem exportada, não só thumbnail, em 100%/125%/150% e DPI misto.
 
+### Indicador persistente — solicitado para a próxima versão
+
+Ainda não implementado. Requisito confirmado pelo usuário em 2026-10-13:
+contorno vermelho fino, pontilhado/tracejado e discreto que permita reconhecer
+o que está ou não sendo gravado durante toda a tomada, não só ao selecionar.
+
+O main deverá manter uma sobreposição dedicada, sem roubar foco ou cliques,
+associada à fonte e ao estado reais da sessão. Para janela, acompanhar a geometria
+capturada; para região fixa, conservar os limites do crop. Continuar visível com
+o HUD oculto; distinguir pausa e remover ao parar, cancelar, falhar ou fechar a fonte.
+
+A borda não pertence à textura gravada nem ao compositor do vídeo. Sua exclusão
+precisa ser verificada no MP4 e nos frames exportados de monitor/janela/região,
+em DPI misto e junto ao cursor editável. Não presumir proteção herdada do HUD,
+nem deslocar/reduzir a área capturada para esconder a borda. Critérios completos
+em [REQUIREMENTS.md](REQUIREMENTS.md) e [TESTING.md](TESTING.md).
+
+Este checkpoint registra o pedido, sem reiniciar ou alterar a gravação de teste
+que o usuário já iniciou. Nenhum overlay persistente está disponível no pacote atual.
+
 ## 02C — saída de áudio, microfone e falhas
 
 Proposto, **ainda não implementado**:

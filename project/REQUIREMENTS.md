@@ -5,7 +5,8 @@ Estado: especificação inicial, ainda não implementada pelo fork.
 ## MVP Windows 11
 
 1. Selecionar monitor, janela ou retângulo de um monitor.
-2. Visualizar os limites da seleção antes de gravar, com cancelamento por Escape.
+2. Visualizar os limites da seleção antes de gravar, com cancelamento por Escape,
+   e manter um contorno discreto durante a captura (detalhes abaixo).
 3. Selecionar explicitamente o dispositivo de saída de áudio e, opcionalmente,
    um microfone. Gravar sistema, microfone, ambos ou vídeo sem áudio.
 4. Gravar enquanto transcreve localmente, sem enviar áudio, vídeo ou transcrição
@@ -19,6 +20,23 @@ Estado: especificação inicial, ainda não implementada pelo fork.
    reprocessado com autorização de retenção e espaço em disco disponível.
 9. Exportar TXT, SRT e JSON; recuperar sessões interrompidas sem sobrescrever
    gravações anteriores.
+
+## Indicador persistente da área gravada
+
+Pedido do usuário em 2026-10-13 para a próxima versão; **ainda não implementado**.
+
+- Borda vermelha fina e pontilhada/tracejada delimitando exatamente o monitor,
+  a janela ou o retângulo que está sendo capturado. Visível durante toda a gravação,
+  mesmo com o HUD oculto ou outro aplicativo em foco; sem piscar ou bloquear cliques.
+- A borda informa o recorte visual real, não apenas o último item selecionado.
+  Ao capturar uma janela, acompanha sua geometria; um retângulo fixo continua fixo
+  no monitor, mesmo se a janela dentro dele se mover.
+- Pausa deve ser distinguível de gravação ativa, com indicação textual no HUD,
+  sem depender só da cor. Parar, cancelar, falhar ou encerrar a sessão remove a borda.
+- A sobreposição não pode aparecer no MP4 nem nos frames exportados, ou mudar os
+  pixels/dimensões da seleção. Comprovar a exclusão em captura de monitor/janela/região,
+  incluindo DPI misto; não presumir isso só porque o HUD já possui proteção.
+- Não alterar ou reiniciar a gravação em curso para entregar este ajuste futuro.
 
 ## Seleção de áudio é independente da seleção visual
 

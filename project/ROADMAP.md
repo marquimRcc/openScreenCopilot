@@ -44,6 +44,8 @@ aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
 
 - Overlay retangular em monitor único, crop GPU e validação DPI.
+- Indicador persistente: borda vermelha discreta e pontilhada da área efetivamente
+  capturada, fora do vídeo final, inclusive com HUD oculto; pedido de 2026-10-13.
 - Seletor de endpoint de saída, microfone independente e medidor de nível.
 - Tratamento de fechamento de janela, desconexão e mudança de formato.
 - Fixar contrato do relógio de sessão e das pausas antes de adicionar ASR.

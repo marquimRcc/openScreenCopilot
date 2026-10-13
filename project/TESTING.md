@@ -53,6 +53,22 @@ transcrições privadas para CI, issues públicas ou ferramentas de avaliação 
 Metas acima são critérios de projeto, não medições já obtidas. Não extrapolar
 benchmark offline AV1 para captura + ASR concorrentes.
 
+## Indicador da área gravada — aceite pendente da etapa 02B
+
+- Selecionar monitor, janela e região; conferir que a borda discreta mostra os
+  limites reais durante toda a gravação, inclusive com HUD oculto e foco em outro app.
+- Mover/redimensionar a janela capturada; a borda a acompanha. Mover uma janela
+  dentro de uma região fixa não pode mover o crop nem seu contorno.
+- Confirmar que a sobreposição não intercepta cliques, arrastos ou atalhos e não
+  rouba foco. Distinguir pausa; remover ao parar, cancelar, falhar ou fechar a fonte.
+- Testar 100%/125%/150% e DPI misto nas bordas dos monitores; conferir pixels do
+  crop, dimensões do MP4 e ausência do indicador no vídeo/frames exportados.
+- Cobrir ciclo de vida e geometria com testes automatizados; confirmar visibilidade
+  e exclusão com captura nativa real. Mocks não aprovam esse comportamento.
+
+Somente especificado em 2026-10-13, não executado nem homologado. A gravação
+em curso do usuário não valida um recurso que ainda não foi implementado.
+
 ## Camadas automatizadas
 
 1. Rust unit: resampling, VAD, máxima duração, dedup, fonte/época, cancelamento.

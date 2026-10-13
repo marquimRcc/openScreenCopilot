@@ -159,6 +159,16 @@ AppStream, título e Swift passaram; unit tests e jobs Rust ainda estavam em exe
 ao registrar este checkpoint. Não há alegação de CI totalmente verde ainda.
 Isso não é build Nix completo nem homologação Linux/RegataOS.
 
+## Pedido para a próxima versão — indicador persistente
+
+Em 2026-10-13, durante o teste iniciado manualmente pelo usuário, foi solicitado
+um contorno vermelho discreto e pontilhado mostrando a área realmente gravada,
+visível ao longo de toda a tomada, sem aparecer no vídeo final.
+Requisito e aceite registrados na etapa 02B em [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md),
+[REQUIREMENTS.md](REQUIREMENTS.md) e [TESTING.md](TESTING.md).
+**Só planejamento:** nenhum código/runtime foi modificado, nenhuma gravação foi
+reiniciada ou interrompida e o pacote atual ainda não possui esse indicador.
+
 ## Regra de atualização
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
