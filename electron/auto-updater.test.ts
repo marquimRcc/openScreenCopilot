@@ -22,6 +22,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("electron", () => ({ app: mocks.app }));
+// Preserve the reusable updater engine tests; production policy is tested separately.
+vi.mock("../src/config/product", () => ({ SELF_UPDATE_ENABLED: true }));
 vi.mock("electron-updater", () => ({ autoUpdater: mocks.autoUpdater }));
 
 function state(overrides: Partial<InstallReadiness> = {}): InstallReadiness {

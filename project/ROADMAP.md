@@ -17,6 +17,9 @@ por etapa; não fazer push direto em main. Não confundir este plano com o roadm
 
 Dependência: 00.
 
+Estado: em validação; identidade e pacote local concluídos, com pendência nativa
+de timestamps. Evidências em [WINDOWS11-BASELINE.md](WINDOWS11-BASELINE.md).
+
 - Registrar Windows/build, CPU/GPU, driver, RAM, dispositivos e ferramentas.
 - Usar Node/npm fixados e documentar toolchain C++/Rust necessário.
 - Separar productName/appId/userData/protocolos/atalhos, URLs e auto-update do fork.
@@ -47,12 +50,14 @@ Dependência: 02.
 
 - Provar AV1 hardware no caminho WGC -> encoder -> MP4.
 - Comparar integração MF/libavcodec e auditar licença do build escolhido.
-- Ajustar 30 fps/resolução/bitrate e expor codec real e estimativa.
-- Fallback visível, sem prometer teto no hardware incompatível.
-- Executar os testes completos de 30 minutos do perfil compacto.
+- Comparar controle por qualidade/bitrate, 30/60 fps e resolução nativa;
+  expor codec real e estimativa sem diminuir legibilidade silenciosamente.
+- Fallback visível, sem prometer qualidade ou tamanho universal.
+- Executar testes de 30 minutos em conteúdo estático e dinâmico.
 
-Aceite: MP4 <= 300.000.000 bytes/1.800 s nos casos homologados, texto legível,
-áudio sincronizado e editor capaz de abrir/exportar. Registrar casos que não atendem.
+Aceite: redução mensurada contra a baseline, com texto legível, áudio sincronizado
+e editor capaz de abrir/exportar. Qualidade tem prioridade sobre tamanho; os
+300 MB/30 minutos não são mais limite de aceite. Registrar os tradeoffs observados.
 
 ## 04 — Extrair speech-core e sidecar
 

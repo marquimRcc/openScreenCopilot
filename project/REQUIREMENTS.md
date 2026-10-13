@@ -36,17 +36,17 @@ avaliações próprias. Não duplicar a voz do usuário quando ela já retorna n
 
 ## Qualidade e tamanho
 
-- Meta: arquivo MP4 final de até 300.000.000 bytes em 1.800 segundos de gravação útil,
-  no perfil "Compacto 300 MB / 30 min", com conteúdo e hardware homologados.
-- Ponto inicial de experimento: 30 fps, resolução até 1080p, AV1 por hardware,
-  vídeo 1.100 kbit/s e áudio AAC 96 kbit/s.
-- Preservar legibilidade de textos é prioritário; medir tamanho não basta.
-- Cenas muito dinâmicas podem exigir resolução/fps menores ou um perfil maior.
-  Informar o conflito em vez de prometer qualidade sem perdas.
-- TXT/SRT/JSON, cache temporário e modelos **não** entram no limite do MP4.
-  A UI deve informar também o uso total de disco.
-- Meta de qualidade visual e orçamento dependem de teste real; CRF isolado não
-  garante limite de tamanho e bitrate nominal não garante tamanho exato.
+- Prioridade confirmada em 2026-10-13: qualidade visual e áudio claro, com o menor
+  arquivo que preserve esses critérios. Os 300 MB/30 minutos deixam de ser teto
+  obrigatório; não sacrificar legibilidade para alcançar um número arbitrário.
+- Comparar controle de qualidade variável e bitrate, 30/60 fps, resolução nativa
+  e AV1 por hardware quando disponível. Selecionar o perfil por evidência real.
+- Preservar detalhes de texto e interfaces; não reduzir resolução ou fps em silêncio.
+- Cenas dinâmicas podem exigir arquivo maior. Informar o conflito em vez de
+  prometer qualidade sem perdas ou um tamanho fixo para qualquer conteúdo.
+- Medir bytes do MP4, qualidade e sincronia juntos, contra a mesma captura baseline.
+  A UI deve informar também uso de disco por TXT/SRT/JSON, temporários e modelos.
+- CRF isolado não garante tamanho fixo e bitrate nominal não garante tamanho exato.
 
 ## Transcrição
 

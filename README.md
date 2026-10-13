@@ -4,18 +4,20 @@ Gravador de tela com transcrição local, construído a partir de
 [OpenScreen](https://github.com/getopenscreen/openscreen) e
 [meeting-copilot](https://github.com/marquimRcc/meeting-copilot).
 
-**Estado: fundação e arquitetura.** Esta inicialização preserva o código das duas bases,
-suas licenças e seus históricos. **Não integra ainda a transcrição ao vivo, a seleção
-retangular ou o novo perfil de compressão.** O aplicativo executável continua sendo
-o OpenScreen herdado. Não há instalador próprio aprovado para testes neste momento.
+**Estado: etapa 01 em validação no Windows.** As duas bases, licenças e históricos
+foram preservados. O aplicativo tem identidade própria e um pacote local experimental,
+mas **não integra ainda transcrição ao vivo, seleção retangular ou novo encoder**.
+Não há instalador ou release homologado. Há uma pendência de timestamps no encoder
+Intel herdado; veja a [baseline Windows](project/WINDOWS11-BASELINE.md).
 
 ## O que vamos construir
 
 - Seleção de monitor, janela ou retângulo, começando pelo Windows 11.
 - Áudio do dispositivo de saída escolhido (alto-falantes/fone) e microfone opcional.
 - Gravação eficiente com AV1 por hardware quando disponível e fallback explícito.
-- Perfil-alvo de até **300 MB decimais em 30 minutos**; qualidade e tamanho serão
-  medidos juntos. Não existe garantia universal de qualidade para qualquer conteúdo.
+- Qualidade primeiro: preservar texto legível e áudio claro, reduzindo o tamanho
+  por comparação com a baseline. **Sem teto obrigatório de 300 MB/30 minutos.**
+  Não existe garantia universal de qualidade sem perdas para qualquer conteúdo.
 - Transcrição local durante a gravação, independente do vídeo, com TXT, SRT e JSON.
 - Compatibilidade posterior com Linux/RegataOS, validada no sistema real.
 
@@ -29,6 +31,7 @@ o OpenScreen herdado. Não há instalador próprio aprovado para testes neste mo
 | [Requisitos](project/REQUIREMENTS.md) | Escopo do MVP, limites e decisões de produto |
 | [Contratos](project/CONTRACTS.md) | IPC, áudio, relógios, segmentos e recuperação |
 | [Windows 11](project/WINDOWS11.md) | Captura, áudio, AV1 e orçamento de tamanho |
+| [Baseline Windows](project/WINDOWS11-BASELINE.md) | Ambiente real, build de teste e limitações da etapa 01 |
 | [Testes](project/TESTING.md) | Matriz, medições e critérios de aceite |
 | [Decisões técnicas](project/DECISIONS.md) | Alternativas escolhidas e rejeitadas |
 | [Origem e manutenção](project/UPSTREAMS.md) | Commits fixados, licenças e atualização das bases |
@@ -63,9 +66,9 @@ npx tsc -p tsconfig.test.json --noEmit
 npm test
 ```
 
-Ainda não publique instaladores com as identidades, URLs de atualização, certificados
-ou feeds de distribuição dos projetos originais. A primeira etapa de implementação
-isola esses dados para o fork. Não execute o backend Python arquivado do meeting-copilot.
+Não publique instaladores com identidades, certificados ou feeds dos projetos originais.
+O fork usa perfil próprio, desativa auto-update e bloqueia o comando de Store; isso não
+substitui a homologação de distribuição. Não execute o backend Python arquivado do vendor.
 
 ## Licença e créditos
 

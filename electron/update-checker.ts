@@ -1,5 +1,7 @@
-const LATEST_RELEASE_API = "https://api.github.com/repos/getopenscreen/openscreen/releases/latest";
-const OFFICIAL_RELEASE_PREFIX = "/getopenscreen/openscreen/releases/tag/";
+import { REPOSITORY_NAME, REPOSITORY_OWNER } from "../src/config/product";
+
+const LATEST_RELEASE_API = `https://api.github.com/repos/${REPOSITORY_OWNER}/${REPOSITORY_NAME}/releases/latest`;
+const OFFICIAL_RELEASE_PREFIX = `/${REPOSITORY_OWNER}/${REPOSITORY_NAME}/releases/tag/`;
 
 interface ReleaseResponse {
 	ok: boolean;

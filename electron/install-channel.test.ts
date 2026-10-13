@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
 	classifyInstall,
 	type InstallProbe,
@@ -6,6 +6,10 @@ import {
 	ownsItsUpdates,
 	platformOwnsUpdates,
 } from "./install-channel";
+
+// Exercise the inherited channel matrix independently of the fork's disabled policy.
+// fork-update-policy.test.ts covers the actual production flag.
+vi.mock("../src/config/product", () => ({ SELF_UPDATE_ENABLED: true }));
 
 /** A packaged Linux install with no channel markers at all. Every case overrides only the
  *  fields it is about, so a test never accidentally depends on the host it runs on. */

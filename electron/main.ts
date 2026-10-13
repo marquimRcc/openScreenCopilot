@@ -1,3 +1,4 @@
+import "./initialize-identity";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -12,6 +13,7 @@ import {
 	shell,
 	Tray,
 } from "electron";
+import { SELF_UPDATE_ENABLED } from "../src/config/product";
 import { ShortcutBinding } from "../src/lib/shortcuts";
 import {
 	type AboutFacts,
@@ -642,7 +644,7 @@ let currentUpdateMode: UpdateMode = "notify";
 let backgroundUpdateTimer: ReturnType<typeof setInterval> | null = null;
 
 function showUpdateSettingsMenu(): boolean {
-	return app.isPackaged && ownsItsUpdates(getInstallChannel());
+	return SELF_UPDATE_ENABLED && app.isPackaged && ownsItsUpdates(getInstallChannel());
 }
 
 function persistUpdateMode(mode: UpdateMode) {
@@ -766,7 +768,7 @@ function startBackgroundUpdateTimer() {
 	if (
 		!shouldStartBackgroundUpdateTimer({
 			isPackaged: app.isPackaged,
-			ownsItsUpdates: ownsItsUpdates(getInstallChannel()),
+			ownsItsUpdates: SELF_UPDATE_ENABLED && ownsItsUpdates(getInstallChannel()),
 		})
 	) {
 		return;
@@ -1299,15 +1301,17 @@ appReady?.then(async () => {
 	ipcMain.handle("star-prompt:export-finished", () => {
 		const { successfulExports, dismissed } = starPromptSettings.recordSuccessfulExport();
 		return {
-			offer: offersStarPrompt({
-				successfulExports,
-				dismissed,
-				recording: isRecording,
-				// Every handler in this file is registered inside `appReady`, which the CLI boot
-				// path never reaches, so this is the second lock on a shut door — see the note on
-				// `headless` in star-prompt.ts.
-				headless: cliCommand !== null,
-			}),
+			offer:
+				SELF_UPDATE_ENABLED &&
+				offersStarPrompt({
+					successfulExports,
+					dismissed,
+					recording: isRecording,
+					// Every handler in this file is registered inside `appReady`, which the CLI boot
+					// path never reaches, so this is the second lock on a shut door — see the note on
+					// `headless` in star-prompt.ts.
+					headless: cliCommand !== null,
+				}),
 			// Drives which links the prompt shows. A Store copy must not be pointed at Releases
 			// or at an .exe, so it is offered the repo root and the Store's own review page.
 			store: getInstallChannel() === "store",

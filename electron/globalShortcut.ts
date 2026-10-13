@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import { globalShortcut } from "electron";
-import { type ShortcutBinding } from "../src/lib/shortcuts";
+import { DEFAULT_SHORTCUTS, type ShortcutBinding } from "../src/lib/shortcuts";
 import { SHORTCUTS_FILE } from "./ipc/handlers";
 
-const DEFAULT_OPEN_APP_BINDING: ShortcutBinding = { key: "o", ctrl: true, shift: true };
+const DEFAULT_OPEN_APP_BINDING: ShortcutBinding = DEFAULT_SHORTCUTS.openApp;
 
 // Maps KeyboardEvent.key values to Electron accelerator key names
 const KEY_TO_ACCELERATOR: Record<string, string> = {

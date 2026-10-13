@@ -20,8 +20,8 @@ Data da inicialização: 2026-10-13.
 ## Ainda não implementado
 
 Seleção retangular, seletor novo de endpoint de saída, encoder AV1 na captura,
-perfil 300 MB, core Rust extraído, sidecar novo, transcrição durante gravação,
-persistência nova, rebranding/isolamento de identidade e homologação RegataOS.
+perfil de compressão por qualidade, core Rust extraído, sidecar novo,
+transcrição durante gravação, persistência nova e homologação RegataOS.
 
 Não há release ou instalador do fork aprovado. A presença do código dos dois projetos
 no mesmo Git não significa que seus runtimes estejam integrados.
@@ -66,11 +66,41 @@ RegataOS e Nix. Não há alteração nativa nesta etapa, nem alegação de homol
 O hash Nix foi atualizado a partir do prefetch remoto; build Nix completo continua
 fora do aceite desta etapa.
 
-## Próxima etapa
+## Etapa 01 — execução em 2026-10-13
 
-01 — Baseline Windows e identidade isolada, conforme [ROADMAP.md](ROADMAP.md).
-Começar pelo inventário do ambiente e isolamento de userData/auto-update; somente
-depois produzir um pacote de teste. Preservar instalações existentes.
+Branch: `feat/windows-baseline-identity`, base `023b30c1719c58d7411b26e1757aec9e2173f98d`.
+
+- Inventário Windows/CPU/GPU/driver/áudio e toolchain registrado.
+- Produto `openScreenCopilot`, appId próprio, perfis packaged/dev separados,
+  cache Chromium próprio e novo atalho Ctrl+Shift+Alt+O.
+- Auto-update bloqueado antes de carregar electron-updater, feed vazio,
+  hooks AppImage desconectados e comando Store bloqueado.
+- URLs de projeto, CODEOWNERS e metadados de manutenção apontam ao fork;
+  avisos legais e autores originais preservados. Marca atualizada nas 15 línguas.
+- Compositor Rust, WGC/cursor e Whisper CPU compilados localmente;
+  FFmpeg LGPL e ONNX Runtime verificados pelos scripts de origem/hash.
+- Pacote local `0.1.0-alpha.1` gerado com `--dir --publish never`; nenhuma instalação,
+  publicação, assinatura ou atualização de software existente foi realizada.
+- Abertura real, editor, idioma pt-BR, versão própria e ausência de atualização
+  no menu conferidos com computer-use. Não equivale a captura/exportação homologadas.
+- Qualidade passa a ter prioridade sobre teto fixo de tamanho, conforme o pedido
+  atualizado; 300 MB/30 minutos não é mais critério obrigatório.
+
+**Etapa ainda não aceita:** teste nativo de timestamps falha no encoder Intel
+(erro máximo de 325 ms), reproduzido duas vezes. Software preserva os tempos.
+Nenhum teste foi desativado e nenhum fallback foi forçado silenciosamente.
+Resultados detalhados, hashes e lacunas: [WINDOWS11-BASELINE.md](WINDOWS11-BASELINE.md).
+
+Suíte final desta etapa: 335 arquivos, 4.732 testes aprovados, 5 ignorados e
+nenhuma falha, com Node 22.22.1/npm 10.9.4. Biome sem erros, 26 avisos herdados;
+dois typechecks, i18n (15 línguas) e docs:check (48 arquivos) aprovados.
+Captura curta WGC de janela, sistema + microfone: 460.913 bytes, H.264 30 fps,
+AAC 48 kHz, vídeo 5,033800 s / áudio 5,034667 s. Material quase silencioso:
+não comprova inteligibilidade, ambas as fontes separadamente ou estabilidade longa.
+
+Próximo checkpoint: corrigir/investigar a preservação temporal no caminho hardware,
+repetir o teste sob carga e concluir gravação, exportação e transcrição pós-gravação
+antes de aceitar 01 e avançar para a seleção retangular (02).
 
 ## Regra de atualização
 
