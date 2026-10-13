@@ -84,10 +84,11 @@ para o workspace raiz. Não executar instalação recursiva, backend Python nem
 workflows vendor. TypeScript/Vitest da raiz já têm escopo explícito; Biome exclui vendor.
 O pacote Electron inclui dist/dist-electron, não o snapshot inteiro.
 
-Os workflows raiz ainda vêm do OpenScreen. Fork novo pode manter Actions desabilitado
-até revisão. Não habilitar release, deploy de site, Store, winget, AUR, Homebrew,
-Discord ou aprovação automática herdados. Não adicionar secrets dos autores.
-A etapa 01 audita automações, identidade de pacote e feeds antes de distribuição.
+Os workflows raiz vêm do OpenScreen, mas somente ci.yml e nix-check.yml podem
+executar no fork. Os demais jobs recebem uma guarda de repositório upstream e
+são ignorados aqui. Consulte [CI-POLICY.md](CI-POLICY.md), inclusive o comportamento
+de pull_request_target antes do merge inicial. Não adicionar secrets dos autores.
+A etapa 01 audita identidade, feeds e destinos antes de habilitar distribuição própria.
 
 Os arquivos arquivados em project/upstream mantêm conteúdo original: links relativos
 não foram reescritos para não adulterar a referência. Use o commit fixado no upstream
@@ -104,6 +105,6 @@ Foram fixados finais LF para JSON/JS/CJS/YAML, além dos tipos já cobertos, evi
 falhas de formatação e de testes que leem workflows como texto no Windows.
 A árvore Git do snapshot meeting-copilot continua idêntica ao commit de origem.
 
-O hash de dependências Nix precisa ser recalculado/validado em ambiente Nix após
-esta alteração de lockfile. Não foi executado nesta fundação Windows, nem é prova
-de compatibilidade com RegataOS. Tratar na auditoria de builds da etapa 01.
+O hash de dependências Nix foi atualizado com o valor produzido pelo job remoto
+prefetch-npm-deps após a alteração de lockfile. Não foi feito build Nix completo
+neste Windows nem teste RegataOS. Validar esses alvos nas etapas próprias.

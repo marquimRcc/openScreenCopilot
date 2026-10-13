@@ -30,6 +30,7 @@ concurrency:
 
 jobs:
   prerelease:
+    if: github.repository == 'getopenscreen/openscreen'
     name: Cut pre-release
     runs-on: ubuntu-latest
     steps:

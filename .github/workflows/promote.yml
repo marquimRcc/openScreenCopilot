@@ -24,6 +24,7 @@ concurrency:
 
 jobs:
   promote:
+    if: github.repository == 'getopenscreen/openscreen'
     name: Promote RC to stable
     runs-on: ubuntu-latest
     steps:

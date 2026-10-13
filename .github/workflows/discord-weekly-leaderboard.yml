@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   leaderboard:
+    if: github.repository == 'getopenscreen/openscreen'
     name: Post weekly contributor leaderboard
     runs-on: ubuntu-latest
     steps:

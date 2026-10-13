@@ -11,6 +11,7 @@ por etapa; não fazer push direto em main. Não confundir este plano com o roadm
 - [x] Preservar licenças e fixar os commits de origem.
 - [x] Registrar arquitetura, contratos, riscos e matriz de testes.
 - [x] Validações locais concluídas e entrega versionada por branch/PR (ver STATUS.md).
+- [x] Isolar automações não auditadas com guardas de repositório e teste de política.
 
 ## 01 — Baseline Windows e identidade isolada
 
@@ -21,7 +22,7 @@ Dependência: 00.
 - Separar productName/appId/userData/protocolos/atalhos, URLs e auto-update do fork.
 - Auditar e neutralizar publicação, notificações, CODEOWNERS e identidades de Store
   herdados antes de habilitar distribuição; não publicar nos destinos dos autores.
-- Revisar a CI do fork e atualizar/validar o hash Nix após o ajuste de lockfile.
+- Revisar a CI do fork e validar builds próprios; hash Nix ajustado na fundação.
 - Reproduzir uma captura original com sistema e microfone; guardar métricas.
 - Manter editor, transcrição pós-gravação e exportação funcionando.
 

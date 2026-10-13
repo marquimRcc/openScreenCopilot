@@ -16,8 +16,8 @@ permissions:
 jobs:
   notify:
     name: Sync PR activity to Discord
-    if: |
-      github.actor != 'github-actions[bot]'
+    if: >-
+      github.repository == 'getopenscreen/openscreen' && (github.actor != 'github-actions[bot]')
     concurrency:
       group: discord-pr-sync-${{ github.repository }}-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
       cancel-in-progress: false

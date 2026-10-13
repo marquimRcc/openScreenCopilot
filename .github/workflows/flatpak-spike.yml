@@ -22,6 +22,7 @@ permissions:
 
 jobs:
   spike:
+    if: github.repository == 'getopenscreen/openscreen'
     name: How far is Flathub
     runs-on: ubuntu-latest
     # The full attempt downloads a runtime, an SDK, two SDK extensions, a base app,

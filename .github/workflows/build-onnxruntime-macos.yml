@@ -60,6 +60,7 @@ permissions:
 
 jobs:
   build:
+    if: github.repository == 'getopenscreen/openscreen'
     name: macOS arm64, deployment target 13.0
     # arm64 runner: the only macOS target upstream ships, and the only one the
     # app packages. There is no Intel build to match.

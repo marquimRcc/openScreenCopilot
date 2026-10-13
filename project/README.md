@@ -7,6 +7,8 @@ Ordem de leitura: [situação](STATUS.md), [requisitos](REQUIREMENTS.md),
 [arquitetura](ARCHITECTURE.md), [contratos](CONTRACTS.md), [decisões](DECISIONS.md),
 [Windows 11](WINDOWS11.md), [testes](TESTING.md) e [plano](ROADMAP.md).
 
+A política de isolamento das automações está em [CI-POLICY.md](CI-POLICY.md).
+
 A procedência, as licenças, o procedimento de atualização e a diferença entre
 fork GitHub e importação com histórico estão em [UPSTREAMS.md](UPSTREAMS.md).
 

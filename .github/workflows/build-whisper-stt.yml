@@ -33,6 +33,7 @@ permissions:
 
 jobs:
   build:
+    if: github.repository == 'getopenscreen/openscreen'
     name: ${{ matrix.label }}
     strategy:
       fail-fast: false

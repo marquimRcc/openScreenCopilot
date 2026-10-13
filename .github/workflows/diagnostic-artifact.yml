@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   build-windows:
+    if: github.repository == 'getopenscreen/openscreen'
     name: Windows x64 diagnostic bundle
     runs-on: windows-latest
     steps:
@@ -69,6 +70,7 @@ jobs:
           retention-days: 14
 
   build-macos:
+    if: github.repository == 'getopenscreen/openscreen'
     name: macOS ${{ matrix.arch }} diagnostic bundle
     runs-on: macos-latest
     strategy:

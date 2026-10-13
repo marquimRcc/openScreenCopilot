@@ -36,6 +36,7 @@ permissions:
 
 jobs:
   build:
+    if: github.repository == 'getopenscreen/openscreen'
     name: Build site
     runs-on: ubuntu-latest
     steps:
@@ -138,8 +139,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/main')
-      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      github.repository == 'getopenscreen/openscreen' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

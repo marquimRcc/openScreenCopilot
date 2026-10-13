@@ -27,7 +27,8 @@ jobs:
     # So the job always starts, and a step announces the missing configuration. It costs
     # a runner-minute per release; it buys "nothing was published" being visible in the
     # run summary instead of inferable from a tap nobody thought to look at.
-    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    if: >-
+      github.repository == 'getopenscreen/openscreen' && (github.event_name == 'workflow_dispatch' || !github.event.release.prerelease)
     env:
       TAP_OWNER: ${{ vars.HOMEBREW_TAP_OWNER }}
       TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}

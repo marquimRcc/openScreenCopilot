@@ -28,7 +28,8 @@ env:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: (github.event_name == 'workflow_dispatch' || !github.event.release.prerelease) && vars.AUR_PACKAGE_NAME != ''
+    if: >-
+      github.repository == 'getopenscreen/openscreen' && ((github.event_name == 'workflow_dispatch' || !github.event.release.prerelease) && vars.AUR_PACKAGE_NAME != '')
     steps:
       - name: Resolve and validate tag
         id: meta
