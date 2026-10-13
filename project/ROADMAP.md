@@ -38,6 +38,11 @@ gravação baseline reproduzível. Evidência: versão/commit, logs, ffprobe e v
 
 Dependência: 01.
 
+Estado: 02A iniciada, com crop D3D11 e contrato de coordenadas testados, sem
+overlay/endpoint novo na interface. Fundação independente autorizada pelo usuário;
+aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
+[WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
+
 - Overlay retangular em monitor único, crop GPU e validação DPI.
 - Seletor de endpoint de saída, microfone independente e medidor de nível.
 - Tratamento de fechamento de janela, desconexão e mudança de formato.

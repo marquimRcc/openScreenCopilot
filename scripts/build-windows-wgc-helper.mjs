@@ -134,6 +134,10 @@ console.log(`Built ${cursorSamplerOutputPath}`);
 console.log(`Copied ${cursorSamplerDistributablePath}`);
 
 const audioUtilsTestPath = path.join(BUILD_DIR, "audio_sample_utils_test.exe");
+// Actual D3D11 texture readback verifies every pixel of a selected region.
+// WARP makes this independent of screen privacy/lock state and GPU vendor.
+await run(path.join(BUILD_DIR, "capture_region_test.exe"), [], { cwd: BUILD_DIR });
+
 if (!fs.existsSync(audioUtilsTestPath)) {
 	throw new Error(`WGC helper build completed but ${audioUtilsTestPath} was not found.`);
 }

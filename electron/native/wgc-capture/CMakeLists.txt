@@ -36,6 +36,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(wgc-capture
+  src/capture_region.cpp
+  src/capture_region.h
   src/audio_sample_utils.cpp
   src/audio_sample_utils.h
   src/desktop_icon_cover.cpp
@@ -88,6 +90,11 @@ target_link_libraries(wgc-capture PRIVATE
   windowsapp
   winmm
 )
+
+add_executable(capture_region_test src/capture_region.cpp src/capture_region_test.cpp)
+target_compile_definitions(capture_region_test PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+target_compile_options(capture_region_test PRIVATE /EHsc /W4 /utf-8)
+target_link_libraries(capture_region_test PRIVATE d3d11 dxgi)
 
 add_executable(cursor-sampler
   src/cursor-sampler.cpp

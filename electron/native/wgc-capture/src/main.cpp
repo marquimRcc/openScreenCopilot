@@ -1,4 +1,5 @@
 #include "audio_sample_utils.h"
+#include "capture_region.h"
 #include "desktop_icon_cover.h"
 #include "dpi_awareness.h"
 #include "frame_slot_clock.h"
@@ -44,6 +45,8 @@ struct CaptureConfig {
     int height = 0;
     MonitorBounds bounds{};
     bool hasDisplayBounds = false;
+    bool hasCaptureRegion = false;
+    CaptureRegion captureRegion{};
     bool captureSystemAudio = false;
     bool captureMic = false;
     bool captureCursor = false;
@@ -574,6 +577,10 @@ bool parseConfig(const std::string& json, CaptureConfig& config) {
     config.bounds.width = findInt(json, "displayW", 0);
     config.bounds.height = findInt(json, "displayH", 0);
     config.hasDisplayBounds = findBool(json, "hasDisplayBounds", false);
+    config.hasCaptureRegion = findBool(json, "hasCaptureRegion", false);
+    config.captureRegion = {
+        findInt(json, "regionX", -1), findInt(json, "regionY", -1),
+        findInt(json, "regionWidth", -1), findInt(json, "regionHeight", -1)};
     config.captureSystemAudio = findBool(json, "captureSystemAudio", false);
     config.captureMic = findBool(json, "captureMic", false);
     config.captureCursor = findBool(json, "captureCursor", false);
@@ -666,6 +673,15 @@ int wmain(int argc, wchar_t* argv[]) {
         std::cerr << "ERROR: Failed to parse config JSON" << std::endl;
         return 1;
     }
+    // Region support is deliberately monitor-only. Never degrade an invalid
+    // request to full-screen capture, which could expose unselected content.
+    if (config.hasCaptureRegion &&
+        (config.sourceType != "display" || !config.hasDisplayBounds ||
+         config.bounds.width < 2 || config.bounds.height < 2 ||
+         !validCaptureRegion(config.captureRegion, config.bounds.width, config.bounds.height))) {
+        std::cerr << "ERROR: A capture region requires valid pixels and explicit display bounds" << std::endl;
+        return 1;
+    }
 
     char injectDefaultSinkWriterFailure[2]{};
     const DWORD injectDefaultSinkWriterFailureLength = GetEnvironmentVariableA(
@@ -751,11 +767,19 @@ int wmain(int argc, wchar_t* argv[]) {
 
     reportCaptureAdapters(session.device(), capturedMonitor);
 
-    // WGC owns the captured texture size. Encoding must use that exact size
-    // until a dedicated GPU scaling pass is introduced; CopyResource requires
-    // matching resource dimensions.
-    int width = session.captureWidth();
-    int height = session.captureHeight();
+    const int sourceWidth = session.captureWidth();
+    const int sourceHeight = session.captureHeight();
+    if (config.hasCaptureRegion &&
+        (sourceWidth != config.bounds.width || sourceHeight != config.bounds.height ||
+         !validCaptureRegion(config.captureRegion, sourceWidth, sourceHeight))) {
+        std::cerr << "ERROR: Invalid capture region; expected even dimensions inside one monitor"
+                  << std::endl;
+        return 1;
+    }
+    // Crop is a GPU copy, not a resize. The encoder receives only selected
+    // pixels. Existing whole-monitor/window behavior stays unchanged.
+    int width = config.hasCaptureRegion ? config.captureRegion.width : sourceWidth;
+    int height = config.hasCaptureRegion ? config.captureRegion.height : sourceHeight;
     width = (std::max(2, width) / 2) * 2;
     height = (std::max(2, height) / 2) * 2;
 
@@ -1020,6 +1044,26 @@ int wmain(int argc, wchar_t* argv[]) {
     // them is the next bug report, and neither is worth a log line each.
     std::atomic<uint64_t> contendedFrames = 0;
     Microsoft::WRL::ComPtr<ID3D11Texture2D> latestFrameTexture;
+    const auto copyCapturedFrame = [&](ID3D11Texture2D* texture) {
+        if (config.hasCaptureRegion) {
+            if (!copyCaptureRegion(session.device(), session.context(), texture,
+                                   config.captureRegion, sourceWidth, sourceHeight, latestFrameTexture)) {
+                std::cerr << "ERROR: Region frame copy failed or display geometry changed" << std::endl;
+                return false;
+            }
+            return true;
+        }
+        if (!latestFrameTexture) {
+            D3D11_TEXTURE2D_DESC desc{};
+            texture->GetDesc(&desc);
+            desc.BindFlags = 0;
+            desc.CPUAccessFlags = 0;
+            desc.MiscFlags = 0;
+            if (FAILED(session.device()->CreateTexture2D(&desc, nullptr, &latestFrameTexture))) return false;
+        }
+        session.context()->CopyResource(latestFrameTexture.Get(), texture);
+        return true;
+    };
     std::vector<BYTE> latestWebcamFrame;
     int latestWebcamWidth = 0;
     int latestWebcamHeight = 0;
@@ -1038,19 +1082,6 @@ int wmain(int argc, wchar_t* argv[]) {
                 return;
             }
             std::scoped_lock lock(frameMutex);
-            if (!latestFrameTexture) {
-                D3D11_TEXTURE2D_DESC desc{};
-                texture->GetDesc(&desc);
-                desc.BindFlags = 0;
-                desc.CPUAccessFlags = 0;
-                desc.MiscFlags = 0;
-                if (FAILED(session.device()->CreateTexture2D(&desc, nullptr, &latestFrameTexture))) {
-                    encodeFailed = true;
-                    control.requestStop();
-                    return;
-                }
-            }
-
             // Gated on an already-arrived first frame: main() blocks up to 10s
             // waiting for firstFrameWritten before it will even print
             // recording-started, a startup budget this stall is meant to
@@ -1063,7 +1094,11 @@ int wmain(int argc, wchar_t* argv[]) {
             if (testStallFrameCallbackMs > 0 && firstFrameWritten.load()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(testStallFrameCallbackMs));
             }
-            session.context()->CopyResource(latestFrameTexture.Get(), texture);
+            if (!copyCapturedFrame(texture)) {
+                encodeFailed = true;
+                control.requestStop();
+                return;
+            }
             if (!firstFrameWritten.exchange(true)) {
                 frameCv.notify_all();
             }
@@ -1150,18 +1185,6 @@ int wmain(int argc, wchar_t* argv[]) {
                     const bool gotFrame = session.tryGetNextFrame(&wgcTexture, &wgcTimestampHns);
                     pictureChanged = gotFrame;
                     if (gotFrame) {
-                        if (!latestFrameTexture) {
-                            D3D11_TEXTURE2D_DESC desc{};
-                            wgcTexture->GetDesc(&desc);
-                            desc.BindFlags = 0;
-                            desc.CPUAccessFlags = 0;
-                            desc.MiscFlags = 0;
-                            if (FAILED(session.device()->CreateTexture2D(&desc, nullptr, &latestFrameTexture))) {
-                                encodeFailed = true;
-                                control.requestStop();
-                                break;
-                            }
-                        }
                         // The wedge risk this class exists to avoid: this call
                         // can block inside the display driver and never return
                         // (#252, still true of PR #305's DXGI path on some
@@ -1169,7 +1192,11 @@ int wmain(int argc, wchar_t* argv[]) {
                         // already owns deciding when to give up -- there is no
                         // separate WGC callback thread left for it to take a
                         // lock down with it.
-                        session.context()->CopyResource(latestFrameTexture.Get(), wgcTexture);
+                        if (!copyCapturedFrame(wgcTexture)) {
+                            encodeFailed = true;
+                            control.requestStop();
+                            break;
+                        }
                         firstFrameWritten = true;
                     } else if (!latestFrameTexture) {
                         // No frame captured yet at all: nothing to encode

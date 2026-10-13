@@ -19,7 +19,7 @@ Data da inicialização: 2026-10-13.
 
 ## Ainda não implementado
 
-Seleção retangular, seletor novo de endpoint de saída, encoder AV1 na captura,
+Seleção retangular pela interface, seletor novo de endpoint de saída, encoder AV1 na captura,
 perfil de compressão por qualidade, core Rust extraído, sidecar novo,
 transcrição durante gravação, persistência nova e homologação RegataOS.
 
@@ -118,6 +118,42 @@ foi bloqueada pela impossibilidade de ativar a janela; foi solicitado acesso ao
 usuário. CLI/export/helper não foram registrados como passe da interface.
 CI remota e hash Nix ainda devem confirmar o checkpoint antes do merge.
 Detalhes e limites: [WINDOWS11-BASELINE.md](WINDOWS11-BASELINE.md).
+
+## Etapa 02 — fundação independente iniciada
+
+Branch: `feat/windows-region-foundation`, sobre o checkpoint da etapa 01.
+O aceite manual de 01 não foi dispensado: somente a parte independente de 02
+foi iniciada enquanto a janela de QA estava inacessível, conforme autorização
+do usuário para avançar.
+
+- Crop D3D11 implementado no helper (pull e callback legado), sem resize e sem
+  fallback para capturar conteúdo fora do retângulo. Região requer monitor explícito.
+- Teste real de textura com WARP aprovado, comparação pixel a pixel e guardas.
+- Contrato de coordenadas do futuro overlay aprovado em 18 testes (125%/150%,
+  origens negativas, frações, cancelamento e entradas inválidas).
+- Requests inválidos recusados pelo executável sem criar gravação.
+- Regressão nativa de timestamps permanece aprovada: 33 testes do encoder.
+
+**Ainda não disponível pela interface:** arrastar o retângulo, integração IPC e
+cursor recortado, seleção de endpoint de saída e novo medidor de sistema/mic.
+WARP/contratos não homologam recorte real WGC ou DPI misto físico.
+Escopo, protocolo e próximos passos: [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
+
+Rodada final do workspace (01 + fundação 02): 337 arquivos, 4.752 testes aprovados,
+5 ignorados, 0 falhas; 251,69 s. Regressões focadas: 3 arquivos / 34 testes.
+TypeScript app/testes aprovados; Biome 0 erros / 26 avisos herdados; 15 línguas
+aprovadas. Documentação da etapa 02 validada: 49 arquivos / links aprovados.
+Snapshot vendor inalterado (`8c1d5521283853c9d19e89c74bbe4ac34b27d822`).
+
+Entrega em branches separadas, sem push em main. O PR de 01 fica em draft até
+concluir os aceites manuais; 02 depende de 01 e seu PR não será aberto para merge
+antes de resolver essa base. Não habilitar CI/distribuição upstream para contornar
+essa dependência; a CI existente valida o [PR 2 de 01](https://github.com/marquimRcc/openScreenCopilot/pull/2).
+Na primeira execução, lint, ambos os typechecks, docs, build e AppStream passaram;
+o job Nix identificou o hash alterado pela identidade do lockfile. O valor
+`sha256-1t3UZ5qbn0S6NZnuW3z2hAhx4VpOGddRGnlkSho/YMk=` foi aplicado a partir
+do prefetch remoto em `eb058f12`; nova execução deve confirmar a correção.
+Isso não é build Nix completo nem homologação Linux/RegataOS.
 
 ## Regra de atualização
 
