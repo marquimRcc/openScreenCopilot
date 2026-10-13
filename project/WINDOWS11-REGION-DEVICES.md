@@ -116,6 +116,9 @@ ausente/erro do shell sem apresentar sucesso falso. Critérios em
 
 Proposto, **ainda não implementado**:
 
+- Áudio do sistema ligado por padrão em perfis novos/preferências ausentes;
+  microfone desligado por padrão. Respeitar desligamento explícito salvo e mostrar
+  estado/endpoint efetivos, com aviso se a captura de áudio falhar. Pedido de 2026-10-13.
 - Enumerar endpoints WASAPI eRender ativos, com ID e nome amigável; escolha de
   saída separada da escolha de microfone. Padrão significa o endpoint resolvido
   no começo da tomada, não autorização para trocar silenciosamente no meio.

@@ -57,6 +57,14 @@ Pedido do usuário em 2026-10-13 após encerrar uma captura e não encontrar o M
 
 ## Seleção de áudio é independente da seleção visual
 
+Pedido confirmado em 2026-10-13: **áudio do sistema ativado por padrão**, microfone
+opcional e desligado por padrão. Ainda é requisito, não mudança aplicada ao pacote.
+Em perfis novos/preferência ausente, iniciar com sistema ligado; permitir desligar
+explicitamente e respeitar essa escolha salva. Não reativar áudio silenciosamente
+quando o usuário escolheu "Sem áudio", nem ativar mic/câmera por essa mudança.
+Mostrar estado e endpoint efetivos antes de gravar; indisponibilidade/falha de
+captura deve ser visível, sem afirmar que há áudio apenas porque o toggle está ligado.
+
 Selecionar a janela do Teams **não** significa capturar somente o Teams. No MVP,
 WASAPI loopback captura os aplicativos que saem no endpoint selecionado. Um fone
 é um dispositivo de reprodução, não uma fonte distinta de "áudio do sistema".

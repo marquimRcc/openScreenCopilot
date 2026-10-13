@@ -193,6 +193,12 @@ ação persistente "Abrir local salvo" no editor. Requisitos e critérios em
 [REQUIREMENTS.md](REQUIREMENTS.md), [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md)
 e [TESTING.md](TESTING.md). Só especificado; nenhum botão novo foi implementado.
 
+Pedido adicional de 2026-10-13 registrado para 02C: áudio do sistema ativado por
+padrão em perfis novos/preferências ausentes; microfone opcional/desligado.
+Desligamento explícito salvo deve ser respeitado, sem reativação silenciosa.
+Requisito e testes em [REQUIREMENTS.md](REQUIREMENTS.md) e [TESTING.md](TESTING.md).
+Somente documentação; preferências e binário existentes não foram alterados.
+
 ## Regra de atualização
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

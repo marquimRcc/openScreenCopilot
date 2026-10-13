@@ -83,6 +83,15 @@ em curso do usuário não valida um recurso que ainda não foi implementado.
 - Testes de wiring/erro automatizados e verificação real no Explorador; ainda
   não executados. Não considerar o botão da exportação como passe pós-gravação.
 
+## Áudio do sistema por padrão — aceite pendente da etapa 02C
+
+- Perfil novo/preferência ausente: sistema ligado, mic/câmera desligados; confirmar
+  faixa audível no MP4 com reprodução conhecida no endpoint escolhido.
+- Desligamento explícito salvo continua respeitado após reiniciar; "Sem áudio"
+  fica evidente. Toggle ligado sem endpoint/sinal não basta para aprovar captura.
+- Falha de abertura/desconexão precisa de aviso; não registrar teste de áudio como
+  aprovado por MP4 somente com vídeo. Requisito registrado, ainda não implementado/testado.
+
 ## Camadas automatizadas
 
 1. Rust unit: resampling, VAD, máxima duração, dedup, fonte/época, cancelamento.
