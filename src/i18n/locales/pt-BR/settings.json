@@ -140,7 +140,7 @@
 	"stylePresets": {
 		"button": "Predefinições",
 		"menuLabel": "Predefinições de estilo",
-		"factoryName": "OpenScreen",
+		"factoryName": "openScreenCopilot",
 		"factoryBadge": "Integrada",
 		"empty": "Nenhuma predefinição salva",
 		"create": "Criar nova predefinição…",

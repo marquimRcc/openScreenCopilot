@@ -109,7 +109,7 @@ export function findConflict(
 }
 
 export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
-	openApp: { key: "o", ctrl: true, shift: true },
+	openApp: { key: "o", ctrl: true, shift: true, alt: true },
 	addZoom: { key: "z" },
 	addTrim: { key: "t" },
 	addSpeed: { key: "s" },

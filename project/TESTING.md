@@ -24,7 +24,7 @@ transcrições privadas para CI, issues públicas ou ferramentas de avaliação 
 | Dispositivos | Desconectar/reconectar, mudar padrão, alterar sample rate |
 | Encoder | AV1 real, hardware sem AV1, fallback, competição com GPU do ASR |
 | Conteúdo | Texto pequeno/slides/código, rolagem, webcam e movimento intenso |
-| Duração | 5 min para smoke; 30 min para orçamento; 60 min para estabilidade |
+| Duração | 5 min para smoke; 30 min para qualidade/tamanho; 60 min para estabilidade |
 | ASR | pt-BR, silêncio, fala contínua, sotaques, ruído, falas simultâneas |
 | Sessão | Pausas múltiplas, stop durante inferência, ASR atrasado ou travado |
 | Recuperação | Crash de sidecar, crash do app, disco cheio, cache no limite |
@@ -34,8 +34,9 @@ transcrições privadas para CI, issues públicas ou ferramentas de avaliação 
 
 ## Métricas e metas iniciais
 
-- Tamanho: <= 300.000.000 bytes para 1.800 segundos úteis no perfil compacto
-  e cenários homologados. Medir arquivo final, não bitrate configurado.
+- Tamanho: medir bytes e MB/min do arquivo final contra a baseline de conteúdo,
+  resolução e duração equivalentes. Sem teto obrigatório de 300 MB/30 minutos;
+  rejeitar economia que prejudique os critérios visuais e de áudio.
 - Qualidade: comparar com referência capturada equivalente, mesma região e resolução.
   VMAF/SSIM são evidência auxiliar, não substituem legibilidade de texto. Fixar
   o limiar por corpus no spike, antes de declarar aprovação.

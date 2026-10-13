@@ -40,16 +40,18 @@ export function offersStarPrompt(state: StarPromptState): boolean {
  *  a Store copy that is the second, parallel install `install-channel.ts` exists to prevent, and
  *  on every other channel it is simply not what the ask is about. Lives here so main, the app
  *  menu and the export prompt cannot drift to three different links. */
-export const REPO_URL = "https://github.com/getopenscreen/openscreen";
+export { REPOSITORY_URL as REPO_URL } from "../src/config/product";
 
 /** The Store listing this app ships under: the same id in the website's Store link and in the
  *  `winget install --source msstore` command the README recommends. */
-export const MS_STORE_PRODUCT_ID = "9MXQ1HQJL5G5";
+// This fork has no Store listing. Never send a review to the upstream product.
+export const MS_STORE_PRODUCT_ID = "";
 
 /** Built here from a constant, and never from a string the renderer sends. `open-external-url`
  *  deliberately allows http/https/mailto only, because handing an arbitrary custom scheme to
  *  the OS handler is a launch primitive and the renderer runs with `webSecurity:false`. A fixed
  *  deep link needs no hole in that allowlist, so it does not get one. */
 export function storeReviewUrl(): string {
+	if (!MS_STORE_PRODUCT_ID) throw new Error("This fork has no Microsoft Store listing.");
 	return `ms-windows-store://review/?ProductId=${MS_STORE_PRODUCT_ID}`;
 }

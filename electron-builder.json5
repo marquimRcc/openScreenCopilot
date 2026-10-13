@@ -1,9 +1,9 @@
 // @see - https://www.electron.build/configuration/configuration
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "com.etiennelescot.openscreen",
+  "appId": "io.github.marquimrcc.openscreencopilot",
   "asar": true,
-  "productName": "Openscreen",
+  "productName": "openScreenCopilot",
   // There is deliberately no `electronVersion` here. electron-builder needs an EXACT
   // version because it downloads the binaries for one release, and it takes that from
   // package.json's `electron` devDependency, which is pinned without a caret for this
@@ -21,35 +21,15 @@
   // LICENSE it ships alongside does not make. Any other surface that renders this line must
   // repeat it byte-for-byte.
   "copyright": "© 2025-2026 OpenScreen contributors — MIT License",
-  // Declared explicitly, NOT to start publishing from CI — every build still passes
-  // `--publish never`, which suppresses uploading only. What this turns on is the update
-  // METADATA: `latest.yml` / `latest-mac.yml` / `latest-linux.yml`, the `.blockmap` used for
-  // differential downloads, `app-update.yml` inside resources, and the `package-type` marker
-  // in deb/rpm/pacman that tells electron-updater which installer to run.
-  //
-  // Some of that was already being produced, because app-builder-lib falls back to inferring
-  // the provider from `.git/config`'s origin when no publish config is declared — which works
-  // in CI and silently stops working for anyone building from a source tarball. Declaring it
-  // (plus `repository` in package.json) makes it deterministic instead of incidental.
-  //
-  // The Store (appx) target deliberately gets NO publish config: `isSuitableWindowsTarget()`
-  // only writes `app-update.yml` for nsis, so the MSIX build cannot arm an updater that its
-  // read-only container could never run. Do not add `appx.electronUpdaterAware`.
-  "publish": [
-    {
-      "provider": "github",
-      "owner": "getopenscreen",
-      "repo": "openscreen"
-    }
-  ],
+  // Explicitly empty: do not infer a publishing provider from Git origin.
+  // The experimental fork has no update feed; SELF_UPDATE_ENABLED also blocks runtime access.
+  "publish": [],
   // Fails the build when compositor_view.node is older than the crates/ Rust sources. Plain
   // `npm run build` does not rebuild the addon, and a stale one fails SILENTLY at runtime
   // (unknown scene fields are #[serde(default)]) rather than erroring. See the script header
   // and technical-documentation/engineering/build-and-packaging.md.
   "beforePack": "scripts/before-pack.cjs",
-  // Standard AppImage updates need .upd_info and a .zsync alongside electron-updater's blockmap.
-  "artifactBuildCompleted": "scripts/appimage-updates.cjs",
-  "afterAllArtifactBuild": "scripts/appimage-updates.cjs",
+  // AppImage update hooks stay disconnected until the fork's Linux distribution audit.
   "npmRebuild": true,
   // sharp ships ABI-stable (napi) prebuilt binaries with bundled libvips. Building it from source
   // needs a system libvips we don't provide and breaks on CI/local ("vips-cpp.42 not found"), so we
@@ -234,7 +214,7 @@
     ],
     "icon": "icons/icons/png",
     "artifactName": "${productName}-Linux-${version}.${ext}",
-    "maintainer": "Etienne Lescot <etiennelescot@gmail.com>",
+    "maintainer": "marquimRcc <47907461+marquimRcc@users.noreply.github.com>",
     "category": "AudioVideo",
     "extraResources": [
       {
@@ -445,14 +425,14 @@
     "oneClick": false,
     "allowToChangeInstallationDirectory": true
   },
-  // Microsoft Store packaging identity, from Partner Center's "Product identity" page
-  // (Applications et jeux > OpenScreen > Product identity).
+  // Development placeholders, NOT registered Store credentials. build:win:store is blocked
+  // until this fork has an audited publisher identity and signing configuration.
   "appx": {
-    "identityName": "EtienneLescot.OpenScreen",
-    "publisher": "CN=03B0FC8C-2067-45D9-BE82-9F15CE264B4A",
-    "publisherDisplayName": "Etienne Lescot",
-    "applicationId": "Openscreen",
-    "displayName": "OpenScreen",
+    "identityName": "marquimRcc.openScreenCopilot.Development",
+    "publisher": "CN=openScreenCopilot-Local-Development",
+    "publisherDisplayName": "openScreenCopilot contributors",
+    "applicationId": "openScreenCopilot",
+    "displayName": "openScreenCopilot",
     "backgroundColor": "transparent",
     "capabilities": ["runFullTrust", "microphone", "webcam"],
     // Mirrors SUPPORTED_LOCALES in src/i18n/config.ts. This list is what the Store

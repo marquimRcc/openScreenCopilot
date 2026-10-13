@@ -11,7 +11,7 @@ de desempenho continuam sujeitos a teste. Registrar mudanças com motivo e evid�
 | 004 | PCM separado por fonte antes do mix | Extrair áudio do MP4 crescente dificulta latência, fontes e recuperação |
 | 005 | Fila limitada + cache persistente com retenção | Fila infinita estoura memória; descarte silencioso falsifica a transcrição |
 | 006 | Relógio monotônico + contadores + mapa de pausas | Horário civil muda; relógios independentes causam drift |
-| 007 | AV1 hardware por capacidade, com fallback visível | Forçar AV1 universalmente exclui GPUs; CRF não garante 300 MB |
+| 007 | AV1 hardware por capacidade, com fallback visível | Forçar AV1 universalmente exclui GPUs; avaliar qualidade e bytes juntos |
 | 008 | Whisper inicial; Parakeet opcional avaliado | Compatibilidade pt-BR e aceleração devem ser medidas, não inferidas do nome do modelo |
 | 009 | Windows primeiro, adaptadores Linux depois | Portar tudo antes de validar o fluxo aumenta variáveis sem prova de qualidade |
 | 010 | MP4, texto e manifest separados | Texto embutido no vídeo impede uso independente e encarece reprocessamento |
@@ -19,6 +19,7 @@ de desempenho continuam sujeitos a teste. Registrar mudanças com motivo e evid�
 | 012 | Fork OpenScreen + importação da outra base com histórico | GitHub associa um fork a um único projeto de origem; preservar a segunda genealogia via merge |
 | 013 | Sem runtime vendor automaticamente | Não instalar dependências nem executar pipelines de publicação da base importada |
 | 014 | Identidade própria antes de distribuir | Colidir appId/userData/feeds pode afetar a instalação original e usuários do upstream |
+| 015 | Qualidade antes de um teto fixo de tamanho | Pedido atualizado em 2026-10-13: 300 MB/30 min deixa de ser obrigatório; redução exige comparação visual e de áudio |
 
 ## Reutilização, não fusão cega
 

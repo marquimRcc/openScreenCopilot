@@ -5,8 +5,8 @@ const childProcess = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const REPOSITORY = "getopenscreen/openscreen";
-const ASSET_PATTERN = "Openscreen-Linux-*.AppImage.zsync";
+const REPOSITORY = "marquimRcc/openScreenCopilot";
+const ASSET_PATTERN = "openScreenCopilot-Linux-*.AppImage.zsync";
 
 function readBuffer(fd, offset, length, limit) {
 	if (

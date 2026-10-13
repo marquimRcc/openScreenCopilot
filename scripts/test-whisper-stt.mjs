@@ -15,6 +15,7 @@
 //   node scripts/test-whisper-stt.mjs --wav a.wav    # any platform: bring your own clip
 //   node scripts/test-whisper-stt.mjs --wav a.wav --ref "expected words"
 //   node scripts/test-whisper-stt.mjs --language fr  # force a language instead of auto
+//   node scripts/test-whisper-stt.mjs --wav a.wav --cpu  # CPU-only baseline build
 //
 // Env overrides:
 //   OPENSCREEN_WHISPER_SERVER_EXE  helper binary (default: the staged one for this host)
@@ -63,6 +64,7 @@ const WITH_VAD = fs.existsSync(VAD_MODEL);
 const LANGUAGE = argOf("--language") ?? "auto";
 const WAV_ARG = argOf("--wav");
 const REF_ARG = argOf("--ref");
+const FORCE_CPU = process.argv.includes("--cpu");
 
 /**
  * Mirrors `SttManager`'s cache location: `app.getPath("userData")/stt-models`
@@ -237,6 +239,7 @@ async function main() {
 			"--threads",
 			String(Math.max(1, os.cpus().length)),
 			...(WITH_VAD ? ["--vad-model", VAD_MODEL] : []),
+			...(FORCE_CPU ? ["--cpu"] : []),
 		],
 		{ stdio: ["ignore", "pipe", "pipe"] },
 	);
@@ -319,7 +322,8 @@ async function main() {
 	// Metal reported as CPU is the exact bug this catches: ggml's Metal *device*
 	// is named "MTL0", so a matcher looking for "Metal" never fires.
 	const gpuExpected =
-		(process.platform === "darwin" && process.arch === "arm64") || process.platform === "win32";
+		!FORCE_CPU &&
+		((process.platform === "darwin" && process.arch === "arm64") || process.platform === "win32");
 	check(
 		typeof json.backend === "string" && json.backend.startsWith("whispercpp-"),
 		"backend is a contract value",
@@ -329,6 +333,13 @@ async function main() {
 		check(
 			json.backend !== "whispercpp-cpu",
 			"backend reports GPU offload on a GPU-capable host",
+			String(json.backend),
+		);
+	}
+	if (FORCE_CPU) {
+		check(
+			json.backend === "whispercpp-cpu",
+			"explicit CPU backend is honored",
 			String(json.backend),
 		);
 	}

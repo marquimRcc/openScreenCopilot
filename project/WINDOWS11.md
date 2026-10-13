@@ -41,30 +41,23 @@ MVP não segue automaticamente outro endpoint sem avisar. Oferecer seleção e t
 de nível. Loopback de dispositivo inclui todos os aplicativos naquela saída.
 Captura por processo é possível como investigação futura, não filtro já existente.
 
-## Encoder e orçamento
+## Encoder, qualidade e eficiência
 
 AV1 por hardware: verificar primeiro Intel QSV no equipamento de teste, depois
 NVENC/AMF conforme capacidades reais. A API MF herdada não vira um encoder AV1
 por trocar uma string. Fazer spike entre MF compatível e libavcodec/FFmpeg com
 interoperabilidade D3D11, priorizando zero-copy e licenças redistribuíveis.
 
-```text
-orçamento bruto: 300.000.000 bytes * 8 / 1.800 s = 1.333.333 bit/s
-ponto inicial: (1.100.000 vídeo + 96.000 áudio) * 1.800 / 8
-             = 269.100.000 bytes, antes do overhead de container
-reserva inicial: 30.900.000 bytes para overhead e variação
-```
+O pedido foi atualizado em 2026-10-13: priorizar qualidade e reduzir desperdício,
+sem impor o teto anterior de 300 MB/30 minutos. O perfil deve partir de texto
+legível e áudio claro, não de um bitrate calculado para caber nesse orçamento.
 
-Esse cálculo é orçamento, não resultado medido de uma gravação. Validar controle
-de bitrate médio/VBV, PTS, áudio, metadata e tamanho efetivo. Se não conseguir
-cumprir o teto e a legibilidade juntos, informar incompatibilidade do perfil.
-Não degradar resolução ou trocar codec silenciosamente.
+Comparar controle por qualidade variável e bitrate/VBV, registrando PTS, áudio,
+metadata, tamanho final e legibilidade. Não degradar resolução ou trocar codec
+silenciosamente. 30 fps é candidato, não obrigação para qualquer uso; resolução
+nativa/1080p/720p e conteúdo com texto pequeno exigem comparação visual.
 
-CRF serve para qualidade variável, não para um teto rígido de tamanho. 30 fps é
-candidato, não obrigação para qualquer uso. 1080p/720p/área nativa e conteúdo com
-texto pequeno exigem comparação visual.
-
-Fallback H.264 deve ser explícito: pode não atender 300 MB com qualidade equivalente.
+Fallback H.264 deve ser explícito e medido com os mesmos critérios de qualidade.
 AV1 por software é opção consciente após benchmark, nunca fallback que satura CPU
 em silêncio. Reservar recursos para ASR e verificar competição GPU/VRAM.
 

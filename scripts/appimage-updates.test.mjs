@@ -105,7 +105,7 @@ describe("AppImage standard update information", () => {
 		const information = after.subarray(UPDATE_OFFSET, UPDATE_OFFSET + UPDATE_SIZE);
 		const end = information.indexOf(0);
 		expect(information.subarray(0, end).toString()).toBe(
-			"gh-releases-zsync|getopenscreen|openscreen|latest|Openscreen-Linux-*.AppImage.zsync",
+			"gh-releases-zsync|marquimRcc|openScreenCopilot|latest|openScreenCopilot-Linux-*.AppImage.zsync",
 		);
 		expect(information.subarray(end).every((byte) => byte === 0)).toBe(true);
 		expect(event.updateInfo).not.toBe(beforeInfo);
@@ -126,7 +126,7 @@ describe("AppImage standard update information", () => {
 				"-f",
 				"Openscreen-Linux-2.0.1.AppImage",
 				"-u",
-				"https://github.com/getopenscreen/openscreen/releases/download/v2.0.1/Openscreen-Linux-2.0.1.AppImage",
+				"https://github.com/marquimRcc/openScreenCopilot/releases/download/v2.0.1/Openscreen-Linux-2.0.1.AppImage",
 				"-o",
 				`${event.file}.zsync`,
 				event.file,
@@ -144,7 +144,8 @@ describe("AppImage standard update information", () => {
 		const event = await artifact({
 			version: "2.1.0-rc.2",
 			filename: "Openscreen-Linux-2.1.0-rc.2 beta.AppImage",
-			updateInformation: "gh-releases-zsync|getopenscreen|openscreen|latest-all|*.AppImage.zsync",
+			updateInformation:
+				"gh-releases-zsync|marquimRcc|openScreenCopilot|latest-all|*.AppImage.zsync",
 		});
 		const zsync = vi.spyOn(childProcess, "execFileSync").mockImplementation(() => undefined);
 		await artifactBuildCompleted(event);
@@ -156,7 +157,7 @@ describe("AppImage standard update information", () => {
 		expect(event.updateInfo.size).toBe(after.length);
 		expect(event.updateInfo.sha512).toBe(createHash("sha512").update(after).digest("base64"));
 		expect(zsync.mock.calls[0][1]).toContain(
-			"https://github.com/getopenscreen/openscreen/releases/download/v2.1.0-rc.2/Openscreen-Linux-2.1.0-rc.2%20beta.AppImage",
+			"https://github.com/marquimRcc/openScreenCopilot/releases/download/v2.1.0-rc.2/Openscreen-Linux-2.1.0-rc.2%20beta.AppImage",
 		);
 	});
 

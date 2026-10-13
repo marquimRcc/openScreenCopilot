@@ -50,6 +50,8 @@ add_executable(wgc-capture
   src/main.cpp
   src/mf_encoder.cpp
   src/mf_encoder.h
+  src/sample_timing_sink.cpp
+  src/sample_timing_sink.h
   src/monitor_utils.cpp
   src/monitor_utils.h
   src/wasapi_device_watcher.cpp
@@ -191,6 +193,8 @@ add_executable(mf_encoder_color_test
   src/mf_encoder.cpp
   src/mf_encoder.h
   src/mf_encoder_color_test.cpp
+  src/sample_timing_sink.cpp
+  src/sample_timing_sink.h
 )
 
 target_compile_definitions(mf_encoder_color_test PRIVATE
