@@ -76,6 +76,9 @@ em curso do usuário não valida um recurso que ainda não foi implementado.
   o MP4 original no Explorador, sem duplicação ou reexportação.
 - Reabrir sessão e mudar a pasta de futuras tomadas: a ação continua apontando
   ao arquivo da sessão atual, não ao destino de uma gravação posterior.
+- Após finalizar, "Nova captura" fica evidente na edição e abre a preparação;
+  não grava automaticamente. Cancelar retorna sem perda do MP4/projeto anterior.
+  Verificar tratamento de alterações não salvas e duas tomadas sem sobrescrita.
 - Cobrir gravação cancelada/falha, arquivo movido/apagado e erro do shell. Não
   anunciar "Gravação salva" nem "pasta aberta" sem resultado correspondente.
 - Distinguir MP4 capturado, projeto e MP4 exportado. Conferir que captura sem

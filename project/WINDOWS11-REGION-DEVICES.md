@@ -106,6 +106,10 @@ persistente com nome/caminho do MP4 original e botão "Abrir local salvo". Abrir
 o Explorador com esse arquivo selecionado; manter ação acessível no editor e
 não confundir com salvar projeto ou exportar uma edição.
 
+Pedido adicional: botão "Nova captura" destacado na edição após finalizar.
+Reutilizar o fluxo de preparação existente, preservando MP4/projeto anterior e
+tratando mudanças não salvas. Não iniciar nova gravação sem ação explícita do usuário.
+
 Já existe infraestrutura `revealInFolder` no preload/IPC e uso na exportação;
 a existência desse código não aprova a descoberta do arquivo após gravar.
 A integração deve usar o arquivo da sessão validado no main e tratar arquivo

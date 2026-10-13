@@ -199,6 +199,11 @@ Desligamento explícito salvo deve ser respeitado, sem reativação silenciosa.
 Requisito e testes em [REQUIREMENTS.md](REQUIREMENTS.md) e [TESTING.md](TESTING.md).
 Somente documentação; preferências e binário existentes não foram alterados.
 
+Pedido adicional pós-gravação: mostrar "Nova captura" de forma evidente na tela
+de edição, junto do acesso ao arquivo salvo. Abrir preparação sem gravar
+automaticamente, preservar a tomada anterior e tratar alterações não salvas.
+Registrado para 02B; ainda não implementado como ação destacada pós-gravação.
+
 ## Regra de atualização
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

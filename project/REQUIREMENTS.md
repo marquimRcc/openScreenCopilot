@@ -50,6 +50,10 @@ Pedido do usuário em 2026-10-13 após encerrar uma captura e não encontrar o M
   não apenas em uma notificação que desaparece rapidamente.
 - Usar o caminho persistido da sessão, não a pasta padrão ou a pasta configurada
   posteriormente. Distinguir o MP4 original do projeto e de uma exportação editada.
+- Após finalizar e abrir a edição, mostrar também um botão evidente "Nova captura",
+  junto de "Abrir local salvo". Levar à preparação da próxima tomada, sem iniciar
+  automaticamente nem apagar/sobrescrever a gravação anterior. Tratar alterações
+  não salvas do projeto antes de sair da edição; reutilizar o fluxo de gravação existente.
 - Informar falha de gravação/salvamento sem anunciar sucesso; se o arquivo tiver
   sido movido/apagado ou o Explorador falhar, mostrar erro claro, sem recriar dados.
 - Exibir estado de áudio sem ambiguidade: vídeo intencionalmente sem áudio continua
