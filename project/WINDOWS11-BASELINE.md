@@ -5,7 +5,8 @@ Data: 2026-10-13. Branch `feat/windows-baseline-identity`, baseada em
 
 **Parcial, não homologada.** Este é um pacote de desenvolvimento gerado localmente,
 não um artefato CI aprovado, um instalador público ou uma release candidate.
-A captura e os codecs ainda são os herdados; meeting-copilot permanece congelado.
+A captura e os codecs partem dos herdados; a correção temporal abaixo modifica o
+helper Windows. meeting-copilot permanece congelado.
 
 ## Ambiente observado
 
@@ -90,7 +91,7 @@ de mic reportado: JBL Quantum350 Wireless. Dados de ffprobe:
 Vídeo/áudio permanecem locais, fora do Git. Janela vazia e 5 s não representam
 reunião real: não extrapolar tamanho, qualidade, estabilidade ou drift de 30 minutos.
 
-## Alerta nativo reproduzido
+## Alerta nativo reproduzido — checkpoint anterior, resolvido abaixo
 
 `mf_encoder_color_test.exe`: 22 testes, 21 passam e 1 falha, em duas execuções.
 Cores BT.709, High profile, ausência de B-frames e repetição de frame passam no
@@ -105,9 +106,61 @@ A causa exata dentro do MFT/driver/muxer não foi determinada. Não atribuir ao 
 sem isolar o pipeline. Também não extrapolar esse erro sintético como drift medido
 de toda reunião real. É uma evidência concreta de que este caso temporal não passa.
 
-Próxima investigação: observar PTS/duração antes/depois do encoder e na fronteira
-dos fragments, comparar container e input DXGI sem trocar o padrão global, corrigir
-com regressão e repetir 10 minutos sob carga com marcadores visuais/sonoros.
+Esse resultado histórico foi preservado. A investigação e a correção posteriores
+estão registradas a seguir; não extrapolar o ensaio sintético para reuniões longas.
+
+## Correção temporal e validações adicionais — 2026-10-13
+
+Na configuração testada, a duração entregue depois do encoder hardware não
+preservava a duração de entrada, inclusive nas fronteiras de fragmentos MP4.
+A observação isolou a divergência de metadados nesse pipeline; não identifica
+uma falha universal de todo driver Intel. Habilitar low-latency não corrigiu e
+foi revertido. Não foi necessário desativar hardware, fragmentação ou testes.
+
+Foi adicionada uma camada de sink que repõe a duração original de cada sample
+de vídeo pela correspondência exata de PTS antes do muxer. PTS e áudio não são
+reescritos. Samples sem correspondência e pendências no finalize são erros;
+a tabela é limitada a 512 entradas, com sincronização separada do writer.
+
+Um segundo problema era de build: MSVC em português emitia o prefixo de includes
+com codificação diferente da armazenada pelo Ninja. Headers não eram rastreados
+corretamente e um build incremental misturou layouts de classes. O script agora
+usa UTF-8 antes da configuração e invalida somente seu build gerado antigo.
+
+| Ensaio real do encoder | Antes | Depois |
+|---|---|---|
+| 160 frames, taxa efetiva diferente da nominal e lacuna de 300 ms | Hardware: 325 ms de erro máximo | Hardware e software: 160/160; erro numérico aproximadamente zero |
+| 240 frames, jitter e lacunas de 200/1.400/350 ms | Novo caso de regressão | Hardware e software: 240/240; erro máximo 0,0083 ms |
+| Suíte encoder (cores, perfil, B-frames, repetição e tempos) | 21/22 | 33/33, incluindo novos testes de metadados |
+
+`npm run build:native:win` passou por completo, incluindo testes de áudio, webcam,
+visibilidade, relógio e encoder. Hash do WGC **somente com a correção da etapa 01**:
+`d28621a0222aa93dd373b73affcdb5411a3f4034f317bba4069120ffcdfd1ed9`.
+O pacote local foi regenerado com esse helper, sem assinatura/instalação/publicação.
+Os hashes na tabela de build acima pertencem ao checkpoint anterior.
+
+Validações adicionais, todas com conteúdo sintético próprio e arquivos locais:
+
+- Timeline WASAPI: silêncio inicial, tom de 440 Hz solicitado aos 4 s, início
+  detectado aos 4,7 s em faixa de 10,84 s; passou na tolerância de 1 s do teste.
+  Inclui latência do player: não é uma medição precisa de lip sync.
+- Whisper small-q8_0 + Silero, downloads com SHA verificado: fala pt-BR de
+  12,788 s, 24 palavras, 3 intervalos VAD, WER 0; 3,46 s em CPU, RTF 0,270.
+  Tempos por palavra, backend, idioma e guardrail DTW passaram. Alinhador CTC
+  português não disponível: teste correspondente ignorado explicitamente.
+- Exportação pelo runner CLI do aplicativo empacotado, usando o mesmo compositor
+  Rust da interface: projeto v2, vídeo sintético 720p/30 e fala pt-BR, saída
+  1080p/30 H.264 High (`h264_qsv`) + AAC LC 48 kHz estéreo. Sucesso, 13.506.131 bytes,
+  vídeo 12,733333 s / áudio 12,766000 s. Diferença de duração de 32,667 ms não é
+  lip sync. O log registra corte final de 22 ms da fonte disponível.
+- Fala extraída do MP4 exportado: WER 0 novamente, 3,61 s em CPU, RTF 0,283;
+  confirma inteligibilidade dessa amostra depois da exportação.
+
+Comandos adicionais: `npm run test:wgc-audio-timeline:win`,
+`npm run test:whisper-stt -- --wav <fixture-16k.wav> --language pt --cpu --ref <texto>`,
+`openScreenCopilot.exe export <fixture.openscreen> --out <saida.mp4> --quality good --fps 30 --json`.
+O novo `--cpu` é explícito no teste; a verificação GPU padrão não foi desativada.
+Logs ficam em `.cache/`, ignorados pelo Git. Nenhuma fala/MP4 foi enviado ao GitHub.
 
 ## Validação de interface e lacunas
 
@@ -126,11 +179,17 @@ controlador continuou reportando foco na busca, mesmo após tentar focar Nome.
 Nenhum caminho foi digitado sem confirmar foco. A importação foi cancelada com
 Escape; preview/exportação com mídia não foram validados nessa execução.
 
-Revisão GitHub: checkpoint em branch, não aceito para merge/release. O erro do
-teste nativo precisa ser resolvido antes do PR de conclusão da etapa 01. CI
-remota e hash Nix do lockfile renomeado ainda não foram revalidados neste checkpoint.
+Na tentativa de nova rodada visual após recompilar, o controlador não conseguiu
+ativar a janela mesmo após uma recuperação. A rodada foi interrompida, sem
+substituir os cliques do Windows por eventos DOM. Foi solicitado ao usuário que
+deixe a área de trabalho e a janela acessíveis. Não há novo passe visual aprovado.
+
+Revisão GitHub: checkpoint em branch, não aceito para release. A regressão temporal
+foi corrigida, mas falta fechar o aceite manual. CI remota e hash Nix do lockfile
+renomeado devem ser revalidados no PR antes do merge.
 
 Pendentes: rodada completa capture-to-export pelo HUD, texto pequeno/movimento,
-fala e playback neutro, pós-transcrição com modelo real, estabilidade 30/60 minutos,
+fala e playback neutro capturados pelo HUD, pós-transcrição pela interface,
+estabilidade 30/60 minutos,
 sincronia sob carga, DPI misto, segundo monitor, troca de dispositivos, RegataOS,
 assinatura/distribuição. Nada disso é aprovado por um simples build ou mock de CI.

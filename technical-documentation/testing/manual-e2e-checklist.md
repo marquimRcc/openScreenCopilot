@@ -905,6 +905,19 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+Fork checkpoint, 2026-10-13 (not a full checklist pass): after correcting the
+Windows timing sink, all 33 encoder tests pass, including hardware irregular
+timing. Actual packaged CLI export of synthetic Portuguese speech/video succeeds
+through the Rust compositor (1080p30 H.264 QSV/AAC); local Whisper CPU reports WER 0
+on the exported speech. The WASAPI delayed-tone timeline test also passes within
+its 1 s tolerance. These are native/CLI results, NOT an OS-input UI pass. The new
+computer-use attempt could not activate the packaged window after one recovery;
+the visual pass stopped and user assistance was requested. Skipped: HUD capture
+to preview/export/captions, 10/30/60-minute stress/sync, mic intelligibility,
+mixed-DPI/multi-monitor hardware, device changes, Linux/RegataOS and release QA.
+Previous partial identity results remain in the row below. No checklist box or
+release promotion is approved by these additional automated results.
+
 | Date | Build / tag | Platform | Pass/fail | Notes |
 |------|-------------|----------|-----------|-------|
 | 2026-10-13 | fork `openScreenCopilot 0.1.0-alpha.1`, local unpacked build, `feat/windows-baseline-identity` based on `023b30c1719c58d7411b26e1757aec9e2173f98d` | Windows 11 Pro 26300 x64, Core Ultra 5 125U, Intel Graphics 32.0.101.8826 | Partial — identity slice passed; native timing defect remains | Computer-use OS input on the actual packaged executable: startup, pt-BR HUD controls, fork global shortcut, editor opened through Ctrl+O, wordmark menu without update check, About name/version/repository and original copyright. Two HUD mouse clicks were refused by the controller's hit-test against the window behind it; mouse reachability of the click-through HUD is NOT passed. Content protection disabled only for QA. Separately, real WGC helper smoke on a blank Paint window, system+mic requested, hardware H.264 30 fps + AAC 48 kHz: 460,913 bytes, video 5.033800 s, audio 5.034667 s, stop 173 ms, nonblack first frame; almost silent mix, no speech/reference tone, so neither source intelligibility nor long sync is passed. Synthetic native encoder suite: 21/22 pass, hardware PTS test fails at 325 ms twice, software timing passes. No native source changes or released installer. Skipped: full HUD capture-to-export, speech playback, real-model STT, effects/caption/AI/webcam tests, multi-display/DPI, long-load take, all other OS, release promotion. Details and artifact hashes: [fork baseline](../../project/WINDOWS11-BASELINE.md). |

@@ -17,8 +17,10 @@ por etapa; não fazer push direto em main. Não confundir este plano com o roadm
 
 Dependência: 00.
 
-Estado: em validação; identidade e pacote local concluídos, com pendência nativa
-de timestamps. Evidências em [WINDOWS11-BASELINE.md](WINDOWS11-BASELINE.md).
+Estado: em validação; identidade e pacote local concluídos; falha nativa de
+timestamps corrigida. Exportação e ASR CPU passaram com mídia sintética.
+Ainda faltam o aceite visual completo e estabilidade sob carga.
+Evidências em [WINDOWS11-BASELINE.md](WINDOWS11-BASELINE.md).
 
 - Registrar Windows/build, CPU/GPU, driver, RAM, dispositivos e ferramentas.
 - Usar Node/npm fixados e documentar toolchain C++/Rust necessário.

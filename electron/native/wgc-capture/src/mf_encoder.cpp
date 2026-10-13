@@ -1,6 +1,7 @@
 #include "mf_encoder.h"
 
 #include "audio_sample_utils.h"
+#include "sample_timing_sink.h"
 
 #include <codecapi.h>
 #include <d3d10.h>
@@ -220,6 +221,7 @@ HRESULT createSinkWriter(
     Microsoft::WRL::ComPtr<IMFByteStream>& byteStream,
     Microsoft::WRL::ComPtr<IMFMediaSink>& mediaSink,
     Microsoft::WRL::ComPtr<IMFSinkWriter>& sinkWriter,
+    const std::shared_ptr<VideoSampleTimings>& timings,
     SinkWriterCreateStage& failedStage) {
     // Default to the sink-writer creation step; the software-path steps below
     // overwrite this only when one of them returns early with a failure.
@@ -363,6 +365,10 @@ HRESULT createSinkWriter(
     }
 
     failedStage = SinkWriterCreateStage::CreateSinkWriter;
+    Microsoft::WRL::ComPtr<IMFMediaSink> timingSink;
+    hr = createVideoTimingSink(mediaSink.Get(), timings, timingSink);
+    if (FAILED(hr)) return hr;
+    mediaSink = timingSink;
     const HRESULT sinkWriterHr = MFCreateSinkWriterFromMediaSink(
         mediaSink.Get(), attributes.Get(), &sinkWriter);
     if (SUCCEEDED(sinkWriterHr) && forceSoftwareEncoder) {
@@ -908,6 +914,7 @@ bool MFEncoder::initialize(
         bool logCreateFailure,
         bool fragmented) {
         resetSinkWriterAttempt();
+        videoSampleTimings_ = std::make_shared<VideoSampleTimings>();
 
         // Before the sink writer, not inside configureAudioStream where this
         // used to live: MFCreateFMPEG4MediaSink takes the audio output type as
@@ -931,6 +938,7 @@ bool MFEncoder::initialize(
             byteStream_,
             mediaSink_,
             sinkWriter_,
+            videoSampleTimings_,
             failedStage);
         if (FAILED(sinkWriterHr)) {
             // Only a genuine sink-writer creation failure gets the sink-writer /
@@ -1931,6 +1939,10 @@ bool MFEncoder::writePendingVideoSample() {
     if (!pendingVideoSample_) {
         return true;
     }
+    if (containerFormat_ == kContainerFormatFragmentedMp4 &&
+        !succeeded(videoSampleTimings_->remember(pendingVideoSample_.Get()), "Remember video timing")) {
+        return false;
+    }
     encodeStage_ = "write-sample";
     const bool written =
         succeeded(sinkWriter_->WriteSample(videoStreamIndex_, pendingVideoSample_.Get()), "WriteSample");
@@ -2008,6 +2020,10 @@ bool MFEncoder::finalize() {
         // The last frame keeps its nominal 1/fps: nothing follows it.
         ok = writePendingVideoSample();
         ok = succeeded(sinkWriter_->Finalize(), "SinkWriter::Finalize") && ok;
+        if (ok && containerFormat_ == kContainerFormatFragmentedMp4 && videoSampleTimings_->pending() != 0) {
+            std::cerr << "ERROR: Encoder did not return every submitted video timestamp." << std::endl;
+            ok = false;
+        }
     }
     pendingVideoSample_.Reset();
     releaseSinkWriter();
@@ -2027,4 +2043,8 @@ bool MFEncoder::finalize() {
     device_.Reset();
     MFShutdown();
     return ok;
+}
+
+uint64_t MFEncoder::videoTimingCorrections() const {
+    return videoSampleTimings_ ? videoSampleTimings_->corrections() : 0;
 }

@@ -10,6 +10,7 @@
 // failed. The hardware encoder is covered when the host has one.
 
 #include "mf_encoder.h"
+#include "sample_timing_sink.h"
 
 #include <d3d11.h>
 #include <wrl/client.h>
@@ -364,8 +365,8 @@ void checkRepeatedFrames(ID3D11Device* device, ID3D11DeviceContext* context) {
 // there dropped whatever the real gap held beyond it: a writer running late at
 // 40 fps, or a stall, lost time at every fragment and the video fell behind the
 // audio (217 ms over a ten-minute take, #1164).
-void checkSampleTimesKept(ID3D11Device* device, ID3D11DeviceContext* context, bool software) {
-    const std::string label = software ? "software" : "default";
+void checkSampleTimesKept(ID3D11Device* device, ID3D11DeviceContext* context, bool software, bool irregular = false) {
+    const std::string label = std::string(software ? "software" : "default") + (irregular ? "-irregular" : "");
     char tempDir[MAX_PATH]{};
     GetTempPathA(MAX_PATH, tempDir);
     const std::string path = std::string(tempDir) + "openscreen-mf-encoder-times-" + label + ".mp4";
@@ -373,8 +374,19 @@ void checkSampleTimesKept(ID3D11Device* device, ID3D11DeviceContext* context, bo
 
     // 60 fps nominal, written every 25 ms for 4 s, with a 300 ms stall at 2 s.
     std::vector<int64_t> stamps;
-    for (int64_t t = 0; t < 40'000'000; t += 250'000) {
-        stamps.push_back(t < 20'000'000 ? t : t + 3'000'000);
+    if (irregular) {
+        int64_t t = 0;
+        for (int i = 0; i < 240; ++i) {
+            if (i == 47) t += 2'000'000;
+            if (i == 114) t += 14'000'000;
+            if (i == 201) t += 3'500'000;
+            stamps.push_back(t);
+            t += 333'333 + (i % 7) * 1'000;
+        }
+    } else {
+        for (int64_t t = 0; t < 40'000'000; t += 250'000) {
+            stamps.push_back(t < 20'000'000 ? t : t + 3'000'000);
+        }
     }
     {
         std::vector<BYTE> bgra(static_cast<size_t>(kWidth) * kHeight * 4, 128);
@@ -382,7 +394,7 @@ void checkSampleTimesKept(ID3D11Device* device, ID3D11DeviceContext* context, bo
         MFEncoder encoder;
         MFEncoderOptions options;
         options.preferSoftwareEncoder = software;
-        if (!encoder.initialize(widen(path), kWidth, kHeight, 60, 2'000'000, device, context, nullptr, options)) {
+        if (!encoder.initialize(widen(path), kWidth, kHeight, irregular ? 30 : 60, 2'000'000, device, context, nullptr, options)) {
             expect("sample-times-initialize-" + label, false, "initialize failed");
             return;
         }
@@ -392,6 +404,7 @@ void checkSampleTimesKept(ID3D11Device* device, ID3D11DeviceContext* context, bo
             wrote = encoder.captureBgraSample(frame, stamps[i], sample) && encoder.submitVideoSample(sample.Get());
         }
         expect("sample-times-writes-" + label, wrote && encoder.finalize(), "write or finalize failed");
+        std::cout << "TIMING_REPAIRS " << label << "=" << encoder.videoTimingCorrections() << "\n";
     }
 
     const std::string probe =
@@ -412,13 +425,67 @@ void checkSampleTimesKept(ID3D11Device* device, ID3D11DeviceContext* context, bo
     }
     std::cout << "TIMES_RAW " << label << " frames=" << pts.size() << "/" << stamps.size()
               << " worst pts error " << worstMs << " ms\n";
+    if (worstMs >= 0.5) {
+        for (size_t i : {size_t{0}, size_t{39}, size_t{40}, size_t{79}, size_t{80}, size_t{119}, size_t{120}, size_t{159}}) {
+            if (i < pts.size() && i < stamps.size()) {
+                std::cout << "TIMES_DETAIL " << label << " frame=" << i << " expected="
+                          << stamps[i] / 10'000.0 << " actual=" << pts[i] * 1000.0 << " ms\n";
+            }
+        }
+    }
     expect("sample-times-kept-" + label, worstMs < 0.5, std::to_string(worstMs) + " ms");
     DeleteFileA(path.c_str());
 }
 
+void checkTimingMetadata() {
+    if (FAILED(MFStartup(MF_VERSION))) {
+        expect("timing-metadata-startup", false, "MFStartup failed");
+        return;
+    }
+    const auto sampleAt = [](LONGLONG time, LONGLONG duration) {
+        Microsoft::WRL::ComPtr<IMFSample> sample;
+        if (SUCCEEDED(MFCreateSample(&sample))) {
+            sample->SetSampleTime(time);
+            sample->SetSampleDuration(duration);
+        }
+        return sample;
+    };
+    VideoSampleTimings timings;
+    auto input = sampleAt(10'000, 325'000);
+    auto encoded = sampleAt(10'000, 166'666);
+    if (!input || !encoded) {
+        expect("timing-metadata-samples", false, "MFCreateSample failed");
+        MFShutdown();
+        return;
+    }
+    expect("timing-remembers-source", SUCCEEDED(timings.remember(input.Get())), "remember failed");
+    expect("timing-rejects-duplicate", FAILED(timings.remember(input.Get())), "duplicate accepted");
+    expect("timing-restores-duration", SUCCEEDED(timings.restore(encoded.Get())), "restore failed");
+    LONGLONG time = 0, duration = 0;
+    encoded->GetSampleTime(&time);
+    encoded->GetSampleDuration(&duration);
+    expect("timing-keeps-pts-and-corrects-duration", time == 10'000 && duration == 325'000 &&
+        timings.corrections() == 1 && timings.pending() == 0, "incorrect metadata or bookkeeping");
+    expect("timing-rejects-unknown-output", FAILED(timings.restore(encoded.Get())), "unknown PTS accepted");
+    bool filled = true;
+    for (int i = 0; i < 512; ++i) {
+        auto sample = sampleAt(i, 100);
+        filled = SUCCEEDED(timings.remember(sample.Get())) && filled;
+    }
+    auto overflow = sampleAt(512, 100);
+    expect("timing-bounded-at-512", filled && timings.pending() == 512 &&
+        FAILED(timings.remember(overflow.Get())), "unbounded metadata queue");
+    auto consumed = sampleAt(127, 100);
+    expect("timing-reuses-capacity", SUCCEEDED(timings.restore(consumed.Get())) &&
+        SUCCEEDED(timings.remember(overflow.Get())) && timings.pending() == 512,
+        "capacity not reclaimed");
+    MFShutdown();
+}
+
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    const bool timingOnly = argc == 2 && std::string(argv[1]) == "--timing-only";
     checkConverterAgainstReference();
     if (!toolsAvailable()) {
         skip("mf-encoder-color", "ffprobe/ffmpeg not on PATH");
@@ -440,12 +507,17 @@ int main() {
         skip("mf-encoder-color", "no D3D11 device");
         return 0;
     }
-    checkEncoder(device.Get(), context.Get(), true);
-    checkEncoder(device.Get(), context.Get(), false);
-    timeFullHd(device.Get(), context.Get());
-    checkRepeatedFrames(device.Get(), context.Get());
+    if (!timingOnly) {
+        checkEncoder(device.Get(), context.Get(), true);
+        checkEncoder(device.Get(), context.Get(), false);
+        timeFullHd(device.Get(), context.Get());
+        checkRepeatedFrames(device.Get(), context.Get());
+    }
+    checkTimingMetadata();
     checkSampleTimesKept(device.Get(), context.Get(), true);
     checkSampleTimesKept(device.Get(), context.Get(), false);
+    checkSampleTimesKept(device.Get(), context.Get(), true, true);
+    checkSampleTimesKept(device.Get(), context.Get(), false, true);
 
     std::cout << "ran " << g_ran << " tests\n";
     if (g_failed != 0) {

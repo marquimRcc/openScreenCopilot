@@ -10,8 +10,11 @@
 #include <atomic>
 #include <cstdint>
 #include <mutex>
+#include <memory>
 #include <string>
 #include <vector>
+
+class VideoSampleTimings;
 
 struct BgraFrameView {
     const BYTE* data = nullptr;
@@ -173,6 +176,7 @@ public:
     // call, or a machine that fell back would be fed DXGI samples the sink
     // writer was never configured for.
     bool usesDxgiInput() const;
+    uint64_t videoTimingCorrections() const;
     // A breadcrumb, not state: safe to read from another thread at any time.
     // One slot per writing thread, deliberately. encodeStage() names what the
     // video-writer thread is inside; audioStage() names what the audio-mixer
@@ -221,6 +225,7 @@ private:
     bool writePendingVideoSample();
 
     Microsoft::WRL::ComPtr<IMFSinkWriter> sinkWriter_;
+    std::shared_ptr<VideoSampleTimings> videoSampleTimings_;
     // Held only on the fragmented path, and held because a sink writer built on
     // a media sink does not own either of them: releasing the writer leaves the
     // sink live and the output file open. releaseSinkWriter() is what closes
