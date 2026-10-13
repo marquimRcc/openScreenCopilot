@@ -152,7 +152,11 @@ essa dependência; a CI existente valida o [PR 2 de 01](https://github.com/marqu
 Na primeira execução, lint, ambos os typechecks, docs, build e AppStream passaram;
 o job Nix identificou o hash alterado pela identidade do lockfile. O valor
 `sha256-1t3UZ5qbn0S6NZnuW3z2hAhx4VpOGddRGnlkSho/YMk=` foi aplicado a partir
-do prefetch remoto em `eb058f12`; nova execução deve confirmar a correção.
+do prefetch remoto em `eb058f12`; a nova execução Nix
+[38477762767](https://github.com/marquimRcc/openScreenCopilot/actions/runs/38477762767)
+confirmou a correção. Na CI desse commit, lint, ambos os typechecks, docs, build,
+AppStream, título e Swift passaram; unit tests e jobs Rust ainda estavam em execução
+ao registrar este checkpoint. Não há alegação de CI totalmente verde ainda.
 Isso não é build Nix completo nem homologação Linux/RegataOS.
 
 ## Regra de atualização

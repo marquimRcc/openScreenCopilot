@@ -185,8 +185,10 @@ substituir os cliques do Windows por eventos DOM. Foi solicitado ao usuário que
 deixe a área de trabalho e a janela acessíveis. Não há novo passe visual aprovado.
 
 Revisão GitHub: checkpoint em branch, não aceito para release. A regressão temporal
-foi corrigida, mas falta fechar o aceite manual. CI remota e hash Nix do lockfile
-renomeado devem ser revalidados no PR antes do merge.
+foi corrigida, mas falta fechar o aceite manual. O [PR 2](https://github.com/marquimRcc/openScreenCopilot/pull/2)
+permanece draft. O hash Nix renomeado foi recalculado pelo prefetch remoto e
+corrigido em `eb058f12`; o job Nix da nova execução passou. Os demais checks da CI
+devem estar todos verdes antes de merge; resultados intermediários em [STATUS.md](STATUS.md).
 
 Pendentes: rodada completa capture-to-export pelo HUD, texto pequeno/movimento,
 fala e playback neutro capturados pelo HUD, pós-transcrição pela interface,
