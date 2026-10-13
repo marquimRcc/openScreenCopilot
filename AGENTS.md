@@ -1,5 +1,20 @@
 # AGENTS.md
 
+## openScreenCopilot fork — project scope
+
+This repository is now marquimRcc/openScreenCopilot. Read project/STATUS.md and
+project/ROADMAP.md first. project/ contains PROPOSED architecture and staged work;
+technical-documentation/ describes the inherited implementation. Do not claim
+planned capture/ASR behavior is already implemented.
+
+vendor/meeting-copilot is a frozen snapshot; do not lint, reformat or recursively
+install it. Follow vendor/AGENTS.md and project/UPSTREAMS.md for extraction/updates.
+Preserve both licenses and histories. Never push directly to main.
+
+Do not publish installers, enable upstream distribution workflows or reuse
+upstream app identity/update feeds. Isolate them in roadmap stage 01 first.
+The existing guide below remains the application engineering baseline.
+
 OpenScreen is a free, open-source screen recorder and video editor (Electron + React + TypeScript, with a native Rust compositor) maintained as a continuation of the original v1.5.0 release. This file is the canonical guide for any AI coding agent working in this repo.
 
 ## Setup commands

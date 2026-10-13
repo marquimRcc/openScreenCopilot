@@ -29,7 +29,8 @@ jobs:
     # Le job démarre donc toujours, et c'est une étape qui annonce l'absence de
     # configuration. Le coût est une minute de runner par release ; le gain est que
     # « pas publié » devienne visible dans le résumé du run.
-    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    if: >-
+      github.repository == 'getopenscreen/openscreen' && (github.event_name == 'workflow_dispatch' || !github.event.release.prerelease)
     env:
       IDENTIFIER: ${{ vars.WINGET_IDENTIFIER }}
       # `secrets` n'est PAS un contexte lisible depuis un `if`, ni au niveau du job ni

@@ -13,7 +13,8 @@ permissions: {}
 
 jobs:
   approve:
-    if: github.event.pull_request.user.login == 'Beetix' && !github.event.pull_request.draft
+    if: >-
+      github.repository == 'getopenscreen/openscreen' && (github.event.pull_request.user.login == 'Beetix' && !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read

@@ -43,6 +43,7 @@ concurrency:
 
 jobs:
   submit:
+    if: github.repository == 'getopenscreen/openscreen'
     name: Submit ${{ inputs.release_tag }} to the Store
     runs-on: windows-latest
     # No job-level `if` on MSSTORE_PRODUCT_ID, deliberately. build.yml can afford

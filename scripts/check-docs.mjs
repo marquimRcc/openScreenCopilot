@@ -15,7 +15,9 @@ const DOCS = join(ROOT, "technical-documentation");
 // because this script was watching that tree and not this one. Every file here
 // is loaded into agent runs, so a stale one is worse than a stale page nobody
 // opens. Only REQUIRED (the "expected file is real" pass) stays docs-only.
-const TREES = [DOCS, join(ROOT, ".harness")];
+// project/ holds this fork's proposed architecture and plan, separate from
+// the implemented-system reference. Archived upstream prose stays verbatim.
+const TREES = [DOCS, join(ROOT, ".harness"), join(ROOT, "project")];
 
 // Names of components, docs, or conventions that no longer exist on this branch.
 // A doc may only mention them inside a "removed / superseded" note, which lives
@@ -95,7 +97,7 @@ const owned = (rel) => !only || only.has(rel);
 function walk(dir) {
 	const out = [];
 	for (const entry of readdirSync(dir, { withFileTypes: true })) {
-		if (entry.name === "_harvest") continue;
+		if (entry.name === "_harvest" || entry.name === "upstream") continue;
 		const full = join(dir, entry.name);
 		if (entry.isDirectory()) out.push(...walk(full));
 		else if (entry.name.endsWith(".md")) out.push(full);

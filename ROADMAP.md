@@ -1,4 +1,9 @@
 # OpenScreen Roadmap
+
+> Fork notice: this page is the inherited OpenScreen roadmap, not this project's
+> commitment. Follow [openScreenCopilot's staged plan](project/ROADMAP.md) and
+> [current status](project/STATUS.md). A verbatim baseline is archived in project/upstream/.
+
 The recorder you love, with an optional AI sidekick.
 
 This page tracks what we are fixing, what comes next and what shipped recently. **Last reviewed on 2026-09-25, at v1.13.0.** Ideas and votes are welcome in [#🗺️・roadmap](https://discord.com/channels/1489517664467681310/1493586210675884265) on our Discord or in a GitHub issue.

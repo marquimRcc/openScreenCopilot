@@ -88,6 +88,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'getopenscreen/openscreen'
     name: nix build .#openscreen
     runs-on: ubuntu-latest
     # Set from the smoke step's own arithmetic, not from a build measurement.

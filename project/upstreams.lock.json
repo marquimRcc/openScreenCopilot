@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"recordedOn": "2026-10-13",
+	"githubRepository": "marquimRcc/openScreenCopilot",
+	"sources": [
+		{
+			"name": "OpenScreen",
+			"url": "https://github.com/getopenscreen/openscreen.git",
+			"ref": "main",
+			"commit": "c3d167f2569a7f058d642e9fdbb09b0f02f052da",
+			"prefix": ".",
+			"license": "MIT",
+			"licenseFile": "LICENSE"
+		},
+		{
+			"name": "meeting-copilot",
+			"url": "https://github.com/marquimRcc/meeting-copilot.git",
+			"ref": "main",
+			"commit": "3c299c99abf7c38c1e3bac34c4aecdc010c911dd",
+			"tree": "8c1d5521283853c9d19e89c74bbe4ac34b27d822",
+			"prefix": "vendor/meeting-copilot",
+			"license": "MIT",
+			"licenseFile": "vendor/meeting-copilot/LICENSE.md",
+			"history": "merge-without-squash"
+		}
+	],
+	"legacyGitlinks": [
+		{
+			"path": "vendor/meeting-copilot/backend/whisper.cpp",
+			"url": "https://github.com/Zackriya-Solutions/whisper.cpp",
+			"commit": "d682e150908e10caa4c15883c633d7902d385237",
+			"initialized": false
+		}
+	]
+}

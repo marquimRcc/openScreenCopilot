@@ -33,6 +33,31 @@ function run() {
 }
 
 describe("check-docs", () => {
+	it("checks relative links in the fork project documentation", () => {
+		const probe = path.join(ROOT, "project", "_check-docs-project-probe.md");
+		writeFileSync(probe, "# probe\n\n[missing](not-a-real-copilot-file.md)\n");
+		try {
+			const { code, out } = run();
+			expect(out).toContain("_check-docs-project-probe.md");
+			expect(out).toContain("broken link");
+			expect(code).toBe(1);
+		} finally {
+			rmSync(probe, { force: true });
+		}
+	});
+
+	it("keeps archived upstream prose outside the current-documentation gate", () => {
+		const probe = path.join(ROOT, "project", "upstream", "_check-docs-archive-probe.md");
+		writeFileSync(probe, "# archived probe\n\n[original link](not-a-real-copilot-file.md)\n");
+		try {
+			const { code, out } = run();
+			expect(out).toContain("check-docs: OK");
+			expect(code).toBe(0);
+		} finally {
+			rmSync(probe, { force: true });
+		}
+	});
+
 	it("passes on the tree as committed", () => {
 		const { code, out } = run();
 		expect(out).toContain("check-docs: OK");

@@ -1,0 +1,281 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { RecordingControls } from '@/components/RecordingControls';
+import { useSidebar } from '@/components/Sidebar/SidebarProvider';
+import { usePermissionCheck } from '@/hooks/usePermissionCheck';
+import { useRecordingState, RecordingStatus } from '@/contexts/RecordingStateContext';
+import { useTranscripts } from '@/contexts/TranscriptContext';
+import { useConfig } from '@/contexts/ConfigContext';
+import { StatusOverlays } from '@/app/_components/StatusOverlays';
+import Analytics from '@/lib/analytics';
+import { SettingsModals } from './_components/SettingsModal';
+import { TranscriptPanel } from './_components/TranscriptPanel';
+import { useModalState } from '@/hooks/useModalState';
+import { useRecordingStateSync } from '@/hooks/useRecordingStateSync';
+import { useRecordingStart } from '@/hooks/useRecordingStart';
+import { useRecordingStop } from '@/hooks/useRecordingStop';
+import { useTranscriptRecovery } from '@/hooks/useTranscriptRecovery';
+import { TranscriptRecovery } from '@/components/TranscriptRecovery';
+import { indexedDBService } from '@/services/indexedDBService';
+import { CopilotPanel } from '@/components/Copilot';
+import { useMeetingCopilot } from '@/hooks/useMeetingCopilot';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+
+export default function Home() {
+  // Local page state (not moved to contexts)
+  const [isRecording, setIsRecordingState] = useState(false);
+  const [barHeights, setBarHeights] = useState(['58%', '76%', '58%']);
+  const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(true);
+  const copilot = useMeetingCopilot();
+
+  // Use contexts for state management
+  const { meetingTitle } = useTranscripts();
+  const { transcriptModelConfig, selectedDevices } = useConfig();
+  const recordingState = useRecordingState();
+
+  // Extract status from global state
+  const { status, isStopping, isProcessing, isSaving } = recordingState;
+
+  // Hooks
+  const { hasMicrophone } = usePermissionCheck();
+  const { setIsMeetingActive, isCollapsed: sidebarCollapsed, refetchMeetings } = useSidebar();
+  const { modals, messages, showModal, hideModal } = useModalState(transcriptModelConfig);
+  const { isRecordingDisabled, setIsRecordingDisabled } = useRecordingStateSync(isRecording, setIsRecordingState, setIsMeetingActive);
+  const { handleRecordingStart } = useRecordingStart(isRecording, setIsRecordingState, showModal);
+
+  // Get handleRecordingStop function and setIsStopping (state comes from global context)
+  const { handleRecordingStop, setIsStopping } = useRecordingStop(
+    setIsRecordingState,
+    setIsRecordingDisabled
+  );
+
+  // Recovery hook
+  const {
+    recoverableMeetings,
+    isLoading: isLoadingRecovery,
+    isRecovering,
+    checkForRecoverableTranscripts,
+    recoverMeeting,
+    loadMeetingTranscripts,
+    deleteRecoverableMeeting
+  } = useTranscriptRecovery();
+
+  const router = useRouter();
+
+  useEffect(() => {
+    // Track page view
+    Analytics.trackPageView('home');
+  }, []);
+
+  // Atalho global Alt + Q para abrir o painel do Copilot
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey && (event.key === 'q' || event.key === 'Q')) {
+        setIsCopilotOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Abrir o painel automaticamente quando uma pergunta relevante for detectada ou começar a gerar
+  useEffect(() => {
+    if (copilot.currentQuestion || copilot.streamingAnswer || copilot.isGenerating) {
+      setIsCopilotOpen(true);
+    }
+  }, [copilot.currentQuestion, copilot.streamingAnswer, copilot.isGenerating]);
+
+  // Startup recovery check
+  useEffect(() => {
+    const performStartupChecks = async () => {
+      try {
+        // Skip recovery check if currently recording or processing stop
+        // This prevents the recovery dialog from showing when:
+        if (recordingState.isRecording ||
+          status === RecordingStatus.STOPPING ||
+          status === RecordingStatus.PROCESSING_TRANSCRIPTS ||
+          status === RecordingStatus.SAVING) {
+          console.log('Skipping recovery check - recording in progress or processing');
+          return;
+        }
+
+        // 1. Clean up old meetings (7+ days)
+        try {
+          await indexedDBService.deleteOldMeetings(7);
+        } catch (error) {
+          console.warn('⚠️ Failed to clean up old meetings:', error);
+        }
+
+        // 2. Clean up saved meetings (24+ hours after save)
+        try {
+          await indexedDBService.deleteSavedMeetings(24);
+        } catch (error) {
+          console.warn('⚠️ Failed to clean up saved meetings:', error);
+        }
+
+        // 3. Always check for recoverable meetings on startup
+        // Don't skip based on sessionStorage - we need to check every time
+        await checkForRecoverableTranscripts();
+      } catch (error) {
+        console.error('Failed to perform startup checks:', error);
+      }
+    };
+
+    performStartupChecks();
+  }, [checkForRecoverableTranscripts, recordingState.isRecording, status]);
+
+  // Auto popup de recuperação na inicialização desativado para manter a tela limpa
+  // O usuário pode acessar as gravações e recuperação quando desejar sem popup intrusivo
+  useEffect(() => {
+    // Apenas carrega a lista para estar disponível se acionado manualmente, sem abrir modal sozinho
+  }, [recoverableMeetings]);
+
+  // Handle recovery with toast notifications and navigation
+  const handleRecovery = async (meetingId: string) => {
+    try {
+      const result = await recoverMeeting(meetingId);
+
+      if (result.success) {
+        toast.success('Reunião recuperada com sucesso!', {
+          description: result.audioRecoveryStatus?.status === 'success'
+            ? 'Transcrições e áudio recuperados'
+            : 'Transcrições recuperadas (sem áudio disponível)',
+          action: result.meetingId ? {
+            label: 'Ver Reunião',
+            onClick: () => {
+              router.push(`/meeting-details?id=${result.meetingId}`);
+            }
+          } : undefined,
+          duration: 10000,
+        });
+
+        // Refresh sidebar to show the newly recovered meeting
+        await refetchMeetings();
+
+        // If no more recoverable meetings, clear session flag so dialog can show again
+        if (recoverableMeetings.length === 0) {
+          sessionStorage.removeItem('recovery_dialog_shown');
+        }
+
+        // Auto-navigate after a short delay
+        if (result.meetingId) {
+          setTimeout(() => {
+            router.push(`/meeting-details?id=${result.meetingId}`);
+          }, 2000);
+        }
+      }
+    } catch (error) {
+      toast.error('Falha ao recuperar reunião', {
+        description: error instanceof Error ? error.message : 'Ocorreu um erro desconhecido',
+      });
+      throw error;
+    }
+  };
+
+  // Handle dialog close - clear session flag if no meetings left
+  const handleDialogClose = () => {
+    setShowRecoveryDialog(false);
+    // If user closes dialog and there are no more meetings, clear the flag
+    // This allows the dialog to show again next session if new meetings appear
+    if (recoverableMeetings.length === 0) {
+      sessionStorage.removeItem('recovery_dialog_shown');
+    }
+  };
+
+  useEffect(() => {
+    if (recordingState.isRecording) {
+      const interval = setInterval(() => {
+        setBarHeights(prev => {
+          const newHeights = [...prev];
+          newHeights[0] = Math.random() * 20 + 10 + 'px';
+          newHeights[1] = Math.random() * 20 + 10 + 'px';
+          newHeights[2] = Math.random() * 20 + 10 + 'px';
+          return newHeights;
+        });
+      }, 300);
+
+      return () => clearInterval(interval);
+    }
+  }, [recordingState.isRecording]);
+
+  // Computed values using global status
+  const isProcessingStop = status === RecordingStatus.PROCESSING_TRANSCRIPTS || isProcessing;
+  const [isTranscriptCollapsed, setIsTranscriptCollapsed] = useState(false);
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* All Modals supported*/}
+      <SettingsModals
+        modals={modals}
+        messages={messages}
+        onClose={hideModal}
+      />
+
+      {/* Recovery Dialog */}
+      <TranscriptRecovery
+        isOpen={showRecoveryDialog}
+        onClose={handleDialogClose}
+        recoverableMeetings={recoverableMeetings}
+        onRecover={handleRecovery}
+        onDelete={deleteRecoverableMeeting}
+        onLoadPreview={loadMeetingTranscripts}
+      />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Painel de Transcrição: Lateral, compacto e colapsável */}
+        <TranscriptPanel
+          isProcessingStop={isProcessingStop}
+          isStopping={isStopping}
+          showModal={showModal}
+          isCopilotOpen={isCopilotOpen}
+          onToggleCopilot={() => setIsCopilotOpen(prev => !prev)}
+          hasCopilotSuggestion={Boolean(copilot.currentQuestion || copilot.streamingAnswer)}
+          isCopilotGenerating={copilot.isGenerating}
+          isCollapsed={isTranscriptCollapsed}
+          onToggleCollapse={() => setIsTranscriptCollapsed(prev => !prev)}
+        />
+
+        {/* Palco Principal: Resposta da IA com prioridade total */}
+        <CopilotPanel
+          isOpen={isCopilotOpen}
+          onClose={() => setIsCopilotOpen(false)}
+          copilot={copilot}
+        />
+
+        {/* Recording controls - Posicionado de forma limpa e sutil para não tapar o texto */}
+        {(hasMicrophone || isRecording) &&
+          status !== RecordingStatus.PROCESSING_TRANSCRIPTS &&
+          status !== RecordingStatus.SAVING && (
+            <div className="fixed bottom-6 right-8 z-20 pointer-events-auto">
+              <div className="bg-white/95 backdrop-blur-md rounded-full shadow-lg border border-gray-200/80 px-2 py-1 flex items-center hover:shadow-xl transition-all">
+                <RecordingControls
+                  isRecording={recordingState.isRecording}
+                  onRecordingStop={(callApi = true) => handleRecordingStop(callApi)}
+                  onRecordingStart={handleRecordingStart}
+                  onTranscriptReceived={() => { }} // Not actually used by RecordingControls
+                  onStopInitiated={() => setIsStopping(true)}
+                  barHeights={barHeights}
+                  onTranscriptionError={(message) => {
+                    showModal('errorAlert', message);
+                  }}
+                  isRecordingDisabled={isRecordingDisabled}
+                  isParentProcessing={isProcessingStop}
+                  selectedDevices={selectedDevices}
+                  meetingName={meetingTitle}
+                />
+              </div>
+            </div>
+          )}
+
+        {/* Status Overlays - Processing and Saving */}
+        <StatusOverlays
+          isProcessing={status === RecordingStatus.PROCESSING_TRANSCRIPTS && !recordingState.isRecording}
+          isSaving={status === RecordingStatus.SAVING}
+          sidebarCollapsed={sidebarCollapsed}
+        />
+      </div>
+    </div>
+  );
+}

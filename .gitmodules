@@ -1,0 +1,4 @@
+[submodule "vendor/meeting-copilot/backend/whisper.cpp"]
+	path = vendor/meeting-copilot/backend/whisper.cpp
+	url = https://github.com/Zackriya-Solutions/whisper.cpp
+	branch = develop

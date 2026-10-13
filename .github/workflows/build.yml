@@ -42,6 +42,7 @@ concurrency:
 
 jobs:
   build-windows:
+    if: github.repository == 'getopenscreen/openscreen'
     name: Windows ${{ matrix.arch }} installer
     # Each arch builds NATIVELY, like the macOS job below. On an x64 runner every step
     # that keys off the host — fetch-ffmpeg (which also runs the binary it downloads to
@@ -158,6 +159,7 @@ jobs:
             || { echo "::error::blockmap missing — differential updates would silently degrade"; exit 1; }
 
   build-windows-store:
+    if: github.repository == 'getopenscreen/openscreen'
     name: Windows Store package
     runs-on: windows-latest
     steps:
@@ -286,6 +288,7 @@ jobs:
           retention-days: 30
 
   build-macos:
+    if: github.repository == 'getopenscreen/openscreen'
     name: macOS ${{ matrix.arch }} DMG
     # Build each arch NATIVELY. `macos-latest` is Apple Silicon, and everything the
     # 1.8.0 macOS path added keys off the HOST arch: fetch-ffmpeg-macos.mjs configures
@@ -694,6 +697,7 @@ jobs:
         run: security delete-keychain "$RUNNER_TEMP/build.keychain-db" || true
 
   build-linux:
+    if: github.repository == 'getopenscreen/openscreen'
     name: Linux packages
     # PINNED, and not to `ubuntu-latest`. The linker binds every symbol to the newest
     # version its BUILD machine offers, so the runner image silently decides the oldest
@@ -858,7 +862,8 @@ jobs:
       - build-windows
       - build-macos
       - build-linux
-    if: ${{ (github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag != '') }}
+    if: >-
+      github.repository == 'getopenscreen/openscreen' && ((github.event_name == 'push' && github.ref_type == 'tag') || (github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag != ''))
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -1188,9 +1193,9 @@ jobs:
     # certification and land on every user's machine as an automatic update.
     # `!contains(…, '-')` is what separates v1.9.1 from v1.9.1-rc.2.
     if: >-
-      ${{ vars.MSSTORE_PRODUCT_ID != ''
+      github.repository == 'getopenscreen/openscreen' && (vars.MSSTORE_PRODUCT_ID != ''
        && ((github.event_name == 'push' && github.ref_type == 'tag' && !contains(github.ref_name, '-'))
-        || (github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag != '' && !contains(github.event.inputs.release_tag, '-'))) }}
+        || (github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag != '' && !contains(github.event.inputs.release_tag, '-'))))
     steps:
       # Same all-or-nothing gate as the macOS signing job: a half-configured
       # publisher is a misnamed secret, and the quiet failure mode — shipping

@@ -12,7 +12,8 @@ permissions:
 jobs:
   mark-linked-issues-fixed:
     name: Mark linked issues fixed in main
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    if: >-
+      github.repository == 'getopenscreen/openscreen' && (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     runs-on: ubuntu-latest
     steps:
       - name: Update closing issues
