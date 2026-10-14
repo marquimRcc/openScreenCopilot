@@ -905,6 +905,14 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — native own-window pause proof, Windows 11, helper02U unchanged.
+**Programmatic partial, no GUI-scope bypass:**10s wall/pause3s/resume5s, one ACK each;
+five synthetic tone/flash markers scheduled, paused marker excluded, four remain.
+Audio8.128s/video8.1s,759446bytes, audio-minus-video40/7/7/7ms, decode clean/exit0.
+Own opaque HWND only, explicit endpoint, mic/cursor/webcamOFF; no HUD screenshot,
+desktop fallback, all-monitor covers or OS setting changes. Does not certify rapid
+pauses,30min/load, microphones, apps or ASR. Private receipt in project/STATUS.md.
+
 2026-10-14 — openScreenCopilot 02Z, compiled app in separate QA appData, Windows 11.
 **Blocked visual-scope slice, no recording started:** transparent HUD screenshot
 included background apps. Auto-review denied activation+new screenshot; proposed

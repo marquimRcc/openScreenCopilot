@@ -1093,6 +1093,18 @@ no snapshot, mas permanece backlog: comentários e comportamento de buffering
 precisam testes. Nada foi extraído, executado, instalado ou alterado em vendor.
 Documento não é auditoria completa de licenças/modelos nem aceite etapa04.
 
+## Prova sintética de pausa — 2026-10-14
+
+Teste independente do HUD bloqueado, apenas HWND opaco próprio e endpoint explícito,
+sem screenshot de fundo/cobertura de monitores/microfone/cursor/webcam.10s de wall,
+pause aos3s/resume aos5s (um ACK cada), cinco tons/flashes programados. Um marcador
+na pausa foi excluído; quatro restaram. Decode integral limpo, áudio8,128s/vídeo8,1s,
+759.446bytes, diferenças áudio menos vídeo40/7/7/7ms. Recibo privado
+`.cache/window-pause-qa-a7ef5d7b-9013-4c4f-99bd-86841023bb4f/metrics.json`, exit0.
+Sem alteração de produção/nativo/vendor e sem novo build nativo. Não prova precisão
+de ASR, carga longa, pausas rápidas ou todos dispositivos. GUI02Z continua pendente
+de autorização, não foi contornada. Mídia privada preservada e não enviada.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
