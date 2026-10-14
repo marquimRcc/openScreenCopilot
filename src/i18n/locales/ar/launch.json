@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "اختبار صوت النظام (30 ثانية)",
+		"outputMeterStop": "إيقاف الاختبار",
+		"outputMeterStarting": "جارٍ بدء الاختبار…",
+		"outputMeterActive": "نشاط المخرج — ليس تسجيلاً",
+		"outputMeterStopping": "جارٍ إيقاف الاختبار…",
+		"outputMeterStopped": "انتهى الاختبار",
+		"outputMeterError": "الاختبار غير متاح. حاول مجددًا.",
+		"outputMeterHint": "الذروة قبل مستوى صوت المخرج. قد يظهر صفر في الوضع الحصري؛ النشاط لا يثبت تسجيل الصوت.",
+		"outputMeterLevel": "نشاط صوت النظام",
 		"outputDevice": "مخرج الصوت",
 		"outputDefault": "افتراضي Windows",
 		"outputUnavailable": "المخرج المحدد غير متاح",

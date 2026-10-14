@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Test system audio (30 s)",
+		"outputMeterStop": "Stop test",
+		"outputMeterStarting": "Starting test…",
+		"outputMeterActive": "Output activity — not a recording",
+		"outputMeterStopping": "Stopping test…",
+		"outputMeterStopped": "Test ended",
+		"outputMeterError": "Test unavailable. Try again.",
+		"outputMeterHint": "Peak before output volume. Zero may occur in exclusive mode; activity does not prove recorded audio.",
+		"outputMeterLevel": "System audio activity",
 		"outputDevice": "Audio output",
 		"outputDefault": "Windows default",
 		"outputUnavailable": "Selected output unavailable",

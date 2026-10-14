@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Kiểm tra âm thanh hệ thống (30 giây)",
+		"outputMeterStop": "Dừng kiểm tra",
+		"outputMeterStarting": "Đang bắt đầu…",
+		"outputMeterActive": "Hoạt động đầu ra — không phải bản ghi",
+		"outputMeterStopping": "Đang dừng kiểm tra…",
+		"outputMeterStopped": "Đã kết thúc kiểm tra",
+		"outputMeterError": "Không thể kiểm tra. Hãy thử lại.",
+		"outputMeterHint": "Mức đỉnh trước âm lượng đầu ra. Chế độ độc quyền có thể hiển thị số không; hoạt động không chứng minh âm thanh đã được ghi.",
+		"outputMeterLevel": "Hoạt động âm thanh hệ thống",
 		"outputDevice": "Đầu ra âm thanh",
 		"outputDefault": "Mặc định của Windows",
 		"outputUnavailable": "Đầu ra đã chọn không khả dụng",

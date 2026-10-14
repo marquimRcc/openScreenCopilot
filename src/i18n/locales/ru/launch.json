@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Проверить системный звук (30 с)",
+		"outputMeterStop": "Остановить проверку",
+		"outputMeterStarting": "Запуск проверки…",
+		"outputMeterActive": "Активность выхода — не запись",
+		"outputMeterStopping": "Остановка проверки…",
+		"outputMeterStopped": "Проверка завершена",
+		"outputMeterError": "Проверка недоступна. Повторите попытку.",
+		"outputMeterHint": "Пик до регулировки громкости выхода. В монопольном режиме возможен ноль; активность не подтверждает запись звука.",
+		"outputMeterLevel": "Активность системного звука",
 		"outputDevice": "Аудиовыход",
 		"outputDefault": "По умолчанию в Windows",
 		"outputUnavailable": "Выбранный выход недоступен",

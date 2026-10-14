@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Tester le son système (30 s)",
+		"outputMeterStop": "Arrêter le test",
+		"outputMeterStarting": "Démarrage du test…",
+		"outputMeterActive": "Activité de sortie — pas un enregistrement",
+		"outputMeterStopping": "Arrêt du test…",
+		"outputMeterStopped": "Test terminé",
+		"outputMeterError": "Test indisponible. Réessayez.",
+		"outputMeterHint": "Crête avant le volume de sortie. Le mode exclusif peut afficher zéro ; l’activité ne prouve pas que le son est enregistré.",
+		"outputMeterLevel": "Activité du son système",
 		"outputDevice": "Sortie audio",
 		"outputDefault": "Par défaut de Windows",
 		"outputUnavailable": "Sortie sélectionnée indisponible",

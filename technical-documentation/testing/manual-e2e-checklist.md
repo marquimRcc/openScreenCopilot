@@ -905,6 +905,19 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02Y, Windows 11, React output-meter panel fixture.
+**Partial OS-input pass on visible fixture:** first hidden process did not expose a
+window; own idle PID28524 stopped after checking identity. Visible retry exposed the
+real React/preload/IPC/helper panel. First click without screenshot geometry failed;
+fresh selection and screenshot recovered. Real Test/Stop clicks showed starting,
+activity, stopping and ended; normal Alt+F4, native children2/closed2/busyfalse.
+No PCM/recording in meter test. Separate own-window WGC/endpoint tone+flash proof:
+hidden attempt failed CreateForWindow before recording; visible retry passed four
+markers40/7/7/7ms audio-minus-video, decode clean. Whole chosen output loopback,
+micOFF; no private desktop fallback or OS changes. User app untouched. Full GUI/HUD,
+DPI, long capture, pauses, mic and Teams/Slack/YouTube remain skipped/unapproved.
+Full363files/5129pass/5skip and package evidence in project/STATUS.md. Not an RC.
+
 2026-10-14 — openScreenCopilot 02X, Windows 11, isolated Electron/preload/IPC/helper.
 **Programmatic partial, no GUI acceptance:** default output ready, foreign/busy and
 wrong token rejected; scalar events share main UUID, stop waits close, capture guard

@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Systemaudio testen (30 s)",
+		"outputMeterStop": "Test stoppen",
+		"outputMeterStarting": "Test startet…",
+		"outputMeterActive": "Ausgabeaktivität — keine Aufnahme",
+		"outputMeterStopping": "Test wird beendet…",
+		"outputMeterStopped": "Test beendet",
+		"outputMeterError": "Test nicht verfügbar. Erneut versuchen.",
+		"outputMeterHint": "Pegel vor der Ausgabelautstärke. Im Exklusivmodus kann er null sein; Aktivität beweist keine Audioaufnahme.",
+		"outputMeterLevel": "Systemaudio-Aktivität",
 		"outputDevice": "Audioausgabe",
 		"outputDefault": "Windows-Standard",
 		"outputUnavailable": "Gewählte Ausgabe nicht verfügbar",

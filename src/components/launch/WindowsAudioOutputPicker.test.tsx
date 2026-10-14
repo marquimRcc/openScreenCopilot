@@ -65,6 +65,42 @@ afterEach(() => {
 });
 
 describe("Windows output device settings", () => {
+	it("enables explicit system test only from current prefs and cancels on output change", async () => {
+		const start = vi
+			.fn<NonNullable<Window["electronAPI"]["startWindowsOutputMeter"]>>()
+			.mockResolvedValue({ success: true, meterId: "one" });
+		const stop = vi
+			.fn<NonNullable<Window["electronAPI"]["stopWindowsOutputMeter"]>>()
+			.mockResolvedValue({ success: true, result: { status: "cancelled" } });
+		window.electronAPI.startWindowsOutputMeter = start;
+		window.electronAPI.stopWindowsOutputMeter = stop;
+		window.electronAPI.onWindowsOutputMeter = () => () => undefined;
+		const withMeter = {
+			...labels,
+			meter: {
+				test: "Test output",
+				stop: "Stop test",
+				starting: "Starting",
+				active: "Activity",
+				stopping: "Stopping",
+				stopped: "Ended",
+				error: "Test unavailable",
+				hint: "Not proof of recorded audio",
+				level: "Output level",
+			},
+		};
+		render(<WindowsAudioOutputPicker labels={withMeter} />);
+		await waitFor(() => expect(field().disabled).toBe(false));
+		expect(
+			(screen.getByRole("button", { name: "Test output" }) as HTMLButtonElement).disabled,
+		).toBe(true);
+		await act(async () => push({ ...prefs(), systemAudioEnabled: true }));
+		fireEvent.click(screen.getByRole("button", { name: "Test output" }));
+		await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
+		await act(async () => push({ ...prefs("headset"), systemAudioEnabled: true }));
+		await waitFor(() => expect(stop).toHaveBeenCalledWith("one"));
+		expect(field().value).toBe("headset");
+	});
 	it("lists native outputs without changing audio/mic preferences or selecting automatically", async () => {
 		render(<WindowsAudioOutputPicker labels={labels} />);
 		await waitFor(() => expect(field().disabled).toBe(false));

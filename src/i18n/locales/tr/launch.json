@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Sistem sesini test et (30 sn)",
+		"outputMeterStop": "Testi durdur",
+		"outputMeterStarting": "Test başlatılıyor…",
+		"outputMeterActive": "Çıkış etkinliği — kayıt değil",
+		"outputMeterStopping": "Test durduruluyor…",
+		"outputMeterStopped": "Test sona erdi",
+		"outputMeterError": "Test kullanılamıyor. Yeniden deneyin.",
+		"outputMeterHint": "Çıkış ses düzeyinden önceki tepe. Özel modda sıfır olabilir; etkinlik sesin kaydedildiğini kanıtlamaz.",
+		"outputMeterLevel": "Sistem sesi etkinliği",
 		"outputDevice": "Ses çıkışı",
 		"outputDefault": "Windows varsayılanı",
 		"outputUnavailable": "Seçilen çıkış kullanılamıyor",

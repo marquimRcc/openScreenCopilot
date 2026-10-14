@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "测试系统音频（30秒）",
+		"outputMeterStop": "停止测试",
+		"outputMeterStarting": "正在开始测试…",
+		"outputMeterActive": "输出活动 — 并非录音",
+		"outputMeterStopping": "正在停止测试…",
+		"outputMeterStopped": "测试已结束",
+		"outputMeterError": "无法测试，请重试。",
+		"outputMeterHint": "输出音量调节前的峰值。独占模式可能显示为零；活动并不能证明音频已录制。",
+		"outputMeterLevel": "系统音频活动",
 		"outputDevice": "音频输出",
 		"outputDefault": "Windows 默认",
 		"outputUnavailable": "所选输出不可用",

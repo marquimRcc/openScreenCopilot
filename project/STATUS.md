@@ -1015,6 +1015,54 @@ atualizado02X, não instalado/relançado. Logs `.cache/meter-ipc-{lint,final-vit
 App do usuário intacto. Próximo: hook/componente no seletor existente, textos15
 idiomas, estado honesto de atividade antesvolume e lease30s sem autorrestart cego.
 
+## Incremento 02Y — medidor visual
+
+Hook useWindowsOutputMeter e componente WindowsOutputMeterTest integrados ao
+seletor existente HUD/RecStage. Teste explícito30s; sem autoplay, MediaStream,
+AudioContext, polling ou renovação automática. Start/stop, nível scalar0–100 e
+estados iniciando/ativo/encerrando/encerrado/erro. UI distingue atividade antesvolume
+de áudio gravado, zero em modo exclusivo possível. Novos textos15idiomas.
+Busy permanece até terminal/stop main; erro de stop não finge drain. ACK tardio após
+unmount/disable/choice cancela UUID recebido; ready/level/ended antes ACK ficam
+em buffer limitado com coalescing. Eventos de outro job são ignorados. Choice/
+sistemaOFF/locked/loading/saving/saída ausente suspendem teste. Main02W/02X ainda
+garante exclusão/close antescaptura independentemente do cleanup React.
+
+166focados/5arquivos aprovados, ambos typechecks, lint26 herdados e i18n15/998chaves
+aprovados; Vite aprovado. Suíte completa uma vez:363arquivos/5.129aprovados/
+5ignorados/385,86s, Node22.22.1,dois workers,exit0/sem signal,
+fim23:18:59UTC; `.cache/meter-ui-full.{json,log}`. Pacote completo aprovado;
+23payloads/entry/main-C-zXdXuj/preload e27assets/index renderer SHA256 iguais ao
+dist/origem. Primeiro verificador próprio usou separadores POSIX em caminho asar
+Windows aninhado e falhou; corrigido para paths nativos e exclusões extraResources,
+sem mudar/reempacotar conteúdo por causa do checker. WGC inalterado, sem C++/Rust.
+
+GUI: primeira fixture PID28524 iniciada com WindowStyleHidden não apareceu nas
+janelas; encerrada ociosa após conferir exe/args. Reteste como janela interativa
+visível apareceu e foi controlado por computer-use. Primeiro clique sem screenshot
+falhou geometry unavailable; nova seleção+observação com screenshot recuperou.
+Cliques OS reais Testar/Parar mostraram iniciando→atividade→encerrando→encerrado,
+botão retornou ao teste, nível0 honesto em saída sem atividade observada. Fechamento
+normal Alt+F4; recibo `.cache/meter-panel-qa-90c8905b-2ab5-40f3-9716-c6e086948ed8/metrics.json`:
+ready1,children2,closed2,busyfalse,noStreams. Não foi DOM injection; é aceite PARCIAL
+do componente real/preload/IPC/helper em wrapper de QA, não HUD completo, layout/DPI,
+áudio audível ou captura→resultado. Logs/perfil privados preservados; app do usuário
+intacto. Não deixar flags de conteúdo desprotegido em gravações reais.
+
+## Prova sintética de janela/áudio — 2026-10-14
+
+Primeira tentativa com processo oculto falhou CreateForWindow0x80070057 antes
+Recording started; nenhum MP4/sinal iniciado. Reteste com janela visível e mesmo
+handle/config passou, sem fallback para monitor/desktop. MicOFF/cursorOFF/webcamOFF,
+somente HWND próprio, secondaryWindows desabilitado no filho. Quatro tons440Hz
+baixos (gain0,015) e flashes; endpoint explícito igual ao ID efetivo audio-format.
+Loopback continua de TODA saída, não isolamento de processo. Mídia/logs privados.
+Recibo `.cache/window-tone-qa-3635812d-27b0-473a-81d2-b563d3bb2f8f/metrics.json`:
+decode integral limpo,764.997bytes,áudio8,128s/vídeo8,133333s; onsets áudio menos
+vídeo40/7/7/7ms. Tolerância diagnóstica do harness200ms, não aceite de longo prazo,
+30min/carga/pausa/DPI/mic/Teams/Slack/YouTube ou todos endpoints. Nenhuma mudança OS,
+download, upload ou captura de desktop privado. Confirma apenas este caso sintético.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

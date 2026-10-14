@@ -473,6 +473,17 @@ export function RecStage({
 							loadFailed: tLaunch("audio.outputLoadFailed"),
 							saveFailed: tLaunch("audio.outputSaveFailed"),
 							scope: tLaunch("audio.outputScope"),
+							meter: {
+								test: tLaunch("audio.outputMeterTest"),
+								stop: tLaunch("audio.outputMeterStop"),
+								starting: tLaunch("audio.outputMeterStarting"),
+								active: tLaunch("audio.outputMeterActive"),
+								stopping: tLaunch("audio.outputMeterStopping"),
+								stopped: tLaunch("audio.outputMeterStopped"),
+								error: tLaunch("audio.outputMeterError"),
+								hint: tLaunch("audio.outputMeterHint"),
+								level: tLaunch("audio.outputMeterLevel"),
+							},
 						}}
 					/>
 					{canRecordMicrophone() ? (

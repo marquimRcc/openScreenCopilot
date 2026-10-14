@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { getPlatform } from "@/utils/platformUtils";
 import type { WindowsAudioOutput } from "../../../electron/recording/windowsAudioOutputs";
 import styles from "./WindowsAudioOutputPicker.module.css";
+import { type WindowsOutputMeterLabels, WindowsOutputMeterTest } from "./WindowsOutputMeterTest";
 
 export interface WindowsAudioOutputLabels {
 	device: string;
@@ -12,6 +13,7 @@ export interface WindowsAudioOutputLabels {
 	loadFailed: string;
 	saveFailed: string;
 	scope: string;
+	meter?: WindowsOutputMeterLabels;
 }
 
 /** Device settings only: enumeration never opens an audio stream or enables audio. */
@@ -31,6 +33,7 @@ function OutputPicker({ locked, labels }: { locked: boolean; labels: WindowsAudi
 	const id = useId();
 	const [devices, setDevices] = useState<WindowsAudioOutput[]>([]);
 	const [choice, setChoice] = useState<string | null>(null);
+	const [systemAudioEnabled, setSystemAudioEnabled] = useState(false);
 	const [ready, setReady] = useState(false);
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
@@ -55,8 +58,10 @@ function OutputPicker({ locked, labels }: { locked: boolean; labels: WindowsAudi
 			]);
 			if (!alive.current || token !== request.current) return;
 			if (prefs.status === "fulfilled" && prefs.value) {
-				if (revision.current === priorRevision)
+				if (revision.current === priorRevision) {
 					setChoice(prefs.value.windowsSystemAudioDeviceId ?? null);
+					setSystemAudioEnabled(prefs.value.systemAudioEnabled);
+				}
 				setReady(true);
 			}
 			if (
@@ -81,6 +86,7 @@ function OutputPicker({ locked, labels }: { locked: boolean; labels: WindowsAudi
 		const unsubscribe = window.electronAPI.onRecordingPrefsChanged?.((prefs) => {
 			revision.current++;
 			setChoice(prefs.windowsSystemAudioDeviceId ?? null);
+			setSystemAudioEnabled(prefs.systemAudioEnabled);
 			setReady(true);
 		});
 		void load();
@@ -104,6 +110,7 @@ function OutputPicker({ locked, labels }: { locked: boolean; labels: WindowsAudi
 			if (alive.current && revision.current === priorRevision) {
 				revision.current++;
 				setChoice(prefs.windowsSystemAudioDeviceId ?? null);
+				setSystemAudioEnabled(prefs.systemAudioEnabled);
 			}
 		} catch {
 			if (alive.current) setSaveError(true);
@@ -154,6 +161,13 @@ function OutputPicker({ locked, labels }: { locked: boolean; labels: WindowsAudi
 			<span id={`${id}-hint`} className={styles.hint}>
 				{labels.scope}
 			</span>
+			<WindowsOutputMeterTest
+				enabled={
+					ready && systemAudioEnabled && !locked && !loading && !saving && !missing && !loadError
+				}
+				choice={choice}
+				labels={labels.meter}
+			/>
 		</div>
 	);
 }

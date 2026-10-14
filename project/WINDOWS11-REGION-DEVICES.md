@@ -346,10 +346,10 @@ QA isolada real passou; validação final/pacote em STATUS. Requisitos da UI/ace
   sem apresentar zero como prova de falha. Não enviar PCM bruto ou ID arbitrário
   pelo renderer. Homologar áudio/GUI real depois, sem declarar aceite por unit tests.
 
-## Próxima fatia visual — planejada
+## 02Y — fatia visual implementada, aceite parcial
 
-Próxima fatia visual do medidor (planejada, ainda não implementada): reutilizar
-AudioLevelMeter no seletor de saída já presente em HUD/RecStage. Teste explícito
+Hook/componente reutilizam AudioLevelMeter no seletor de saída presente em
+HUD/RecStage. Teste explícito
 curto (lease nativa30s), não abrir hardware automaticamente nem reiniciar em loop.
 Botão Testar/Parar, estado iniciando/ativo/encerrado/indisponível e aviso: pico antes
 do volume, não prova de captura, modo exclusivo pode mostrar zero. Nenhum PCM chega
@@ -357,11 +357,36 @@ do volume, não prova de captura, modo exclusivo pode mostrar zero. Nenhum PCM c
 após unmount deve cancelar o UUID recebido. Eventos anteriores ao ACK ficam em
 buffer pequeno e só são aplicados ao UUID confirmado; eventos de outro job são
 ignorados. Não criar MediaStream/AudioContext novo para medir a saída Windows.
-Testes obrigatórios: ACK tardio, ready/ended antes ACK, token antigo, start/stop
+Testes focados aprovados: ACK tardio, ready/ended antes ACK, token antigo, start/stop
 falhos, troca prefs, fechamento, StrictMode, sem autoretry/polling. Main02W/02X
 continua responsável por drain real mesmo quando o cleanup React atrasar/falhar.
+GUI primeira tentativa oculta não expôs janela; reteste visível permitiu cliques
+OS Testar/Parar e estados até encerrado, children2/closed2. Não homologa HUD completo,
+DPI ou gravação. Prova sintética HWND+endpoint explícito passou separadamente:
+quatro tons/flashes, diferenças40/7/7/7ms e decode limpo; não é teste longo. Ver STATUS.
 
 ## 02D — relógio e aceite
+
+Inspeção do código nativo em2026-10-14 (não é aceite de sincronização longa):
+`main.cpp` inicia `AudioMixer::beginTimeline()` e logo depois define
+`control.recordingStartedAt` com steady_clock. Vídeo usa elapsed real menos pausas;
+não usa hora civil nem simplesmente frameIndex/fps. O mixer (`audio_sample_utils.cpp`)
+ancora seu relógio em beginTimeline, emite por contagem de amostras e preenche silêncio
+em falta de dados. Pause faz flush do cushion; resume aguarda flush, limpa fontes e
+reancora em emittedFrames/sampleRate. Stop pausa o mixer antes de drenar vídeo.
+
+Hoje `main.cpp` ignora timestampHns/durationHns dos callbacks WASAPI ao enfileirar
+fontes. `wasapi_loopback_capture.cpp` deriva timestamps de devicePosition/sampleRate,
+usa flags/gaps para silêncio e descarta qpcPosition. Portanto uma futura ramificação
+PCM ANTES da mistura não pode simplesmente enviar esse timestamp como se fosse PTS
+do MP4 ou usar chegada ao sidecar. As duas âncoras atuais são tomadas em chamadas
+consecutivas, não existe T0 interoperável serializado/exportado para outro processo.
+
+Etapas04/05 precisam contrato versionado: sessão/source/epoch, contador de amostras,
+sampleRate e mapeamento validado dispositivo→sessão; pausas removidas uma única vez,
+lacunas explícitas e sem interpolar fala através de descontinuidades. O MP4 deve
+continuar independente do backlog ASR. Não modificar esse pipeline/relógio ou prometer
+alinhamento por inspeção; medir marcadores A/V, pausas rápidas e carga longa primeiro.
 
 Documentar e testar T0 monotônico compartilhado por vídeo/áudio, pausas removidas
 uma vez, PTS preservados e distinção entre instante de captura e chegada ao ASR.

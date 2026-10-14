@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Otestovat systémový zvuk (30 s)",
+		"outputMeterStop": "Zastavit test",
+		"outputMeterStarting": "Spouštění testu…",
+		"outputMeterActive": "Aktivita výstupu — nejde o nahrávání",
+		"outputMeterStopping": "Ukončování testu…",
+		"outputMeterStopped": "Test ukončen",
+		"outputMeterError": "Test není dostupný. Zkuste to znovu.",
+		"outputMeterHint": "Špička před hlasitostí výstupu. Ve výhradním režimu může být nulová; aktivita nepotvrzuje nahraný zvuk.",
+		"outputMeterLevel": "Aktivita systémového zvuku",
 		"outputDevice": "Zvukový výstup",
 		"outputDefault": "Výchozí ve Windows",
 		"outputUnavailable": "Vybraný výstup není dostupný",

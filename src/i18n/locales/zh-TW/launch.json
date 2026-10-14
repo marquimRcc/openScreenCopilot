@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "測試系統音訊（30秒）",
+		"outputMeterStop": "停止測試",
+		"outputMeterStarting": "正在開始測試…",
+		"outputMeterActive": "輸出活動 — 並非錄音",
+		"outputMeterStopping": "正在停止測試…",
+		"outputMeterStopped": "測試已結束",
+		"outputMeterError": "無法測試，請重試。",
+		"outputMeterHint": "輸出音量調整前的峰值。獨佔模式可能顯示為零；活動並不能證明音訊已錄製。",
+		"outputMeterLevel": "系統音訊活動",
 		"outputDevice": "音訊輸出",
 		"outputDefault": "Windows 預設",
 		"outputUnavailable": "所選輸出無法使用",

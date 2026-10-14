@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "시스템 오디오 테스트 (30초)",
+		"outputMeterStop": "테스트 중지",
+		"outputMeterStarting": "테스트 시작 중…",
+		"outputMeterActive": "출력 활동 — 녹음이 아닙니다",
+		"outputMeterStopping": "테스트 중지 중…",
+		"outputMeterStopped": "테스트 종료",
+		"outputMeterError": "테스트할 수 없습니다. 다시 시도하세요.",
+		"outputMeterHint": "출력 볼륨 조정 전의 피크입니다. 독점 모드에서는 0일 수 있으며, 활동이 오디오 녹음을 증명하지는 않습니다.",
+		"outputMeterLevel": "시스템 오디오 활동",
 		"outputDevice": "오디오 출력",
 		"outputDefault": "Windows 기본값",
 		"outputUnavailable": "선택한 출력을 사용할 수 없음",

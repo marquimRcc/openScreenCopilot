@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Prova audio di sistema (30 s)",
+		"outputMeterStop": "Interrompi prova",
+		"outputMeterStarting": "Avvio della prova…",
+		"outputMeterActive": "Attività in uscita — non è una registrazione",
+		"outputMeterStopping": "Arresto della prova…",
+		"outputMeterStopped": "Prova terminata",
+		"outputMeterError": "Prova non disponibile. Riprova.",
+		"outputMeterHint": "Picco prima del volume di uscita. In modalità esclusiva può essere zero; l’attività non prova che l’audio sia registrato.",
+		"outputMeterLevel": "Attività audio di sistema",
 		"outputDevice": "Uscita audio",
 		"outputDefault": "Predefinita di Windows",
 		"outputUnavailable": "Uscita selezionata non disponibile",

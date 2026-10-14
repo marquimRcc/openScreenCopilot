@@ -37,6 +37,15 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "システム音声をテスト（30秒）",
+		"outputMeterStop": "テストを停止",
+		"outputMeterStarting": "テストを開始中…",
+		"outputMeterActive": "出力の動作 — 録音ではありません",
+		"outputMeterStopping": "テストを停止中…",
+		"outputMeterStopped": "テスト終了",
+		"outputMeterError": "テストできません。再試行してください。",
+		"outputMeterHint": "出力音量調整前のピークです。排他モードではゼロになる場合があります。動作は録音の証明ではありません。",
+		"outputMeterLevel": "システム音声の動作",
 		"outputDevice": "音声出力",
 		"outputDefault": "Windows の既定",
 		"outputUnavailable": "選択した出力は利用できません",
