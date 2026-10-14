@@ -21,7 +21,8 @@ sem abrir configuração extra nem obrigar exportação para acessar o original.
 ## Compartilhar e GIF — desenho do próximo incremento
 
 Fundação 02G em `electron/recording/derivedRecordingTarget.ts`, agora conectada à
-ação local **Salvar uma cópia** (02I), não ao GIF/compartilhamento/compositor.
+ação local **Salvar uma cópia** (02I) e ao controlador GIF via IPC (02M).
+O botão GIF e o compartilhamento continuam pendentes.
 Tokens opacos de uso
 único vinculam dono e snapshot main-owned de fontes; nenhuma autorização genérica
 de caminho é criada no renderer. Um job por dono, revalidação de sessão/estado e
@@ -155,6 +156,32 @@ aprovada, garantir fechamento do probe em finally, fornecer decoder resolvido
 pelo main, compartilhar estado ocupado com Salvar cópia/Nova captura/Editar e
 expor progresso/cancel apenas ao dono. Não importar shell do editor. Botão GIF
 permanece ausente até integrar isso e opções/aviso/estimativa/progresso na UI.
+
+### 02M — integração main/preload, ainda sem botão
+
+`registerSavedRecordingGifHandlers` agora ativo no main, com fonte aprovada e
+janela main atual. Apenas frame principal; papel resultado e URL file/dev na
+origem configurada, não páginas HTTP arbitrárias. Probe real fecha em finally;
+decoder compartilhado precisa estar disponível antes de abrir probe/dialog.
+Destino GIF vem do diálogo nativo da mesma janela, nunca do renderer.
+Export/cancel via preload tipado; progresso privado ao dono leva UUID main-owned,
+frames/total e evento inicial0. Usar UUID para ignorar eventos de outro job;
+progresso100% não autoriza anunciar arquivo salvo antes da resposta final.
+
+Estado ocupado mútuo com cópia; Nova captura e rotas UI editor/HUD/start também
+recusam transição durante derivados. Não é lock global do bridge/MCP legado:
+uma troca externa de sessão invalida a publicação. Proteção do exportador legado
+não foi ampliada. Encerramento completo do processo/recuperação de órfãos ainda
+precisam de avaliação; teste de owner fechado com processo vivo não os homologa.
+
+QA programática em Electron real com preload compilado, IPC real, compositor e
+decoder: gerou GIF validado; recusou outra janela e estado busy; recebeu progresso
+com UUID consistente. Picker foi destino sintético pré-selecionado pelo harness:
+NÃO é passe do diálogo nativo/main completo, cliques OS ou fluxo captura→resultado.
+Primeiro harness tentou devolver função unsubscribe por executeJavaScript e
+falhou clone; corrigido retorno void, sem alterar API por causa desse erro.
+Interface principal continua sem botão GIF; opções/aviso/estimativa/progresso,
+teste manual OS e shutdown/recuperação permanecem próximos incrementos.
 
 Integração mapeada (ainda não implementada): reutilizar
 `electron/mcp/hidden-video.ts:openVideoInHiddenWindow` para obter metadados da

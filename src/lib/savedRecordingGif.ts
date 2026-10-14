@@ -17,6 +17,20 @@ export interface SavedGifRequest {
 	loop: boolean;
 }
 
+export interface SavedGifResult {
+	success: boolean;
+	canceled?: boolean;
+	path?: string;
+	sizeBytes?: number;
+	error?: string;
+	errorCode?: "exists";
+}
+export interface SavedGifProgress {
+	jobId: string;
+	frames: number;
+	totalFrames: number;
+}
+
 export interface SavedGifSourceMetadata {
 	/** Must be probed from the main-approved original, never supplied over IPC. */
 	durationSec: number;

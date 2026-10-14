@@ -175,6 +175,7 @@ import { registerNativeBridgeHandlers } from "./nativeBridge";
 import { createNativeMacMidCaptureErrorWatch } from "./nativeMacMidCaptureErrorWatch";
 import { registerRecordingPrefsHandlers } from "./recordingPrefs";
 import { RecordingStreamRegistry, registerRecordingStreamHandlers } from "./recordingStream";
+import { isRecordingResultOwner, registerSavedRecordingGifHandlers } from "./savedRecordingGif";
 import { type SelectSourceContext, selectSourceWithOwnership } from "./selectSourceOwnership";
 
 const PROJECT_FILE_EXTENSION = "openscreen";
@@ -2590,6 +2591,8 @@ export function registerIpcHandlers(
 	});
 
 	ipcMain.handle("switch-to-editor", () => {
+		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+			throw new Error("A recording derivative is still running.");
 		// createEditorWindow already closes the current mainWindow (the HUD) before
 		// opening the editor. Closing it here too double-closes, leaving ghost
 		// transparent windows and compounding the HUD shadow each cycle.
@@ -2601,24 +2604,18 @@ export function registerIpcHandlers(
 		!!nativeMacCaptureProcess ||
 		!!linuxNativeCaptureSession ||
 		(editorHasUnsavedChanges?.() ?? false);
-	const copyOwnerCurrent = (owner: SavedRecordingCopyOwner) => {
-		const window = getMainWindow();
-		return (
-			!!window &&
-			!window.isDestroyed() &&
-			window.webContents === owner &&
-			new URL(window.webContents.getURL()).searchParams.get("windowType") === "recording-result"
-		);
-	};
+	const copyOwnerCurrent = (owner: SavedRecordingCopyOwner) =>
+		isRecordingResultOwner(getMainWindow(), owner);
+	const currentSavedSource = () =>
+		currentVideoPath && isPathAllowed(currentVideoPath)
+			? {
+					key: `${currentRecordingSession?.createdAt ?? 0}:${currentVideoPath}`,
+					path: currentVideoPath,
+				}
+			: null;
 	const savedRecordingCopies = new SavedRecordingCopies({
-		current: () =>
-			currentVideoPath && isPathAllowed(currentVideoPath)
-				? {
-						key: `${currentRecordingSession?.createdAt ?? 0}:${currentVideoPath}`,
-						path: currentVideoPath,
-					}
-				: null,
-		isBusy: recordingBusy,
+		current: currentSavedSource,
+		isBusy: () => recordingBusy() || savedRecordingGifs.isBusy(),
 		isOwnerCurrent: copyOwnerCurrent,
 		pick: async (owner, name, extension) => {
 			if (!copyOwnerCurrent(owner)) throw new Error("Recording result window changed.");
@@ -2626,6 +2623,23 @@ export function registerIpcHandlers(
 				title: mainT("dialogs", "fileDialogs.saveVideo"),
 				defaultPath: path.join(app.getPath("downloads"), name),
 				filters: [{ name: mainT("dialogs", "fileDialogs.videoFiles"), extensions: [extension] }],
+				properties: ["createDirectory", "showOverwriteConfirmation"],
+			});
+			return result.canceled || !result.filePath ? null : result.filePath;
+		},
+	});
+	const savedRecordingGifs = registerSavedRecordingGifHandlers({
+		ipc: ipcMain,
+		window: getMainWindow,
+		current: currentSavedSource,
+		isBusy: () => recordingBusy() || savedRecordingCopies.isBusy(),
+		compositor: new CompositorViewService(),
+		pick: async (owner, name) => {
+			if (!copyOwnerCurrent(owner)) throw new Error("Recording result window changed.");
+			const result = await showSaveDialogOver(getMainWindow(), {
+				title: mainT("dialogs", "fileDialogs.saveVideo"),
+				defaultPath: path.join(app.getPath("downloads"), name),
+				filters: [{ name: "GIF", extensions: ["gif"] }],
 				properties: ["createDirectory", "showOverwriteConfirmation"],
 			});
 			return result.canceled || !result.filePath ? null : result.filePath;
@@ -2639,7 +2653,8 @@ export function registerIpcHandlers(
 			!!nativeWindowsCaptureProcess ||
 			!!nativeMacCaptureProcess ||
 			!!linuxNativeCaptureSession ||
-			savedRecordingCopies.isBusy(),
+			savedRecordingCopies.isBusy() ||
+			savedRecordingGifs.isBusy(),
 		isEditorDirty: () => editorHasUnsavedChanges?.() ?? false,
 		stat: (file) => fs.stat(file),
 		reveal: (file) => shell.showItemInFolder(file),
@@ -2669,6 +2684,8 @@ export function registerIpcHandlers(
 	}));
 
 	ipcMain.handle("switch-to-hud", () => {
+		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+			throw new Error("A recording derivative is still running.");
 		_switchToHud?.();
 		return { success: true };
 	});
@@ -2687,6 +2704,8 @@ export function registerIpcHandlers(
 		}
 	}
 	ipcMain.handle("start-new-recording", () => {
+		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+			throw new Error("A recording derivative is still running.");
 		startNewRecording();
 		return { success: true };
 	});

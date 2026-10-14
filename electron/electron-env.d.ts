@@ -77,6 +77,14 @@ interface Window {
 			expectedPath: string,
 		) => Promise<import("../src/lib/savedRecording").SavedRecordingCopyResult>;
 		cancelSavedRecordingCopy?: () => Promise<{ accepted: boolean }>;
+		exportSavedRecordingGif?: (
+			expectedPath: string,
+			options: import("../src/lib/savedRecordingGif").SavedGifRequest,
+		) => Promise<import("../src/lib/savedRecordingGif").SavedGifResult>;
+		cancelSavedRecordingGif?: () => Promise<{ accepted: boolean }>;
+		onSavedRecordingGifProgress?: (
+			listener: (progress: import("../src/lib/savedRecordingGif").SavedGifProgress) => void,
+		) => () => void;
 		selectSourceRegion?: (sourceId: string) => Promise<{ selected: boolean }>;
 		getRegionSelectionInfo?: () => Promise<
 			import("../src/lib/windowsCaptureRegion").RegionSelectionInfo | null

@@ -2,7 +2,11 @@ import { createHash, randomUUID } from "node:crypto";
 import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { SavedGifPlan, SavedGifSourceMetadata } from "../../src/lib/savedRecordingGif";
+import type {
+	SavedGifPlan,
+	SavedGifResult,
+	SavedGifSourceMetadata,
+} from "../../src/lib/savedRecordingGif";
 import { type ExportJob, ExportJobs, type ExportOwner } from "../ipc/exportJobs";
 import { DerivedRecordingTargets } from "./derivedRecordingTarget";
 import { buildSavedOriginalGifScene } from "./savedRecordingGifScene";
@@ -25,15 +29,7 @@ interface Deps {
 	): ExportJob<unknown>;
 	/** MUST perform codec/header/full decode validation in main, not trust stats. */
 	validate(file: string, plan: SavedGifPlan, signal: AbortSignal): Promise<void>;
-	progress(owner: ExportOwner, frames: number, totalFrames: number): void;
-}
-export interface SavedGifResult {
-	success: boolean;
-	canceled?: boolean;
-	path?: string;
-	sizeBytes?: number;
-	error?: string;
-	errorCode?: "exists";
+	progress(owner: ExportOwner, frames: number, totalFrames: number, jobId: string): void;
 }
 const digest = async (file: string, signal: AbortSignal) => {
 	const hash = createHash("sha256");
@@ -142,6 +138,7 @@ export class SavedRecordingGifs {
 				owner,
 				job.id,
 				(progress) => {
+					progress(0);
 					const native = this.deps.start(prepared, stagedPath, progress);
 					const safe = {
 						result: native.result,
@@ -173,6 +170,7 @@ export class SavedRecordingGifs {
 								owner,
 								Math.min(Math.floor(frames), prepared.plan.totalFrames),
 								prepared.plan.totalFrames,
+								job.id,
 							);
 						}
 					} catch {

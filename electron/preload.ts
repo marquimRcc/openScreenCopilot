@@ -3,6 +3,7 @@ import type { NativeLinuxRecordingRequest } from "../src/lib/nativeLinuxRecordin
 import type { NativeMacRecordingRequest } from "../src/lib/nativeMacRecording";
 import type { NativeWindowsRecordingRequest } from "../src/lib/nativeWindowsRecording";
 import type { RecordingSession, StoreRecordedSessionInput } from "../src/lib/recordingSession";
+import type { SavedGifProgress, SavedGifRequest } from "../src/lib/savedRecordingGif";
 import type { ShortcutBinding } from "../src/lib/shortcuts";
 import type {
 	AiEditionChatEvent,
@@ -388,6 +389,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	copySavedRecording: (expectedPath: string) =>
 		ipcRenderer.invoke("copy-saved-recording", expectedPath),
 	cancelSavedRecordingCopy: () => ipcRenderer.invoke("cancel-saved-recording-copy"),
+	exportSavedRecordingGif: (expectedPath: string, options: SavedGifRequest) =>
+		ipcRenderer.invoke("export-saved-recording-gif", expectedPath, options),
+	cancelSavedRecordingGif: () => ipcRenderer.invoke("cancel-saved-recording-gif"),
+	onSavedRecordingGifProgress: (listener: (progress: SavedGifProgress) => void) => {
+		const handler = (_event: unknown, progress: SavedGifProgress) => listener(progress);
+		ipcRenderer.on("saved-recording-gif-progress", handler);
+		return () => ipcRenderer.off("saved-recording-gif-progress", handler);
+	},
 	getCurrentRecordingSession: () => {
 		return ipcRenderer.invoke("get-current-recording-session");
 	},

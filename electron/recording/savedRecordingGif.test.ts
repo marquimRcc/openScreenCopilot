@@ -133,7 +133,7 @@ describe("saved-original GIF controller with synthetic writer/validator", () => 
 		expect(await fs.readFile(original)).toEqual(originalBytes);
 		expect(current).toBe(session);
 		expect(deps.validate).toHaveBeenCalledOnce();
-		expect(deps.progress).toHaveBeenCalledWith(owner, 30, 30);
+		expect(deps.progress).toHaveBeenCalledWith(owner, 30, 30, expect.any(String));
 		expect(gifs.isBusy()).toBe(false);
 		expect(owner.listenerCount("destroyed")).toBe(0);
 		expect((await fs.readdir(dir)).sort()).toEqual(

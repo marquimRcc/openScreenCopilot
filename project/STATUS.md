@@ -531,6 +531,38 @@ runtime do controlador/decoder. App aberto não foi tocado; pacote ativo ainda
 anterior. Próximo: wiring main/result owner, busy mútuo com cópia/navegação,
 probe com finally, opções/progresso/cancelamento e GUI real. Não anunciar pronto.
 
+## Incremento 02M — GIF conectado ao main/preload (sem UI)
+
+APIs export/cancel/progress agora ativas. Main usa fonte aprovada e janela atual
+no papel resultado, apenas frame principal, URL file/dev da origem configurada.
+Probe fecha em finally; falta de decoder falha antes de probe/dialog. Destino é
+do diálogo main-owned; opções/caminho esperado apenas no renderer. Progresso com
+UUID gerado no main e início0. Cópia/GIF bloqueiam-se mutuamente; Nova captura e
+rotas UI de editor/HUD/start recusam transição enquanto derivados ativos.
+Não muda lock geral de bridge/MCP legado. Nenhum botão GIF novo ainda.
+
+Testes focados incluem owner estrangeiro/fechado, editor, URL vazia/remota, origem
+dev divergente, subframe, fonte não aprovada, busy, caminhos/cena não autorizados,
+probe fechado, decoder indisponível, progresso e regressões de cópia/resultado.
+Tipo inicial do mock compositor corrigido para assinatura nativa completa;
+typecheck detectou o mock excessivamente genérico antes da correção.
+
+QA programática real de preload/IPC + factory/controller/compositor/decoder:
+GIF2s/30frames/768×480/1.898.617bytes publicado em `.cache/gif-ipc-qa-FmL5yF`;
+outra janela e busy recusados antes de picker; UUID único, primeiro evento0 e
+total30, cancel estrangeiro recusado. Logs `.cache/gif-ipc-guard.*`.
+Primeira QA falhou ao retornar função unsubscribe por executeJavaScript; harness
+corrigido para void, duas execuções seguintes passaram (última com guardas URL/frame).
+Não equivale a cliques OS, diálogo real, handlers/main completo ou captura→resultado.
+App protegido em uso não tocado. Shutdown completo/recuperação de órfãos pendentes.
+
+Validações finais: 4 arquivos/55 focados, ambos tsc, lint26 herdados,
+i18n15/964chaves, docs50, Vite e pacote completos aprovados. Suíte completa:
+351 arquivos/4.945 aprovados/5 ignorados/302,32s, runtime fixado e quatro workers.
+23 payloads nativos SHA256 idênticos; sem fonte Rust/C++ alterada/rebuild novo.
+Pacote `.cache/result-package/win-unpacked` atualizado, não instalado/relançado.
+Não anunciar recurso disponível na interface; botão e aceite GUI seguem pendentes.
+
 ## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
