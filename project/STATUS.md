@@ -243,6 +243,24 @@ respeitando dependências, permissões e testes, até 2026-10-14 às 12h Brasíl
 pausar aos 95% do limite e retomar após reset + 5 minutos. Não dispensa aceites
 manuais, liberações de distribuição ou testes em hardware/SO indisponível.
 
+## Incremento 02C — padrão de áudio do sistema
+
+Em 2026-10-14, implementado padrão ligado em perfil novo/chave ausente no store,
+fallback IPC, painel de preparação e browser shim. `false` salvo permanece
+desligado após mudanças em outras preferências e reinício; mic/câmera continuam
+desligados. Nenhum arquivo real de preferências do usuário foi editado/migrado.
+Testes focados: 5 arquivos / 59 testes aprovados; todas as regressões afetadas
+(`vitest --run --changed HEAD --maxWorkers=4`): 9 arquivos / 86 testes aprovados,
+0 falhas, 15,93 s. Biome sem erros / 26 avisos herdados; typechecks app/testes e
+docs:check (50 arquivos) aprovados.
+A suíte completa de 4.781 testes acima é anterior a este incremento estreito;
+não é apresentada como reexecução após os novos defaults.
+
+Pacote local aberto ainda é o build de região anterior; novo padrão requer
+rebuild/reempacotamento. Aceite de áudio audível em perfil novo, fonte escolhida,
+desconexão e medidor seguem pendentes. Detalhes em
+[WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
+
 ## Regra de atualização
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

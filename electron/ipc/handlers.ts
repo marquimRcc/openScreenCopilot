@@ -713,7 +713,7 @@ const defaultRecordingPrefs: RecordingPrefs = {
 	camDeviceId: null,
 	camDeviceName: null,
 	camQuality: DEFAULT_WEBCAM_QUALITY,
-	systemAudioEnabled: false,
+	systemAudioEnabled: true,
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,

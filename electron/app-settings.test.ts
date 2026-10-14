@@ -15,6 +15,34 @@ afterEach(() => {
 });
 
 describe("app settings store", () => {
+	it("enables system audio only by default, leaving microphone and camera off", () => {
+		const recording = new AppSettingsStore(temp()).getSnapshot().recording;
+		expect(recording).toMatchObject({
+			systemAudioEnabled: true,
+			micEnabled: false,
+			camEnabled: false,
+		});
+	});
+
+	it("preserves an explicit system-audio off choice across writes and restarts", () => {
+		const dir = temp();
+		const store = new AppSettingsStore(dir);
+		store.setRecordingPreferences({ systemAudioEnabled: false });
+		store.setRecordingPreferences({ autoZoomEnabled: false });
+		expect(new AppSettingsStore(dir).getSnapshot().recording.systemAudioEnabled).toBe(false);
+		expect(
+			JSON.parse(readFileSync(path.join(dir, "recording-settings.json"), "utf8")),
+		).toMatchObject({ systemAudioEnabled: false });
+	});
+
+	it("uses system-audio default for a legacy missing key, without rewriting the file", () => {
+		const dir = temp();
+		const file = path.join(dir, "recording-settings.json");
+		const original = JSON.stringify({ micEnabled: false, future: 123 });
+		writeFileSync(file, original);
+		expect(new AppSettingsStore(dir).getSnapshot().recording.systemAudioEnabled).toBe(true);
+		expect(readFileSync(file, "utf8")).toBe(original);
+	});
 	it("uses defaults for absent fields and preserves unknown keys", () => {
 		const dir = temp();
 		const file = path.join(dir, "recording-settings.json");

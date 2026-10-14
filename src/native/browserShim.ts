@@ -68,7 +68,7 @@ let shimRecordingPrefs: ShimRecordingPrefs = {
 	camEnabled: false,
 	camDeviceId: null,
 	camDeviceName: null,
-	systemAudioEnabled: false,
+	systemAudioEnabled: true,
 	cursorCaptureMode: "editable-overlay",
 	autoZoomEnabled: true,
 };

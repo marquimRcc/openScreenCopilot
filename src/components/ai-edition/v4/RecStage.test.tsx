@@ -165,6 +165,16 @@ async function tooltipOn(control: HTMLElement) {
 }
 
 describe("RecStage controls", () => {
+	it.each([
+		[{}, "true"],
+		[{ systemAudioEnabled: false }, "false"],
+	])("shows system audio on for missing preferences but preserves a stored off choice", async (prefs, pressed) => {
+		const { setRecordingPrefs } = stubRecordingPrefs(prefs);
+		renderRecStage();
+		await waitFor(() => expect(pill("rec.systemAudio")).toHaveAttribute("aria-pressed", pressed));
+		expect(pill("rec.microphone")).toHaveAttribute("aria-pressed", "false");
+		expect(setRecordingPrefs).not.toHaveBeenCalled();
+	});
 	beforeEach(() => {
 		vi.clearAllMocks();
 		recordingPrefsListeners = [];

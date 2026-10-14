@@ -60,6 +60,18 @@ describe("browserShim addAsset (issue #350)", () => {
 });
 
 describe("browserShim recording settings", () => {
+	it("starts with system audio on, but respects an explicit off selection", async () => {
+		expect(await window.electronAPI.getRecordingPrefs()).toMatchObject({
+			systemAudioEnabled: true,
+			micEnabled: false,
+			camEnabled: false,
+		});
+		await window.electronAPI.setRecordingPrefs({ systemAudioEnabled: false });
+		expect((await window.electronAPI.getRecordingPrefs()).systemAudioEnabled).toBe(false);
+		expect(JSON.parse(localStorage.getItem("browser-shim-recording-prefs")!)).toMatchObject({
+			systemAudioEnabled: false,
+		});
+	});
 	it("publishes recording settings only after localStorage succeeds", async () => {
 		await window.electronAPI.setRecordingPrefs({ micEnabled: false });
 		const setItem = Storage.prototype.setItem;

@@ -20,7 +20,7 @@ const defaults: RecordingPrefs = {
 	camDeviceId: null,
 	camDeviceName: null,
 	camQuality: "2160p",
-	systemAudioEnabled: false,
+	systemAudioEnabled: true,
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
@@ -54,6 +54,16 @@ function start(
 }
 
 describe("recording preferences IPC", () => {
+	it("defaults system audio on and preserves an explicit off choice through IPC and restart", () => {
+		const first = start();
+		expect(first.get()).toMatchObject({
+			systemAudioEnabled: true,
+			micEnabled: false,
+			camEnabled: false,
+		});
+		first.set({ systemAudioEnabled: false });
+		expect(start().get().systemAudioEnabled).toBe(false);
+	});
 	it("restores toggles and device preferences on restart", () => {
 		const first = start();
 		expect(first.get().micEnabled).toBe(false);

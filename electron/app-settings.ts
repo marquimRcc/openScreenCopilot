@@ -39,7 +39,8 @@ export const DEFAULT_RECORDING_PREFERENCES: RecordingPreferences = {
 	camDeviceId: null,
 	camDeviceName: null,
 	camQuality: DEFAULT_WEBCAM_QUALITY,
-	systemAudioEnabled: false,
+	// New/missing preferences default on; parseRecording preserves an explicit false.
+	systemAudioEnabled: true,
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,

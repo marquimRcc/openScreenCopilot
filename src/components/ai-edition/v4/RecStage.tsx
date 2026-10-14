@@ -49,7 +49,7 @@ const DEFAULT_PREFS: RecordingPrefsState = {
 	camEnabled: false,
 	camDeviceId: null,
 	camDeviceName: null,
-	systemAudioEnabled: false,
+	systemAudioEnabled: true,
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,

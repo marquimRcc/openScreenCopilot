@@ -174,7 +174,20 @@ ausente/erro do shell sem apresentar sucesso falso. Critérios em
 
 ## 02C — saída de áudio, microfone e falhas
 
-Proposto, **ainda não implementado**:
+Padrão de áudio implementado em código em 2026-10-14: store durável, fallback IPC,
+painel de preparação e browser shim passam a iniciar com sistema ligado; uma
+preferência booleana `false` salva continua desligada. Microfone e câmera continuam
+desligados por padrão. Leitura de preferências antigas sem a chave não reescreve
+o arquivo. O HUD continua aguardando o snapshot do main, sem ativação antecipada
+do áudio ou migração forçada do perfil atual. Testes de store/IPC/painel/shim
+cobrem padrão, desligamento persistido e reinício.
+
+Isso não implementa seleção de endpoint/medidor, não reativa escolhas existentes
+e não aprova ainda uma tomada com áudio audível a partir de perfil novo no pacote.
+O pacote aberto de QA ainda é o incremento anterior de região; requer rebuild
+para incorporar este padrão. Não é aceite completo de 02C.
+
+Demais itens **ainda não implementados/homologados**:
 
 - Áudio do sistema ligado por padrão em perfis novos/preferências ausentes;
   microfone desligado por padrão. Respeitar desligamento explícito salvo e mostrar
