@@ -388,6 +388,15 @@ lacunas explícitas e sem interpolar fala através de descontinuidades. O MP4 de
 continuar independente do backlog ASR. Não modificar esse pipeline/relógio ou prometer
 alinhamento por inspeção; medir marcadores A/V, pausas rápidas e carga longa primeiro.
 
+Prova rápida independente em2026-10-14: três pares nominais10ms, ACKs completos,
+decode limpo, somente HWND sintético/endpoint explícito. Não usar frameIndex/30
+para julgar sincronismo: PTS variam. Reanálise correlacionando pixels decodificados
+a best_effort_timestamp_time deu áudio menos vídeo52/20/-38/-38ms; stream de vídeo
+8,068267s contra8,021333s de PCM decodificado. Timers de envio não garantiram10ms;
+AAC/offset inicial e granularidade de medição não foram isolados. Ver STATUS e
+recibos privados metrics-pts.json. Isso não homologa pausa rápida/carga longa e
+não justifica mudança nativa por suposta deriva calculada pelo número de quadros.
+
 Documentar e testar T0 monotônico compartilhado por vídeo/áudio, pausas removidas
 uma vez, PTS preservados e distinção entre instante de captura e chegada ao ASR.
 Não usar hora civil/tempo de chegada como relógio de transcrição. Epochs e filas

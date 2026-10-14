@@ -1105,6 +1105,32 @@ Sem alteração de produção/nativo/vendor e sem novo build nativo. Não prova 
 de ASR, carga longa, pausas rápidas ou todos dispositivos. GUI02Z continua pendente
 de autorização, não foi contornada. Mídia privada preservada e não enviada.
 
+## Prova sintética de pausas rápidas e correção de medição — 2026-10-14
+
+HWND opaco próprio, endpoint explícito, mic/cursor/webcam OFF,8s de wall:
+três pares pause/resume nominais10ms, três ACKs de cada, exit0/decode limpo,
+740.692bytes. Timers do host NÃO garantiram10ms: intervalos de envio medidos
+15,0/0,126/15,8ms; não são duração efetiva nativa. Recibo privado
+`.cache/window-rapid-pause-qa-a3889ecf-1fe9-4477-ac2d-b71366ffe76e/metrics.json`.
+
+A primeira análise usava índice de quadro/30 como tempo e reportou53/20/130/130ms.
+Isso é inadequado para frames com PTS variáveis, especialmente após pausas.
+Reanálise dos MESMOS arquivos, sem captura adicional, correlacionou cada frame
+decodificado ao best_effort_timestamp_time do ffprobe; contagem de frames conferida.
+Recibos `metrics-pts.json` nas três pastas privadas: baseline39/6/6/6ms;
+pausa2s40/6/5/6ms; rápidas52/20/-38/-38ms (áudio menos vídeo). Vídeo rápido
+tem duração de stream8,068267s, não237/30=7,9s; áudio decodificado8,021333s.
+O PASS do harness original era tolerância diagnóstica ampla200ms, NÃO aceite.
+Não alterar relógio nativo a partir de deriva aparente causada pelo analisador.
+
+Marcadores curtos não revelaram deriva crescente após a última pausa, mas houve
+mudança de offset; ainda faltam repetição, carga longa e teste dentro da fala/tons.
+Áudio usa offsets de amostras decodificadas; priming AAC/origem do stream e resolução
+temporal de10ms/um frame limitam a comparação. Sem homologação de pausas10ms,
+precisão ASR,30min, interface ou todos endpoints. Sem fonte de produção/vendor
+alterada, sem rebuild/reempacotamento; GUI02Z continua bloqueada pela autorização
+pendente e não foi contornada. Docs apenas; suíte02Y não repetida.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
