@@ -385,6 +385,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	revealSavedRecording: (expectedPath: string) =>
 		ipcRenderer.invoke("reveal-saved-recording", expectedPath),
 	prepareNewCapture: () => ipcRenderer.invoke("prepare-new-capture"),
+	copySavedRecording: (expectedPath: string) =>
+		ipcRenderer.invoke("copy-saved-recording", expectedPath),
+	cancelSavedRecordingCopy: () => ipcRenderer.invoke("cancel-saved-recording-copy"),
 	getCurrentRecordingSession: () => {
 		return ipcRenderer.invoke("get-current-recording-session");
 	},

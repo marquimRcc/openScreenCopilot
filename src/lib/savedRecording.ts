@@ -11,6 +11,14 @@ export interface SavedRecordingResult {
 	error?: string;
 }
 
+export interface SavedRecordingCopyResult {
+	success: boolean;
+	canceled?: boolean;
+	path?: string;
+	error?: string;
+	errorCode?: "exists";
+}
+
 /** Called only after the capture has been finalized and its session published. */
 export async function showSavedRecording(
 	api: Pick<Window["electronAPI"], "switchToEditor" | "showRecordingResult" | "setRecordingState">,

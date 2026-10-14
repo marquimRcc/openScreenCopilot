@@ -58,6 +58,11 @@
 		"systemTip": "System-Cursor: dein echter Cursor, im Video aufgenommen. Aussehen nicht änderbar, kein Auto-Zoom."
 	},
 	"recordingResult": {
+		"saveCopy": "Kopie speichern…",
+		"copying": "Original wird ohne Änderungen kopiert…",
+		"copySaved": "Kopie gespeichert unter:",
+		"cancelCopy": "Kopie abbrechen",
+		"copyExists": "Dieses Ziel existiert bereits. Wählen Sie einen neuen Namen; Original und vorhandene Dateien bleiben erhalten.",
 		"originalPreview": "Vorschau des Originalvideos. Separate Kamera, bearbeitbarer Cursor und Änderungen erscheinen unter Bearbeiten.",
 		"saved": "Aufnahme gespeichert",
 		"title": "Aufnahme",

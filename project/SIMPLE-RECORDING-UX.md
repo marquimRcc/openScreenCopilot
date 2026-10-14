@@ -20,8 +20,9 @@ sem abrir configuração extra nem obrigar exportação para acessar o original.
 
 ## Compartilhar e GIF — desenho do próximo incremento
 
-Fundação 02G implementada isoladamente em `electron/recording/derivedRecordingTarget.ts`;
-**ainda não conectada ao IPC, diálogo, compositor ou botões**. Tokens opacos de uso
+Fundação 02G em `electron/recording/derivedRecordingTarget.ts`, agora conectada à
+ação local **Salvar uma cópia** (02I), não ao GIF/compartilhamento/compositor.
+Tokens opacos de uso
 único vinculam dono e snapshot main-owned de fontes; nenhuma autorização genérica
 de caminho é criada no renderer. Um job por dono, revalidação de sessão/estado e
 parent canônico. Qualquer destino existente é recusado (inclui original/aliases).
@@ -40,6 +41,25 @@ automática de órfãos neste incremento. Uma integração posterior deve regist
 propriedade/estado antes de adicionar limpeza de startup, sem apagar só por prefixo.
 Bridge exportador legado não foi alterado; não anunciar essa proteção como global.
 
+### 02I — salvar cópia do original
+
+Botão separado, sem anunciar envio/compartilhamento: escolhe destino em diálogo
+nativo ligado à janela atual de resultado. IPC recebe só o caminho esperado do
+original, nunca um destino autorizado pelo renderer. Main valida janela/papel,
+sessão/fontes aprovadas e estado ocioso antes/depois do diálogo. MP4 e WebM são
+copiados em stream, sem recompressão; o formato original é preservado. SHA256
+do stream original e do staged file devem coincidir, com identidade/tamanho/mtime
+da fonte estáveis; então publica sem substituir destino existente. Verificar
+hash basta para esta cópia byte-a-byte; GIF futuro ainda exige decode/codec.
+
+Cancelar/fechar dono aborta o stream e aguarda pipeline fechar antes de limpar.
+Ao começar a publicação final, cancelamento pode ser recusado: não anunciar que
+arquivo publicado foi desfeito. Nova captura/edição ficam desabilitadas durante
+o job; preparação também bloqueada no main. Caminho efetivo da cópia é mostrado,
+original continua selecionado e intacto. Arquivo existente exige nome novo,
+mesmo se o diálogo nativo oferecer substituir. Sem upload, link público ou
+composição de câmera/cursor/edições; apenas bytes do original.
+
 Análise do código em 2026-10-14: GIF já usa compositor nativo, mesma cena/lista
 de clipes do MP4, progresso por ID e cancelamento por dono da janela. Não criar
 segundo encoder, fallback renderer ou pipeline FFmpeg independente. Reutilizar
@@ -54,7 +74,8 @@ orquestração necessária à tela simples. Não importar o shell inteiro do edi
 | GIF | Escolher trecho, resolução/FPS, confirmar estimativa e arquivo novo; exportar cena pelo compositor | Sem áudio, pode ser maior que MP4; destino validado no main, original imutável, progresso/cancelamento e limpeza apenas do derivado próprio |
 | Vídeo com câmera/edições | Construir documento efêmero a partir da sessão validada, compor e mostrar o derivado antes de compartilhar | Preservar câmera/offset/cursor e proporção; não aplicar zoom/layout automático surpreendente; não sobrescrever sessão nem documento aberto |
 
-Contratos propostos (ainda não implementados): pedido da tela leva identidade da
+Contratos futuros para GIF/compartilhamento (cópia byte-a-byte acima já implementada):
+pedido da tela leva identidade da
 gravação + opções, nunca autorização irrestrita de caminho. Main revalida sessão,
 fonte aprovada, estado ocioso e destino selecionado pela mesma janela; reserva um
 job e arquivo temporário próprios. Cancelar/fechar a janela aguarda finalização do

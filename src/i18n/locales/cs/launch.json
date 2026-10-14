@@ -58,6 +58,11 @@
 		"systemTip": "Systémový kurzor: váš skutečný kurzor, zaznamenaný ve videu. Bez změny stylu a bez automatického přiblížení."
 	},
 	"recordingResult": {
+		"saveCopy": "Uložit kopii…",
+		"copying": "Kopírování originálu bez úprav…",
+		"copySaved": "Kopie uložena do:",
+		"cancelCopy": "Zrušit kopírování",
+		"copyExists": "Cíl již existuje. Zvolte nový název; originál i existující soubory budou zachovány.",
 		"originalPreview": "Náhled původního videa. Samostatná kamera, upravitelný kurzor a úpravy se zobrazí v editoru.",
 		"saved": "Záznam uložen",
 		"title": "Záznam",

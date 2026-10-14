@@ -58,6 +58,11 @@
 		"systemTip": "Cursor del sistema: tu cursor real, grabado en el video. Sin cambios de estilo ni zoom automático."
 	},
 	"recordingResult": {
+		"saveCopy": "Guardar una copia…",
+		"copying": "Copiando el original, sin cambios…",
+		"copySaved": "Copia guardada en:",
+		"cancelCopy": "Cancelar copia",
+		"copyExists": "Este destino ya existe. Elige otro nombre; se conservarán el original y los archivos existentes.",
 		"originalPreview": "Vista previa del vídeo original. La cámara separada, el cursor editable y los cambios aparecen en Editar.",
 		"saved": "Grabación guardada",
 		"title": "Grabación",

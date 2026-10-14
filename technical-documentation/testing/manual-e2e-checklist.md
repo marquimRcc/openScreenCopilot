@@ -905,6 +905,17 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02I, Windows 11 @150%, isolated Saved Copy QA
+with production renderer/preload/copy controller, synthetic MP4 and real native
+Save dialog. **Partial:** real click opened dialog; activation revealed owned
+modal; unavailable Save AX index recovered by fresh screenshot/coordinate input.
+Save created the intended local synthetic copy and AX reported its correct path.
+Original/copy SHA256 d6a5106181cef45aab7199326d25e86a1fceb9e460099f07de9207751dbe2365;
+H.264 960×600, 5.033733 s, 266116 bytes, full decode clean. After Save, screenshot
+was occluded again and one activation did not resolve it; no blind clicks.
+Native cancel, final CSS/button ordering, full-app owner wiring and capture→result
+remain unapproved. Unit cancellation tests and this harness are not full-app QA.
+
 2026-10-14 — openScreenCopilot 02E, Windows 11 @150%, native WGC synthetic
 indicator smoke. **Partial:** production indicator factory, protected non-focusable
 click-through window; accessibility/screenshot observed underlying synthetic fixture.

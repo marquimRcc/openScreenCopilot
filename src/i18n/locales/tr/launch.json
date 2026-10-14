@@ -58,6 +58,11 @@
 		"systemTip": "Sistem imleci: gerçek imleciniz, videoya kaydedilir. Stil değişikliği ve otomatik yakınlaştırma yok."
 	},
 	"recordingResult": {
+		"saveCopy": "Bir kopya kaydet…",
+		"copying": "Orijinal, düzenlemesiz kopyalanıyor…",
+		"copySaved": "Kopyanın konumu:",
+		"cancelCopy": "Kopyalamayı iptal et",
+		"copyExists": "Bu hedef zaten var. Yeni bir ad seçin; orijinal ve mevcut dosyalar korunacaktır.",
 		"originalPreview": "Orijinal video önizlemesi. Ayrı kamera, düzenlenebilir imleç ve düzenlemeler Düzenle bölümünde görünür.",
 		"saved": "Kayıt kaydedildi",
 		"title": "Kayıt",

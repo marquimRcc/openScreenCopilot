@@ -73,6 +73,10 @@ interface Window {
 			expectedPath: string,
 		) => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
 		prepareNewCapture?: () => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
+		copySavedRecording?: (
+			expectedPath: string,
+		) => Promise<import("../src/lib/savedRecording").SavedRecordingCopyResult>;
+		cancelSavedRecordingCopy?: () => Promise<{ accepted: boolean }>;
 		selectSourceRegion?: (sourceId: string) => Promise<{ selected: boolean }>;
 		getRegionSelectionInfo?: () => Promise<
 			import("../src/lib/windowsCaptureRegion").RegionSelectionInfo | null

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-type Format = "gif" | "mp4";
+type Format = "gif" | "mp4" | "webm";
 interface Owner {
 	isDestroyed(): boolean;
 	once(event: "destroyed", listener: () => void): unknown;
@@ -25,7 +25,7 @@ function portableOutput(destination: string, format: Format) {
 	const name = path.basename(destination);
 	if (
 		!path.isAbsolute(destination) ||
-		!["gif", "mp4"].includes(format) ||
+		!["gif", "mp4", "webm"].includes(format) ||
 		path.extname(name).toLowerCase() !== `.${format}` ||
 		/[<>:"|?*]/.test(name) ||
 		Array.from(name).some((character) => character.charCodeAt(0) < 32) ||
@@ -42,12 +42,14 @@ async function requireAbsent(file: string) {
 		if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
 		throw error;
 	}
-	throw new Error("Destination already exists. Choose a new filename.");
+	throw Object.assign(new Error("Destination already exists. Choose a new filename."), {
+		code: "EEXIST",
+	});
 }
 
 /** Main-only capability store. Never expose approve() or a caller-supplied path
  * over IPC: destination must be the native dialog's result for this same owner.
- * Not yet wired to the simple-result UI or the legacy export bridge. */
+ * Used by saved-original copying; the legacy export bridge is unchanged. */
 export class DerivedRecordingTargets {
 	private readonly grants = new WeakMap<Owner, Grant>();
 	private readonly active = new WeakSet<Owner>();

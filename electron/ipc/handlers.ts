@@ -145,6 +145,10 @@ import {
 } from "../recording/nativeWindowsCaptureStop";
 import { removeEmptyCaptureOutput } from "../recording/removeEmptyCaptureOutput";
 import { createSavedRecordingActions } from "../recording/savedRecording";
+import {
+	SavedRecordingCopies,
+	type SavedRecordingCopyOwner,
+} from "../recording/savedRecordingCopy";
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
 import { WindowsRegionIndicator } from "../recording/windowsRegionIndicator";
@@ -2591,6 +2595,42 @@ export function registerIpcHandlers(
 		// transparent windows and compounding the HUD shadow each cycle.
 		createEditorWindow();
 	});
+	const recordingBusy = () =>
+		appRecording ||
+		!!nativeWindowsCaptureProcess ||
+		!!nativeMacCaptureProcess ||
+		!!linuxNativeCaptureSession ||
+		(editorHasUnsavedChanges?.() ?? false);
+	const copyOwnerCurrent = (owner: SavedRecordingCopyOwner) => {
+		const window = getMainWindow();
+		return (
+			!!window &&
+			!window.isDestroyed() &&
+			window.webContents === owner &&
+			new URL(window.webContents.getURL()).searchParams.get("windowType") === "recording-result"
+		);
+	};
+	const savedRecordingCopies = new SavedRecordingCopies({
+		current: () =>
+			currentVideoPath && isPathAllowed(currentVideoPath)
+				? {
+						key: `${currentRecordingSession?.createdAt ?? 0}:${currentVideoPath}`,
+						path: currentVideoPath,
+					}
+				: null,
+		isBusy: recordingBusy,
+		isOwnerCurrent: copyOwnerCurrent,
+		pick: async (owner, name, extension) => {
+			if (!copyOwnerCurrent(owner)) throw new Error("Recording result window changed.");
+			const result = await showSaveDialogOver(getMainWindow(), {
+				title: mainT("dialogs", "fileDialogs.saveVideo"),
+				defaultPath: path.join(app.getPath("downloads"), name),
+				filters: [{ name: mainT("dialogs", "fileDialogs.videoFiles"), extensions: [extension] }],
+				properties: ["createDirectory", "showOverwriteConfirmation"],
+			});
+			return result.canceled || !result.filePath ? null : result.filePath;
+		},
+	});
 	const savedRecordingActions = createSavedRecordingActions({
 		getCurrentPath: () => currentVideoPath,
 		isAllowed: isPathAllowed,
@@ -2598,7 +2638,8 @@ export function registerIpcHandlers(
 			appRecording ||
 			!!nativeWindowsCaptureProcess ||
 			!!nativeMacCaptureProcess ||
-			!!linuxNativeCaptureSession,
+			!!linuxNativeCaptureSession ||
+			savedRecordingCopies.isBusy(),
 		isEditorDirty: () => editorHasUnsavedChanges?.() ?? false,
 		stat: (file) => fs.stat(file),
 		reveal: (file) => shell.showItemInFolder(file),
@@ -2620,6 +2661,12 @@ export function registerIpcHandlers(
 		savedRecordingActions.reveal(expectedPath),
 	);
 	ipcMain.handle("prepare-new-capture", () => savedRecordingActions.prepare());
+	ipcMain.handle("copy-saved-recording", (event, expectedPath: string) =>
+		savedRecordingCopies.copy(event.sender, expectedPath),
+	);
+	ipcMain.handle("cancel-saved-recording-copy", (event) => ({
+		accepted: savedRecordingCopies.cancel(event.sender),
+	}));
 
 	ipcMain.handle("switch-to-hud", () => {
 		_switchToHud?.();

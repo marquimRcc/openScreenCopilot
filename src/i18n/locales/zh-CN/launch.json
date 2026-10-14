@@ -58,6 +58,11 @@
 		"systemTip": "系统光标：直接录制到视频中，无法修改样式或使用自动缩放"
 	},
 	"recordingResult": {
+		"saveCopy": "保存副本…",
+		"copying": "正在复制原始视频，不含编辑效果…",
+		"copySaved": "副本已保存到：",
+		"cancelCopy": "取消复制",
+		"copyExists": "目标文件已存在。请选择新名称；原始视频和现有文件将保留。",
 		"originalPreview": "原始视频预览。单独录制的摄像头、可编辑光标和编辑效果可在“编辑”中查看。",
 		"saved": "录制已保存",
 		"title": "录制",

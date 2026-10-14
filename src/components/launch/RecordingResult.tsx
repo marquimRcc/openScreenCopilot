@@ -16,6 +16,8 @@ export function RecordingResult() {
 	const [previewFailed, setPreviewFailed] = useState(false);
 	const [duration, setDuration] = useState(Number.NaN);
 	const [busy, setBusy] = useState(false);
+	const [copying, setCopying] = useState(false);
+	const [copyPath, setCopyPath] = useState<string | null>(null);
 	const loadGeneration = useRef(0);
 	const actionInFlight = useRef(false);
 
@@ -26,6 +28,7 @@ export function RecordingResult() {
 		setInfo(null);
 		setDuration(Number.NaN);
 		setPreviewFailed(false);
+		setCopyPath(null);
 		try {
 			const result = await window.electronAPI.getSavedRecordingInfo?.();
 			if (generation !== loadGeneration.current) return;
@@ -44,7 +47,7 @@ export function RecordingResult() {
 		};
 	}, [load]);
 
-	const action = async (kind: "folder" | "new" | "edit") => {
+	const action = async (kind: "folder" | "new" | "edit" | "copy") => {
 		if (actionInFlight.current) return;
 		actionInFlight.current = true;
 		setBusy(true);
@@ -62,6 +65,17 @@ export function RecordingResult() {
 				if (kind === "folder") {
 					const result = await window.electronAPI.revealSavedRecording?.(info.path);
 					if (!result?.success) throw new Error("Reveal failed");
+				} else if (kind === "copy") {
+					setCopying(true);
+					setCopyPath(null);
+					const result = await window.electronAPI.copySavedRecording?.(info.path);
+					if (result?.canceled) return;
+					if (result?.errorCode === "exists") {
+						setError(t("recordingResult.copyExists"));
+						return;
+					}
+					if (!result?.success || !result.path) throw new Error("Copy failed");
+					setCopyPath(result.path);
 				} else {
 					await window.electronAPI.switchToEditor();
 				}
@@ -70,6 +84,7 @@ export function RecordingResult() {
 			setError(t("recordingResult.actionFailed"));
 		} finally {
 			actionInFlight.current = false;
+			setCopying(false);
 			setBusy(false);
 		}
 	};
@@ -113,10 +128,33 @@ export function RecordingResult() {
 						</div>
 					</>
 				)}
+				{copying && <p role="status">{t("recordingResult.copying")}</p>}
+				{copyPath && (
+					<p role="status" className={styles.copyResult}>
+						{t("recordingResult.copySaved")} <span>{copyPath}</span>
+					</p>
+				)}
 				<div className={styles.actions}>
 					{info && (
 						<button type="button" onClick={() => void action("folder")} disabled={busy}>
 							{t("recordingResult.openFolder")}
+						</button>
+					)}
+					{info && /\.(mp4|webm)$/i.test(info.name) && window.electronAPI.copySavedRecording && (
+						<button type="button" onClick={() => void action("copy")} disabled={busy}>
+							{t("recordingResult.saveCopy")}
+						</button>
+					)}
+					{copying && (
+						<button
+							type="button"
+							onClick={() => {
+								void window.electronAPI
+									.cancelSavedRecordingCopy?.()
+									.catch(() => setError(t("recordingResult.actionFailed")));
+							}}
+						>
+							{t("recordingResult.cancelCopy")}
 						</button>
 					)}
 					<button

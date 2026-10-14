@@ -58,6 +58,11 @@
 		"systemTip": "System cursor: your real cursor, recorded in the video. No restyling, no auto-zoom."
 	},
 	"recordingResult": {
+		"saveCopy": "Save a copy…",
+		"copying": "Copying the original, without edits…",
+		"copySaved": "Copy saved to:",
+		"cancelCopy": "Cancel copy",
+		"copyExists": "This destination already exists. Choose a new name; the original and existing files will be preserved.",
 		"originalPreview": "Original video preview. Separate camera, editable cursor and edits appear in Edit.",
 		"saved": "Recording saved",
 		"title": "Recording",

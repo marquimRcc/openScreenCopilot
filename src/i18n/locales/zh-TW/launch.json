@@ -58,6 +58,11 @@
 		"systemTip": "系統游標：真實游標，直接錄進影片。無法修改樣式，沒有自動縮放。"
 	},
 	"recordingResult": {
+		"saveCopy": "儲存副本…",
+		"copying": "正在複製原始影片，不含編輯效果…",
+		"copySaved": "副本已儲存至：",
+		"cancelCopy": "取消複製",
+		"copyExists": "目標檔案已存在。請選擇新名稱；原始影片和現有檔案將保留。",
 		"originalPreview": "原始影片預覽。獨立錄製的攝影機、可編輯游標和編輯效果可在「編輯」中查看。",
 		"saved": "錄製已儲存",
 		"title": "錄製",

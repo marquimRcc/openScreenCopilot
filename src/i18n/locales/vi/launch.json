@@ -53,6 +53,11 @@
 		"quality2160p": "4K"
 	},
 	"recordingResult": {
+		"saveCopy": "Lưu bản sao…",
+		"copying": "Đang sao chép bản gốc, không chỉnh sửa…",
+		"copySaved": "Bản sao đã lưu tại:",
+		"cancelCopy": "Hủy sao chép",
+		"copyExists": "Tệp đích đã tồn tại. Chọn tên mới; bản gốc và các tệp hiện có sẽ được giữ nguyên.",
 		"originalPreview": "Xem trước video gốc. Camera riêng, con trỏ có thể chỉnh sửa và các chỉnh sửa xuất hiện trong Chỉnh sửa.",
 		"saved": "Đã lưu bản ghi",
 		"title": "Bản ghi",

@@ -398,7 +398,41 @@ Pacote local atualizado não relançado; app em uso não tocado, sem novo aceite
 Pedido humano de redução de ruído do microfone mantido como backlog no ROADMAP,
 sem implementação nem mudança de padrão nesta rodada.
 
-## Regra de atualização
+## Incremento 02I — cópia segura do original na tela simples
+
+`SavedRecordingCopies` conecta destinos 02G ao diálogo nativo/IPC/preload e ao
+botão Salvar uma cópia. Dono precisa ser a janela main atual no papel resultado;
+destino vem exclusivamente do diálogo main-owned, não do renderer. Originais
+MP4/WebM são copiados em stream, sem recompressão e sem upload/composição.
+Fonte aprovada/sessão/estado e SHA256/size/mtime/identidade conferidos antes de
+publicação exclusiva; cancelamento/owner fechado abortam stream, aguardam fechamento
+e limpam somente staged próprio. Nova captura bloqueada no main durante cópia.
+Destino existente gera orientação traduzida para escolher outro nome, nunca overwrite.
+UI mostra caminho real, ocupado/cancelar; original permanece selecionado.
+
+41 testes focados / 4 arquivos aprovados (bytes MP4/WebM, original intacto, cancel,
+owner/expectativa estrangeiros, sessão/fonte trocada no diálogo, colisão, duplicata,
+cancelamento UI e navegação desabilitada). Typechecks app/testes e i18n15/964chaves
+aprovados após corrigir namespace do título e usar owner estrutural mínimo; lint26
+avisos herdados, sem erros. Suíte completa: 346 arquivos / 4.841 aprovados /
+5 ignorados / 305,81 s, Node22.22.1/npm10.9.4 e quatro workers.
+Build/pacote final aprovados, 23 arquivos nativos SHA256 idênticos e docs:check50
+aprovado. Pacote `.cache/result-package/win-unpacked` atualizado, não instalado
+nem relançado; app protegido em uso continua anterior. Fixture própria PID22580
+encerrada após conferir identidade/estado ocioso; cópia/logs sintéticos preservados.
+
+QA computer-use isolada com renderer/preload/controller reais, diálogo Save e
+fixture MP4 sintética: clique Salvar uma cópia abriu diálogo; após ativação ficou
+visível; índice Save indisponível foi recuperado com observação nova/coordenadas.
+Salvar criou `.cache/copy-qa-1791964064643.mp4` e exibiu caminho correto.
+Origem/cópia SHA256 d6a5106181cef45aab7199326d25e86a1fceb9e460099f07de9207751dbe2365,
+H264 960×600, 5,033733 s, 266.116 bytes, decode integral sem erro.
+Após fechar modal screenshot voltou sobreposta; uma ativação não resolveu, sem
+mais cliques cegos. Cancel nativo, layout final após ajustes CSS/ordem, wiring da
+janela completa e fluxo captura→resultado seguem sem aceite real; unidade/harness
+não os substituem. App protegido PID21240 não tocado. Sem novo GIF/Compartilhar.
+
+## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.
