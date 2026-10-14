@@ -905,6 +905,14 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02X, Windows 11, isolated Electron/preload/IPC/helper.
+**Programmatic partial, no GUI acceptance:** default output ready, foreign/busy and
+wrong token rejected; scalar events share main UUID, stop waits close, capture guard
+drains, reload invalidates, close veto resumes and terminal quit exit0. No streams,
+PCM, playback, desktop recording or user app changes. GUI skipped: UI not mounted;
+audible capture, disconnect, DPI/border and full capture-to-result still unapproved.
+Final receipt and validation status in project/STATUS.md; not a release candidate.
+
 2026-10-14 — openScreenCopilot 02W, Windows 11, isolated Electron/main meter guard.
 **Programmatic partial, no GUI acceptance:** real meter drained before simulated
 browser grant; native scope held through actual capabilities-child close (not screen

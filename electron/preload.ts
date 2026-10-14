@@ -6,6 +6,11 @@ import type { RecordingSession, StoreRecordedSessionInput } from "../src/lib/rec
 import type { SavedGifProgress, SavedGifRequest } from "../src/lib/savedRecordingGif";
 import type { ShortcutBinding } from "../src/lib/shortcuts";
 import type {
+	WindowsOutputMeterMessage,
+	WindowsOutputMeterStartResult,
+	WindowsOutputMeterStopResult,
+} from "../src/lib/windowsOutputMeter";
+import type {
 	AiEditionChatEvent,
 	AiEditionMcpHostRequest,
 	AiEditionMcpHostResponse,
@@ -68,6 +73,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		ipcRenderer.invoke("list-windows-audio-outputs") as Promise<
 			import("./ipc/windowsAudioOutputs").WindowsAudioOutputsResult
 		>,
+	startWindowsOutputMeter: () =>
+		ipcRenderer.invoke("start-windows-output-meter") as Promise<WindowsOutputMeterStartResult>,
+	stopWindowsOutputMeter: (meterId: string) =>
+		ipcRenderer.invoke(
+			"stop-windows-output-meter",
+			meterId,
+		) as Promise<WindowsOutputMeterStopResult>,
+	onWindowsOutputMeter: (listener: (message: WindowsOutputMeterMessage) => void) => {
+		const handler = (_event: unknown, message: WindowsOutputMeterMessage) => listener(message);
+		ipcRenderer.on("windows-output-meter-event", handler);
+		return () => ipcRenderer.off("windows-output-meter-event", handler);
+	},
 
 	// --- Native export encoder -------------------------------------------------
 	// The renderer composites and extracts frames but cannot spawn ffmpeg (it is

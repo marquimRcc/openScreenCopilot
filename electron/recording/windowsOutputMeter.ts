@@ -34,7 +34,7 @@ class MeterFailure extends Error {
 	}
 }
 
-/** Isolated main-process controller; no IPC or recording integration yet.
+/** Main-process controller; capture/quit admission is coordinated by its caller.
  * lookup must ONLY resolve the trusted helper path (no owned subprocesses).
  * Every process started here is retained until close, even if kill fails. */
 export class WindowsOutputMeter {

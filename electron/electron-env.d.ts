@@ -33,6 +33,17 @@ interface Window {
 		 *  navigator.clipboard.writeText, so Copy message crosses to main's
 		 *  clipboard module. Optional: shim/web contexts have no bridge. */
 		copyToClipboard?: (text: string) => Promise<void>;
+		startWindowsOutputMeter?: () => Promise<
+			import("../src/lib/windowsOutputMeter").WindowsOutputMeterStartResult
+		>;
+		stopWindowsOutputMeter?: (
+			meterId: string,
+		) => Promise<import("../src/lib/windowsOutputMeter").WindowsOutputMeterStopResult>;
+		onWindowsOutputMeter?: (
+			listener: (
+				message: import("../src/lib/windowsOutputMeter").WindowsOutputMeterMessage,
+			) => void,
+		) => () => void;
 		/** Read-only MMDevice outputs; does not change selection or open audio streams. */
 		listWindowsAudioOutputs?: () => Promise<
 			import("./ipc/windowsAudioOutputs").WindowsAudioOutputsResult

@@ -324,7 +324,10 @@ persiste até close do gravador e browser até fim/owner fechado. Frame/URL/pape
 região e escolha explícita são revalidados no main. Quit drena nas duas fases;
 reentrada agendada preserva veto e STT. QA isolada real passou; não é homologação
 GUI, captura audível ou handlers completos. Validação final/pacote no STATUS.
-Ainda NÃO há API/preload/UI de medidor. Requisitos para a próxima conexão:
+02X conecta API/preload do medidor; ainda sem componente visual montado. Start
+intenção sem argumento/ID/path, snapshot main-owned, UUID e eventos escalares;
+stop owner/frame/token aguarda close. Navegação principal cancela inclusive startup.
+QA isolada real passou; validação final/pacote em STATUS. Requisitos da UI/aceite:
 
 - Um helper/owner, token main-owned, apenas janela atual HUD/editor/frame principal
   local e escolha main-owned. Revalidar owner/estado após todos os awaits; readiness
@@ -342,6 +345,21 @@ Ainda NÃO há API/preload/UI de medidor. Requisitos para a próxima conexão:
 - Reusar UI de medidor existente, separar microfone/sistema, informar limitação
   sem apresentar zero como prova de falha. Não enviar PCM bruto ou ID arbitrário
   pelo renderer. Homologar áudio/GUI real depois, sem declarar aceite por unit tests.
+
+## Próxima fatia visual — planejada
+
+Próxima fatia visual do medidor (planejada, ainda não implementada): reutilizar
+AudioLevelMeter no seletor de saída já presente em HUD/RecStage. Teste explícito
+curto (lease nativa30s), não abrir hardware automaticamente nem reiniciar em loop.
+Botão Testar/Parar, estado iniciando/ativo/encerrado/indisponível e aviso: pico antes
+do volume, não prova de captura, modo exclusivo pode mostrar zero. Nenhum PCM chega
+à UI. Choice/sistema/locked/unmount invalidam a sessão; resposta tardia de start
+após unmount deve cancelar o UUID recebido. Eventos anteriores ao ACK ficam em
+buffer pequeno e só são aplicados ao UUID confirmado; eventos de outro job são
+ignorados. Não criar MediaStream/AudioContext novo para medir a saída Windows.
+Testes obrigatórios: ACK tardio, ready/ended antes ACK, token antigo, start/stop
+falhos, troca prefs, fechamento, StrictMode, sem autoretry/polling. Main02W/02X
+continua responsável por drain real mesmo quando o cleanup React atrasar/falhar.
 
 ## 02D — relógio e aceite
 

@@ -2,6 +2,15 @@
 
 Data da inicialização: 2026-10-13.
 
+## Continuidade autorizada — regra humana de 2026-10-14
+
+Desenvolver continuamente após a renovação, sem pausas entre incrementos nem espera
+de15min. Parar aos89% usados da janela5h; proteção semanal95% permanece. Preservar
+checkpoint e retomar após resetsAt aplicável+5min, sem consumir créditos de reset.
+Watchdog agendado serve apenas para recuperar chat ocioso, não interromper trabalho
+ativo nem criar segundo escritor. Disparo antecipado precisa de nova tentativa após
+a guarda temporal; regra diária isolada perdeu a retomada de14/10 e foi corrigida.
+
 ## Repriorização humana — 2026-10-14
 
 Estimativa de tamanho do GIF e Compartilhar ficam para o final, somente depois
@@ -976,6 +985,35 @@ do app do usuário. GUI/input OS, handlers completos captura→resultado, áudio
 DPI/borda física e desconexão continuam sem homologação. Próximo: IPC/preload do
 medidor com snapshot main-owned, depois UI existente e aceite real. GIF/Compartilhar
 permanecem no final, conforme prioridade humana.
+
+## Incremento 02X — IPC/preload do medidor
+
+API start/stop/event tipada, ainda SEM UI montada. Start aceita somente intenção
+sem argumentos; main lê preferência e cria snapshot literal de escolha, owner e
+callbacks. Apenas HUD/editor atual, frame principal e URL local/origem dev; sistema
+ligado e guardas02W/gate/estado ociosos. UUID nasce no controller e identifica
+starting/ready/level/ended; níveis já limitados/coalescidos, nunca PCM. Starting
+significa pedido admitido, NÃO medidor pronto. Falhas de helper/capability chegam
+como terminal tipado; ready valida endpoint efetivo. Stop exige UUID e owner/frame
+corretos e só responde após close. Registry permanece ocupado até drain inclusive
+erro no envio inicial. Snapshot do frame não reutiliza getter IPC após navegação;
+navegação principal, inclusive reload, invalida e cancela startup/helper, sem
+entregar eventos à página nova. Troca prefs/owner fechado/captura/quit usam02W.
+
+47focados/3arquivos aprovados (17novos IPC); ambos typechecks e lint26 herdados
+aprovados. QA real final isolada Electron/preload/IPC/helper passou com default,
+recusa foreign/busy/token incorreto, UUID coerente, stop apósclose, captura guardada,
+reload e veto/retomada/quit terminal exit0. Recibo privado
+`.cache/meter-ipc-qa-b7334e20-c790-4f80-a2ec-cf260e787d1e/metrics.json`.
+Sem IAudioClient/PCM/captura de tela/input OS; não homologa áudio audível ou GUI.
+Suíte completa uma vez:361arquivos/5.105aprovados/5ignorados/393,96s, Node22.22.1,
+dois workers,exit0/sem signal,fim23:01:47UTC; `.cache/meter-ipc-full.{json,log}`.
+Docs50/i18n15/980chaves aprovados. Vite/pacote completo aprovados;23payloads
+nativos e entry/main-C-zXdXuj/preload SHA256 iguais ao dist/origem. Sem alteração
+C++/Rust; WGCaaa797a9…f3c6a1d5 inalterado. Pacote `.cache/result-package/win-unpacked`
+atualizado02X, não instalado/relançado. Logs `.cache/meter-ipc-{lint,final-vite,package}.log`.
+App do usuário intacto. Próximo: hook/componente no seletor existente, textos15
+idiomas, estado honesto de atividade antesvolume e lease30s sem autorrestart cego.
 
 ## Regra de atualização contínua (entregas)
 

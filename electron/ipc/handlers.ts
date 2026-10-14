@@ -186,6 +186,7 @@ import {
 	isWindowsAudioOutputOwner,
 	registerWindowsAudioOutputHandlers,
 } from "./windowsAudioOutputs";
+import { registerWindowsOutputMeterHandlers } from "./windowsOutputMeter";
 
 const PROJECT_FILE_EXTENSION = "openscreen";
 export const SHORTCUTS_FILE = path.join(app.getPath("userData"), "shortcuts.json");
@@ -2782,6 +2783,18 @@ export function registerIpcHandlers(
 		window: getMainWindow,
 		isSupported: isWindowsGraphicsCaptureOsSupported,
 		helper: findNativeWindowsCaptureHelperPath,
+	});
+	registerWindowsOutputMeterHandlers({
+		ipc: ipcMain,
+		window: getMainWindow,
+		isSupported: isWindowsGraphicsCaptureOsSupported,
+		canPreview: () =>
+			windowsMeterCaptureGuard.canPreview() &&
+			!appRecording &&
+			!nativeWindowsCaptureProcess &&
+			!nativeWindowsStartGate.isBusy(),
+		prefs: () => recordingPrefs.get(),
+		meter: windowsOutputMeter,
 	});
 
 	ipcMain.handle("is-native-windows-capture-available", async () => {

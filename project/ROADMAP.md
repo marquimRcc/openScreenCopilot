@@ -57,7 +57,8 @@ persistência e preflight main-owned implementados02T; medidor do sistema e acei
 audível/visual real ainda pendentes. Fundação CLI/protocolo de medidor implementada
 e validada isoladamente02U. Transporte/controller validado isoladamente02V;
 02W integra drenagem no main antes da captura nativa/Chromium e no quit.
-API/preload/UI do medidor ainda não habilitados. Evidências02W no STATUS.
+02X conecta API/preload start/stop/event; UI ainda não montada.
+Evidências02W/02X no STATUS.
 Fundação independente autorizada pelo usuário;
 aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
