@@ -1063,6 +1063,26 @@ vídeo40/7/7/7ms. Tolerância diagnóstica do harness200ms, não aceite de longo
 30min/carga/pausa/DPI/mic/Teams/Slack/YouTube ou todos endpoints. Nenhuma mudança OS,
 download, upload ou captura de desktop privado. Confirma apenas este caso sintético.
 
+## 02Z — fluxo GUI completo pendente de autorização visual
+
+App compilado abriu em perfil QA próprio `.cache/full-app-qa-fa2d1ba3-afcb-482b-aa1d-97f00026f397`,
+com appData isolado antes initialize-identity e appPath do checkout; helper atual
+fixado no processo. HUD de QA desprotegido somente nessa instância; fonte sintética
+em processo separado. Startup/prefs padrão observados, sem clicar Gravar, sem MP4.
+Screenshot do HUD transparente mostrou fundo de Teams/navegador. Auto-review
+rejeitou ativação+nova screenshot por risco de conteúdo privado fora da fixture.
+Tentativa da alternativa de cobertura opaca em todos monitores também rejeitada
+por interferência ampla sem autorização explícita; NÃO executada. Não contornar.
+
+Solicitada autorização humana para cobertura temporária opaca de QA, sem alterar
+Windows/capturar apps ao fundo; ainda pendente. Não repetir GUI desse fluxo até
+resposta. Limpeza segura: observação apenas texto confirmou HUD ocioso/sem arquivos,
+AltF4 normal em HUD e fonte; processos próprios15480/25280 confirmados encerrados.
+Nenhuma instância com content-protection OFF ficou ativa. App/perfil/mídia do usuário
+intactos. Arraste/Escape/borda física/DPI/captura→resultado ainda NÃO homologados.
+Trabalho independente seguro pode continuar sem essa autorização; não tratar
+dependência de GUI como aceite nem repetir pedidos a cada wake.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

@@ -905,6 +905,15 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02Z, compiled app in separate QA appData, Windows 11.
+**Blocked visual-scope slice, no recording started:** transparent HUD screenshot
+included background apps. Auto-review denied activation+new screenshot; proposed
+all-monitor opaque QA covers also denied without explicit user authorization, not
+executed. Approval requested and pending; no workaround/retry before human reply.
+Text-only observation confirmed idle HUD/no MP4. Normal AltF4 closed own HUD/source,
+PIDs15480/25280 gone; no unprotected QA app left running, user app untouched.
+Region drag/Escape/border/DPI/capture-to-result remain unapproved. See STATUS.
+
 2026-10-14 — openScreenCopilot 02Y, Windows 11, React output-meter panel fixture.
 **Partial OS-input pass on visible fixture:** first hidden process did not expose a
 window; own idle PID28524 stopped after checking identity. Visible retry exposed the
