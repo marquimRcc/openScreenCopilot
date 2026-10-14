@@ -630,6 +630,58 @@ Logs finais `.cache/derivative-quit-{full,lint,vite,package}.log`.
 Typecheck inicial detectou Promise<void> versus Promise<undefined> no callback
 neutro; corrigido e ambos checks repetidos com sucesso antes do build final.
 
+## Incremento 02O — preservar STT quando edição veta saída
+
+Causa confirmada: before-quit precede close das janelas; shutdownStt terminal
+antes da confirmação tornava o gerente retido pelo IPC inutilizável após Cancelar.
+Não ressuscitar singleton nem relaxar guardas contra respawn durante shutdown.
+`createAppQuitLifecycle` separa preparação reversível de encerramento terminal:
+before-quit drena derivados e flush; will-quit, emitido somente após aceites de
+close, aguarda shutdownStt e novo flush antes de reentrar em quit. As duas fases
+usam createQuitBarrier; pedidos repetidos não contornam nenhuma espera. Reentrada
+terminal cruza novamente a fase anterior. Atalhos só são removidos quando o
+will-quit efetivamente passa. Callbacks de erro STT mantêm tratamento herdado.
+
+Cancelar close mantém o mesmo manager, helper e IPC; não cancela/transfere
+transcrição apenas por tentativa de quit. Derivados continuam com cancelamento
+e limpeza 02N. Flush também ocorre após confirmação/salvamento do editor.
+Não altera contratos/provedores/modelos nem a implementação nativa STT.
+
+4 arquivos/68 focados aprovados, ambos tsc e lint26 herdados aprovados. Fixture
+real isolada Windows com preload/IPC/STT e modelos já em cache: processou dois
+pedidos de silêncio sintético2s (um antes e outro após veto programático), mesmo
+manager, backend whispercpp-cpu, shutdown terminal uma vez, flush quatro vezes,
+will-quit PASS e exit0. `.cache/stt-veto-qa-RInQR4/metrics.json` e
+`.cache/stt-veto-final.*`. Downloads externos bloqueados no harness; somente
+HTTP loopback do helper permitido. Sem fala/segmentos: prova de ciclo operacional,
+NÃO qualidade/precisão ou retomada de uma transcrição longa em andamento.
+
+Primeiro harness apontou binário isolado `.cache/whisper-cpu/Release` e falhou
+startup3221225781; logs `.cache/stt-veto-qa.*` preservados. Repetido com helper do
+payload completo e suas DLLs, sem modificar/copiar binários: passou. App do
+usuário não tocado. Não equivale ao diálogo de edição/cliques OS nem ao app main
+completo. GUI e botão GIF seguem pendentes; crash/app.exit continuam fora do
+before/will-quit. Segunda QA real com window-all-closed chamando app.quit,
+como no main: `.cache/stt-veto-qa-YCCJZT/metrics.json` PASS e exit0;
+logs `.cache/stt-veto-lifecycle.*`, um shutdown e quatro flushes novamente.
+
+Ambos typechecks, lint26 herdados, i18n15/964chaves, docs50, Vite e pacote
+completo aprovados; 23 payloads nativos SHA256 idênticos, sem fonte nativa nova.
+Não declarar suíte completa aprovada: primeira execução encerrou quatro workers
+inesperadamente (348 arquivos aprovados/4 erros; `.cache/stt-veto-full.log`).
+Repetição isolada perdeu a sessão e deixou somente bytes nulos no log; sem recibo
+de saída, também inválida (`.cache/stt-veto-full-isolated.log`). Causa não
+confirmada; memória disponível medida depois não comprova OOM anterior.
+Terceira tentativa concluída com dois workers, sem build/QA simultâneos e runner
+que grava recibo JSON do exit code: `.cache/stt-veto-full-receipt.{log,json}`.
+352 arquivos/4.956 aprovados/5 ignorados/378,42s, Node22.22.1, exit0 e sem signal,
+terminou em2026-10-14T13:38:24Z. Sem mudança de código para obter esse passe.
+As tentativas inválidas permanecem preservadas, não são contadas como aprovadas.
+Pacote também conferido por hash: entry main.js, chunk efetivamente referenciado
+main-ClSkljfg.js e preload.mjs dentro de app.asar iguais ao dist atual, além dos
+23 payloads nativos. Verificador privado `.cache/check-stt-package.cjs`.
+Pacote não instalado/relançado; app do usuário intacto. Botão GIF ainda ausente.
+
 ## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

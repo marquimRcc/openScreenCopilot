@@ -48,3 +48,32 @@ export function createQuitBarrier(deps: Dependencies) {
 		})();
 	};
 }
+
+/** Split reversible preparation from terminal shutdown. Electron does not emit
+ * will-quit when an editor vetoes window close, so STT remains usable on cancel. */
+export function createAppQuitLifecycle(deps: {
+	pauseDerivatives(): Drain;
+	flush(): Promise<void>;
+	shutdownStt(): Promise<void>;
+	quit(): void;
+	onError(error: unknown): void;
+}) {
+	return {
+		beforeQuit: createQuitBarrier({
+			pauseDerivatives: deps.pauseDerivatives,
+			shutdown: deps.flush,
+			quit: deps.quit,
+			onError: deps.onError,
+		}),
+		willQuit: createQuitBarrier({
+			pauseDerivatives: () => ({ settled: Promise.resolve(), resume: () => undefined }),
+			shutdown: async () => {
+				await deps.shutdownStt();
+				// Include writes made while the editor was confirming/saving close.
+				await deps.flush();
+			},
+			quit: deps.quit,
+			onError: deps.onError,
+		}),
+	};
+}

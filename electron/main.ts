@@ -69,7 +69,7 @@ import {
 	showPermissionsWindow,
 	showPermissionsWindowIfNeeded,
 } from "./permissions";
-import { createQuitBarrier } from "./quitBarrier";
+import { createAppQuitLifecycle } from "./quitBarrier";
 import { setDisplaySleepBlocked } from "./recording/displaySleepBlocker";
 import { RecordingsDirManager } from "./recording/recordingsDirManager";
 import { offersStarPrompt, REPO_URL, storeReviewUrl } from "./star-prompt";
@@ -1139,20 +1139,15 @@ app.on("activate", () => {
 let pauseRecordingDerivatives: ReturnType<typeof registerIpcHandlers>["pauseRecordingDerivatives"] =
 	() => ({ settled: Promise.resolve(undefined), resume: () => undefined });
 
-// Electron does not wait for an async event listener. Hold the first quit long
-// enough to terminate the long-lived Whisper helper, then re-enter app.quit()
-// with a guard so the second before-quit event can proceed normally. Without
-// this, a normal Cmd+Q orphaned the helper under launchd with the model and GPU
-// resources still resident after every OpenScreen window had gone away.
-const quitBarrier = createQuitBarrier({
+// before-quit precedes window close confirmation. Drain derivatives here, but
+// do NOT terminally shut down STT until every window has accepted close.
+const quitLifecycle = createAppQuitLifecycle({
 	pauseDerivatives: () => pauseRecordingDerivatives(),
-	shutdown: () =>
-		shutdownStt()
-			.catch((error) => {
-				console.error("[stt] Failed to stop whisper helper during app quit:", error);
-			})
-			// Retry a failed persistence flush on the next quit attempt.
-			.then(flushChatPersistence),
+	flush: flushChatPersistence,
+	shutdownStt: () =>
+		shutdownStt().catch((error) => {
+			console.error("[stt] Failed to stop whisper helper during app quit:", error);
+		}),
 	quit: () => app.quit(),
 	onError: (error) => console.error("[quit] Failed to finish shutdown; app remains open:", error),
 });
@@ -1162,11 +1157,12 @@ app.on("before-quit", (event) => {
 	// quit is deferred below: the user asked to leave, and a check they can re-run from the
 	// tray is not worth holding the helper's teardown behind.
 	updateCheckAbort?.abort();
-	quitBarrier(event);
+	quitLifecycle.beforeQuit(event);
 });
 
-app.on("will-quit", () => {
-	unregisterAllGlobalShortcuts();
+app.on("will-quit", (event) => {
+	quitLifecycle.willQuit(event);
+	if (!event.defaultPrevented) unregisterAllGlobalShortcuts();
 });
 
 const appReady = !cliCommand && hasSingleInstanceLock ? app.whenReady() : null;

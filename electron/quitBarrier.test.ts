@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createQuitBarrier } from "./quitBarrier";
+import { createAppQuitLifecycle, createQuitBarrier } from "./quitBarrier";
 
 function deferred() {
 	let resolve!: () => void;
@@ -86,5 +86,87 @@ describe("coordinated before-quit", () => {
 		handle({ preventDefault: vi.fn() });
 		await tick();
 		expect(quit).toHaveBeenCalledOnce();
+	});
+});
+
+describe("app quit phases", () => {
+	it("keeps STT alive on window veto and waits for terminal shutdown only after close is accepted", async () => {
+		const veto = deferred(),
+			stopping = deferred(),
+			stopped = deferred(),
+			complete = deferred();
+		const event = () => ({
+			defaultPrevented: false,
+			preventDefault() {
+				this.defaultPrevented = true;
+			},
+		});
+		let vetoWindow = true;
+		let lifecycle!: ReturnType<typeof createAppQuitLifecycle>;
+		const quit = () => {
+			const before = event();
+			lifecycle.beforeQuit(before);
+			if (before.defaultPrevented) return;
+			if (vetoWindow) {
+				veto.resolve();
+				return;
+			}
+			const will = event();
+			lifecycle.willQuit(will);
+			if (!will.defaultPrevented) complete.resolve();
+		};
+		const shutdownStt = vi.fn(async () => {
+			stopping.resolve();
+			await stopped.promise;
+		});
+		const resume = vi.fn(),
+			flush = vi.fn(async () => undefined),
+			onError = vi.fn();
+		lifecycle = createAppQuitLifecycle({
+			pauseDerivatives: () => ({ settled: Promise.resolve(), resume }),
+			flush,
+			shutdownStt,
+			quit,
+			onError,
+		});
+		quit();
+		await veto.promise;
+		expect(shutdownStt).not.toHaveBeenCalled();
+		expect(resume).toHaveBeenCalledOnce();
+		vetoWindow = false;
+		quit();
+		await stopping.promise;
+		let exited = false;
+		void complete.promise.then(() => {
+			exited = true;
+		});
+		quit();
+		await tick();
+		expect(exited).toBe(false);
+		expect(shutdownStt).toHaveBeenCalledOnce();
+		stopped.resolve();
+		await complete.promise;
+		expect(onError).not.toHaveBeenCalled();
+		expect(flush.mock.calls.length).toBeGreaterThanOrEqual(4);
+	});
+	it("does not stop STT when preparation fails before any window close", async () => {
+		const failed = deferred(),
+			shutdownStt = vi.fn(async () => undefined),
+			quit = vi.fn(),
+			resume = vi.fn();
+		const lifecycle = createAppQuitLifecycle({
+			pauseDerivatives: () => ({ settled: Promise.resolve(), resume }),
+			flush: async () => {
+				throw new Error("flush failed");
+			},
+			shutdownStt,
+			quit,
+			onError: () => failed.resolve(),
+		});
+		lifecycle.beforeQuit({ preventDefault: vi.fn() });
+		await failed.promise;
+		expect(quit).not.toHaveBeenCalled();
+		expect(shutdownStt).not.toHaveBeenCalled();
+		expect(resume).toHaveBeenCalledOnce();
 	});
 });

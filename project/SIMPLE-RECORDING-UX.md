@@ -197,6 +197,19 @@ Teste isolado real de lifecycle/compositor passou duas tentativas, com veto
 programático entre elas, original intacto e sem staging final. Não equivale a
 input OS, diálogo real ou ASR. App do usuário e pacote em uso não tocados.
 
+### 02O — veto da edição preserva o STT
+
+Preparação reversível fica no before-quit (derivados e flush); encerramento
+terminal de Whisper passa ao will-quit, após todas as janelas aceitarem close.
+Assim Cancelar saída mantém o gerente/helper e IPC existentes, sem resetar
+guardas de shutdown. Novo flush inclui escrita ocorrida durante salvar/confirmar.
+Ambas as fases aguardam suas operações; repetir quit não contorna a espera.
+
+QA programática isolada real com preload/IPC e Whisper CPU processou silêncio
+sintético antes/depois de veto, mesmo gerente, um shutdown final e exit0.
+Não mede precisão da fala, transcrição longa em andamento nem diálogo OS real.
+Pacote/app em uso não tocados; a limitação de STT descrita em 02N é histórica.
+
 Integração mapeada (agora implementada em 02M): reutilizar
 `electron/mcp/hidden-video.ts:openVideoInHiddenWindow` para obter metadados da
 fonte já autorizada; sempre fechar a janela oculta em `finally` e revalidar

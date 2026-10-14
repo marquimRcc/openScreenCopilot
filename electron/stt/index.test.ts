@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
-
+import { createAppQuitLifecycle } from "../quitBarrier";
 import { planChunks } from "./chunking";
 import { _resetSttManagerForTests, getSttManager, SttManager, shutdownStt } from "./index";
 import type { SttStatusEvent, SttTranscribeResponse } from "./transcriptionContract";
@@ -407,6 +407,43 @@ describe("SttManager", () => {
 
 		expect(fakeWhisperServer.shutdown).toHaveBeenCalledOnce();
 		expect(() => getSttManager()).toThrowError(/cancel/i);
+	});
+	it("preserves the same STT manager and allows another transcription when window close vetoes quit", async () => {
+		const manager = getSttManager();
+		await manager.init({ modelsBaseDir: "/tmp/fake-stt-models" });
+		let vetoed!: () => void;
+		const veto = new Promise<void>((resolve) => {
+			vetoed = resolve;
+		});
+		let lifecycle!: ReturnType<typeof createAppQuitLifecycle>;
+		const quit = () => {
+			const event = {
+				defaultPrevented: false,
+				preventDefault() {
+					this.defaultPrevented = true;
+				},
+			};
+			lifecycle.beforeQuit(event);
+			if (!event.defaultPrevented) vetoed(); // Unsaved window refuses close, so no will-quit.
+		};
+		lifecycle = createAppQuitLifecycle({
+			pauseDerivatives: () => ({ settled: Promise.resolve(), resume: () => undefined }),
+			flush: async () => undefined,
+			shutdownStt,
+			quit,
+			onError: (error) => {
+				throw error;
+			},
+		});
+		quit();
+		await veto;
+		expect(getSttManager()).toBe(manager);
+		expect(fakeWhisperServer.shutdown).not.toHaveBeenCalled();
+		const response = await manager.transcribe({ samples: new Float32Array(16000), language: "en" });
+		expect(response.segments[0].text).toBe("hello");
+		expect(fakeWhisperServer.start).toHaveBeenCalledOnce();
+		expect(fakeWhisperServer.transcribe).toHaveBeenCalledOnce();
+		await shutdownStt();
 	});
 
 	it("does not respawn the helper when shutdown interrupts a failed chunk", async () => {
