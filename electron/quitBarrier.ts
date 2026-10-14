@@ -7,6 +7,7 @@ interface Dependencies {
 	shutdown(): Promise<void>;
 	quit(): void;
 	onError(error: unknown): void;
+	scheduleReentry?(continueQuit: () => void): void;
 }
 
 /** Electron before-quit is synchronous. Re-enter exactly once after owned work settles.
@@ -35,10 +36,20 @@ export function createQuitBarrier(deps: Dependencies) {
 			try {
 				await drain.settled;
 				await deps.shutdown();
-				drain.resume();
-				pending = false;
-				passNext = true;
-				deps.quit();
+				const reenter = () => {
+					try {
+						drain.resume();
+						pending = false;
+						passNext = true;
+						deps.quit();
+					} catch (error) {
+						passNext = false;
+						pending = false;
+						deps.onError(error);
+					}
+				};
+				if (deps.scheduleReentry) deps.scheduleReentry(reenter);
+				else reenter();
 			} catch (error) {
 				passNext = false;
 				pending = false;
@@ -64,9 +75,12 @@ export function createAppQuitLifecycle(deps: {
 			shutdown: deps.flush,
 			quit: deps.quit,
 			onError: deps.onError,
+			// Let Electron unwind the prevented event even when every awaited task
+			// completes in microtasks. Keep admission frozen until this callback.
+			scheduleReentry: (reenter) => setImmediate(reenter),
 		}),
 		willQuit: createQuitBarrier({
-			pauseDerivatives: () => ({ settled: Promise.resolve(), resume: () => undefined }),
+			pauseDerivatives: deps.pauseDerivatives,
 			shutdown: async () => {
 				await deps.shutdownStt();
 				// Include writes made while the editor was confirming/saving close.
@@ -74,6 +88,7 @@ export function createAppQuitLifecycle(deps: {
 			},
 			quit: deps.quit,
 			onError: deps.onError,
+			scheduleReentry: (reenter) => setImmediate(reenter),
 		}),
 	};
 }

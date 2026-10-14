@@ -5,7 +5,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { DesktopCapturerSource, Rectangle, WebContents } from "electron";
+import type { DesktopCapturerSource, Rectangle, WebContents, WebFrameMain } from "electron";
 import {
 	app,
 	BrowserWindow,
@@ -153,6 +153,8 @@ import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
 import { resolveWindowsAudioOutputForRecording } from "../recording/windowsAudioOutputs";
 import { WindowsCaptureStartGate } from "../recording/windowsCaptureStartGate";
+import { WindowsMeterCaptureGuard } from "../recording/windowsMeterCaptureGuard";
+import { WindowsOutputMeter } from "../recording/windowsOutputMeter";
 import { WindowsRegionIndicator } from "../recording/windowsRegionIndicator";
 import {
 	isWindowsRegionCurrent,
@@ -180,6 +182,7 @@ import { RecordingStreamRegistry, registerRecordingStreamHandlers } from "./reco
 import { isRecordingResultOwner, registerSavedRecordingGifHandlers } from "./savedRecordingGif";
 import { type SelectSourceContext, selectSourceWithOwnership } from "./selectSourceOwnership";
 import {
+	isWindowsAudioOutputFrameOwner,
 	isWindowsAudioOutputOwner,
 	registerWindowsAudioOutputHandlers,
 } from "./windowsAudioOutputs";
@@ -2029,6 +2032,8 @@ export function registerIpcHandlers(
 ) {
 	/** The HUD is recording a take, the user's or an MCP client's (`set-recording-state`). */
 	let appRecording = false;
+	const windowsOutputMeter = new WindowsOutputMeter(findNativeWindowsCaptureHelperPath);
+	const windowsMeterCaptureGuard = new WindowsMeterCaptureGuard(windowsOutputMeter);
 	const regionPicker = new WindowsRegionPicker();
 	const appSettings = new AppSettingsStore(app.getPath("userData"));
 	const broadcastSelectedSource = (source: SelectedSource | null) => {
@@ -2414,6 +2419,13 @@ export function registerIpcHandlers(
 		getMainWindow,
 		() => BrowserWindow.getAllWindows(),
 		(previous, next) => {
+			if (
+				previous.windowsSystemAudioDeviceId !== next.windowsSystemAudioDeviceId ||
+				previous.systemAudioEnabled !== next.systemAudioEnabled
+			) {
+				const pause = windowsOutputMeter.pauseAndDrain();
+				void pause.settled.finally(() => pause.resume());
+			}
 			// Apple's picker bakes the exclusions into the filter it hands back, so a pick made
 			// before "Hide desktop icons" changed would still record the desktop the old way.
 			// Dropping it makes the HUD ask for a new pick instead of ignoring the toggle.
@@ -2434,6 +2446,8 @@ export function registerIpcHandlers(
 		},
 		(event) =>
 			isWindowsAudioOutputOwner(getMainWindow(), event) &&
+			windowsMeterCaptureGuard.canPreview() &&
+			!appRecording &&
 			!nativeWindowsCaptureProcess &&
 			!nativeWindowsStartGate.isBusy(),
 	);
@@ -3095,7 +3109,16 @@ export function registerIpcHandlers(
 			const releaseStart = nativeWindowsStartGate.tryAcquire();
 			if (!releaseStart)
 				return { success: false, error: "Native Windows capture is being prepared." };
+			let meterCapture: ReturnType<WindowsMeterCaptureGuard["beginNative"]>;
 			try {
+				meterCapture = windowsMeterCaptureGuard.beginNative();
+			} catch {
+				releaseStart();
+				return { success: false, error: "Windows capture is active or shutting down." };
+			}
+			try {
+				await meterCapture.settled;
+				if (!meterCapture.isCurrent()) throw new Error("Windows capture preparation cancelled.");
 				if (!isWindowsGraphicsCaptureOsSupported()) {
 					return {
 						success: false,
@@ -3281,12 +3304,14 @@ export function registerIpcHandlers(
 				if ((recordingPrefs.get().windowsSystemAudioDeviceId ?? null) !== outputChoice) {
 					throw new Error("System audio output changed during preparation. Try again.");
 				}
+				if (!meterCapture.isCurrent()) throw new Error("Windows capture preparation cancelled.");
 				const proc = spawn(helperPath, [JSON.stringify(config)], {
 					cwd: RECORDINGS_DIR,
 					stdio: ["pipe", "pipe", "pipe"],
 					windowsHide: true,
 				});
 				nativeWindowsCaptureProcess = proc;
+				meterCapture.bind(proc);
 				proc.once("exit", () => windowsRegionIndicator.clear(proc));
 				nativeWindowsCaptureDrainCleanup = attachNativeWindowsCaptureOutputDrain(proc);
 				console.info("[native-wgc] helper spawned", { pid: proc.pid });
@@ -3385,6 +3410,7 @@ export function registerIpcHandlers(
 				await stopCursorRecording();
 				return { success: false, error: String(error) };
 			} finally {
+				meterCapture.finishPreparation();
 				releaseStart();
 			}
 		},
@@ -4390,7 +4416,15 @@ export function registerIpcHandlers(
 
 	ipcMain.handle(
 		"set-recording-state",
-		async (_, recording: boolean, recordingId?: number, cursorCaptureMode?: CursorCaptureMode) => {
+		async (
+			event,
+			recording: boolean,
+			recordingId?: number,
+			cursorCaptureMode?: CursorCaptureMode,
+		) => {
+			// Freeze preview admission before cursor initialization yields.
+			appRecording = recording;
+			if (!recording) windowsMeterCaptureGuard.endBrowser(event.sender);
 			const normalizedCursorCaptureMode =
 				normalizeCursorCaptureMode(cursorCaptureMode) ?? "editable-overlay";
 			if (recording && normalizedCursorCaptureMode === "editable-overlay") {
@@ -4400,7 +4434,6 @@ export function registerIpcHandlers(
 			}
 
 			const source = selectedSource || { name: "Screen" };
-			appRecording = recording;
 			mcpAppRecorder.recordingChanged(recording);
 			if (onRecordingStateChange) {
 				onRecordingStateChange(recording, source.name);
@@ -5522,12 +5555,26 @@ export function registerIpcHandlers(
 	// `openscreen mcp` serves the same tools on stdio, from the CLI process.
 	return {
 		mcpController,
+		prepareWindowsBrowserCapture: async (frame: WebFrameMain | null, audioRequested: boolean) => {
+			const window = getMainWindow();
+			const allowed = () =>
+				!selectedSource?.captureRegion &&
+				(!audioRequested || (recordingPrefs.get().windowsSystemAudioDeviceId ?? null) === null) &&
+				!appRecording &&
+				!nativeWindowsCaptureProcess &&
+				!nativeWindowsStartGate.isBusy() &&
+				isWindowsAudioOutputFrameOwner(getMainWindow(), window!.webContents, frame);
+			if (!window || !allowed()) throw new Error("Invalid Windows capture owner or state");
+			return windowsMeterCaptureGuard.beginBrowser(window.webContents, allowed);
+		},
 		pauseRecordingDerivatives: () => {
+			const meter = windowsMeterCaptureGuard.pauseForQuit();
 			const copies = savedRecordingCopies.pauseAndDrain();
 			const gifs = savedRecordingGifs.pauseAndDrain();
 			return {
-				settled: Promise.all([copies.settled, gifs.settled]).then(() => undefined),
+				settled: Promise.all([copies.settled, gifs.settled, meter.settled]).then(() => undefined),
 				resume: () => {
+					meter.resume();
 					copies.resume();
 					gifs.resume();
 				},

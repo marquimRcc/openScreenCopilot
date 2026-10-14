@@ -1808,6 +1808,8 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	) => {
 		const platform = window.electronAPI.getPlatform();
 		const browserCursorCaptureMode = effectiveBrowserCursorMode(platform, cursorCaptureMode);
+		let attemptedWindowsBrowserCapture = false;
+		let windowsBrowserCaptureStarted = false;
 
 		try {
 			if (!isCountdownRunActive(countdownRunToken)) {
@@ -1876,6 +1878,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			// start of the recording (issue #57).
 			const screenCapture = (async (): Promise<MediaStream> => {
 				if (platform === "win32") {
+					attemptedWindowsBrowserCapture = true;
 					// getDisplayMedia + setDisplayMediaRequestHandler (main.ts) supplies the
 					// pre-selected source. Editable cursor mode excludes the system cursor so
 					// the editor can render a replacement; system mode bakes it into the video.
@@ -2109,6 +2112,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			setPaused(false);
 			setElapsedSeconds(0);
 			window.electronAPI?.setRecordingState(true, recordingId.current, browserCursorCaptureMode);
+			windowsBrowserCaptureStarted = platform === "win32";
 
 			const activeScreenRecorder = screenRecorder.current;
 			const activeWebcamRecorder = webcamRecorder.current;
@@ -2131,6 +2135,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			}
 		} catch (error) {
 			console.error("Failed to start recording:", error);
+			windowsBrowserCaptureStarted = false;
 			const errorMsg = error instanceof Error ? error.message : "Failed to start recording";
 			if (errorMsg.includes("Permission denied") || errorMsg.includes("NotAllowedError")) {
 				toast.error(t("recording.permissionDenied"));
@@ -2145,6 +2150,14 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			screenRecorder.current = null;
 			webcamRecorder.current = null;
 			teardownMedia();
+		} finally {
+			if (attemptedWindowsBrowserCapture && !windowsBrowserCaptureStarted) {
+				try {
+					await window.electronAPI?.setRecordingState(false);
+				} catch {
+					console.warn("Failed to release Windows capture preparation");
+				}
+			}
 		}
 	};
 

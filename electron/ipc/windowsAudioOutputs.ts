@@ -1,4 +1,10 @@
-import type { BrowserWindow, IpcMain, IpcMainInvokeEvent } from "electron";
+import type {
+	BrowserWindow,
+	IpcMain,
+	IpcMainInvokeEvent,
+	WebContents,
+	WebFrameMain,
+} from "electron";
 import { listWindowsAudioOutputs, type WindowsAudioOutput } from "../recording/windowsAudioOutputs";
 
 export type WindowsAudioOutputsResult =
@@ -18,17 +24,25 @@ export function isWindowsAudioOutputOwner(
 	window: BrowserWindow | null,
 	event: IpcMainInvokeEvent,
 ): boolean {
+	return isWindowsAudioOutputFrameOwner(window, event.sender, event.senderFrame);
+}
+
+export function isWindowsAudioOutputFrameOwner(
+	window: BrowserWindow | null,
+	sender: WebContents,
+	frame: WebFrameMain | null,
+): boolean {
 	if (
 		!window ||
 		window.isDestroyed() ||
-		event.sender.isDestroyed() ||
-		window.webContents !== event.sender ||
-		!event.senderFrame ||
-		event.senderFrame !== event.sender.mainFrame
+		sender.isDestroyed() ||
+		window.webContents !== sender ||
+		!frame ||
+		frame !== sender.mainFrame
 	)
 		return false;
 	try {
-		const url = new URL(event.sender.getURL());
+		const url = new URL(sender.getURL());
 		const dev = process.env.VITE_DEV_SERVER_URL;
 		const local = url.protocol === "file:" || (dev && url.origin === new URL(dev).origin);
 		const role = url.searchParams.get("windowType");

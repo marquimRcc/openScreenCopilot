@@ -941,6 +941,42 @@ Sem rebuild C++/Rust, instalação/relançamento/publicação. Logs
 `.cache/meter-controller-{lint,vite,package}.log`. Fatia programática e skips GUI/
 captura/quit no results log manual. App do usuário e mídia privada preservados.
 
+## Incremento 02W — integração captura/quit
+
+WindowsOutputMeter agora instanciado no main, mas SEM API/preload/UI de início.
+WindowsMeterCaptureGuard reserva admissão antes de drenar; captura nativa aguarda
+close do medidor antes de spawn e mantém a pausa até close do gravador, não exit.
+Chromium Windows valida frame principal/janela HUD-editor atual/local, fonte atual,
+ausência de região e ausência de saída explícita quando há áudio; revalida após
+awaits. Falha de startup no hook libera preparação; owner fechado libera a lease.
+Mudança de preferência cancela/drena prévia. Quit usa a barreira existente, sem
+segundo listener; epochs impedem preparação antiga reviver após veto de saída.
+
+QA real isolada encontrou saída terminal parada na reentrada imediata após
+promessas já resolvidas. Três tentativas diagnósticas preservadas; somente processos
+próprios ociosos encerrados após conferir identidade. Reentrada agora usa setImmediate,
+mantendo admissão congelada até o callback; will-quit também drena antes de STT/flush.
+QA final Electron/helper passou: drenagem antes da concessão browser simulada,
+lease nativa ligada ao close de subprocesso capabilities (NÃO captura de tela),
+veto e retomada, saída terminal exit0. Recibo
+`.cache/meter-guard-qa-7ee1f53f-3c0c-4721-8496-7c4b2af90812/metrics.json`.
+Rechecagem STT real/preload/IPC passou antes/depois de veto programático, mesmo
+manager, silêncio sintético2s, shutdown único e quatro flushes; exit0, recibo
+`.cache/stt-veto-qa-KrFudH/metrics.json`. Não mede precisão de fala/ASR ao vivo.
+
+Testes focados e ambos typechecks aprovados; lint26 avisos herdados, i18n15/980chaves
+e docs50 aprovados. Suíte completa uma vez:360arquivos/5.088pass/5skip/472,84s,
+Node22.22.1,dois workers,exit0/sem signal,fim19:40:02UTC;
+`.cache/meter-capture-full.{json,log}`. Vite e pacote completos aprovados;
+23payloads nativos e entry/main-CX0K8b7A/preload SHA256 iguais ao dist/origem.
+WGCaaa797a9…f3c6a1d5 inalterado. Logs `.cache/meter-capture-{final-lint,vite,package}.log`.
+Pacote `.cache/result-package/win-unpacked` atualizado02W, não instalado/relançado.
+Não houve mudança C++/Rust, captura de desktop privado, instalação ou relançamento
+do app do usuário. GUI/input OS, handlers completos captura→resultado, áudio audível,
+DPI/borda física e desconexão continuam sem homologação. Próximo: IPC/preload do
+medidor com snapshot main-owned, depois UI existente e aceite real. GIF/Compartilhar
+permanecem no final, conforme prioridade humana.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

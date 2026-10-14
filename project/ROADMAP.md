@@ -55,8 +55,9 @@ indicador persistente em validação (02E). Enumeração/resolução nativa de s
 preparadas em02Q/02R, consulta main/preload implementada02S. Seletor de endpoint,
 persistência e preflight main-owned implementados02T; medidor do sistema e aceite
 audível/visual real ainda pendentes. Fundação CLI/protocolo de medidor implementada
-e validada isoladamente02U. Transporte/controller validado isoladamente02V, ainda
-sem integração main/preload/UI ou proteção antes da tomada.
+e validada isoladamente02U. Transporte/controller validado isoladamente02V;
+02W integra drenagem no main antes da captura nativa/Chromium e no quit.
+API/preload/UI do medidor ainda não habilitados. Evidências02W no STATUS.
 Fundação independente autorizada pelo usuário;
 aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).

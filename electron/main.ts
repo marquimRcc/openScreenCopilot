@@ -1138,6 +1138,11 @@ app.on("activate", () => {
 
 let pauseRecordingDerivatives: ReturnType<typeof registerIpcHandlers>["pauseRecordingDerivatives"] =
 	() => ({ settled: Promise.resolve(undefined), resume: () => undefined });
+let prepareWindowsBrowserCapture: ReturnType<
+	typeof registerIpcHandlers
+>["prepareWindowsBrowserCapture"] = async () => {
+	throw new Error("Recording services are not ready");
+};
 
 // before-quit precedes window close confirmation. Drain derivatives here, but
 // do NOT terminally shut down STT until every window has accepted close.
@@ -1222,10 +1227,47 @@ appReady?.then(async () => {
 				return;
 			}
 
-			callback({
-				video: source,
-				...(request.audioRequested && process.platform === "win32" ? { audio: "loopback" } : {}),
-			});
+			const grant = () =>
+				callback({
+					video: source,
+					...(request.audioRequested && process.platform === "win32" ? { audio: "loopback" } : {}),
+				});
+			if (process.platform !== "win32") {
+				grant();
+				return;
+			}
+			void (async () => {
+				let release: (() => void) | undefined;
+				const deny = () => {
+					try {
+						callback({});
+					} catch {
+						/* Request frame already gone. */
+					}
+				};
+				try {
+					const lease = await prepareWindowsBrowserCapture(request.frame, request.audioRequested);
+					release = lease.release;
+					if (
+						!lease.isCurrent() ||
+						!request.frame ||
+						getSelectedDesktopSource()?.id !== source.id
+					) {
+						release();
+						deny();
+						return;
+					}
+				} catch {
+					release?.();
+					deny();
+					return;
+				}
+				try {
+					grant();
+				} catch {
+					release?.();
+				}
+			})();
 		},
 		{ useSystemPicker: false },
 	);
@@ -1416,6 +1458,7 @@ appReady?.then(async () => {
 	);
 	const { mcpController, mcpAppChannel } = ipcServices;
 	pauseRecordingDerivatives = ipcServices.pauseRecordingDerivatives;
+	prepareWindowsBrowserCapture = ipcServices.prepareWindowsBrowserCapture;
 
 	// Native STT (whisper.cpp + forced alignment) — single instance per app.
 	registerSttIpc(ipcMain);

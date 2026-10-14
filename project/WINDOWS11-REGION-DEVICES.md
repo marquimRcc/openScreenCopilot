@@ -318,7 +318,13 @@ não desanexam helper se kill falhar. pauseAndDrain congela admissão sincroname
 travado que foi encerrado/aguardado. Não há instância no main de produção ainda;
 IPC/preload/UI, captura/quit continuam sem essa proteção. Evidências finais no STATUS.
 
-Próxima integração runtime (NÃO implementada):
+02W integra instância main, captura nativa/Chromium e quit antes de habilitar API.
+Admissão reservada antes de drenar, close efetivo antes da captura; lease nativa
+persiste até close do gravador e browser até fim/owner fechado. Frame/URL/papel,
+região e escolha explícita são revalidados no main. Quit drena nas duas fases;
+reentrada agendada preserva veto e STT. QA isolada real passou; não é homologação
+GUI, captura audível ou handlers completos. Validação final/pacote no STATUS.
+Ainda NÃO há API/preload/UI de medidor. Requisitos para a próxima conexão:
 
 - Um helper/owner, token main-owned, apenas janela atual HUD/editor/frame principal
   local e escolha main-owned. Revalidar owner/estado após todos os awaits; readiness

@@ -14,6 +14,31 @@ const tick = async () => {
 };
 
 describe("coordinated before-quit", () => {
+	it("keeps admission frozen and repeated quits blocked until scheduled reentry", async () => {
+		let reenter!: () => void;
+		const resume = vi.fn(),
+			quit = vi.fn(),
+			pause = vi.fn(() => ({ settled: Promise.resolve(), resume }));
+		const handle = createQuitBarrier({
+			pauseDerivatives: pause,
+			shutdown: async () => undefined,
+			quit,
+			onError: vi.fn(),
+			scheduleReentry: (callback) => {
+				reenter = callback;
+			},
+		});
+		const event = { preventDefault: vi.fn() };
+		handle(event);
+		await tick();
+		expect(resume).not.toHaveBeenCalled();
+		expect(quit).not.toHaveBeenCalled();
+		handle(event);
+		expect(pause).toHaveBeenCalledOnce();
+		reenter();
+		expect(resume).toHaveBeenCalledOnce();
+		expect(quit).toHaveBeenCalledOnce();
+	});
 	it("waits for derivatives then STT/persistence; repeated quit does not bypass either", async () => {
 		const drain = deferred(),
 			shutdown = deferred();

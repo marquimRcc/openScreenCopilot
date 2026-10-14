@@ -82,6 +82,7 @@ describe("Windows region capture never falls back to the full monitor", () => {
 		);
 		expect(view.result.current.recording).toBe(true);
 		expect(browserStart).not.toHaveBeenCalled();
+		expect(window.electronAPI.setRecordingState).not.toHaveBeenCalledWith(false);
 	});
 	it.each([
 		"missing-helper",
@@ -130,6 +131,23 @@ describe("Windows region capture never falls back to the full monitor", () => {
 		const view = await record();
 		expect(browserStart).not.toHaveBeenCalled();
 		expect(nativeStart).not.toHaveBeenCalled();
+		expect(view.result.current.recording).toBe(false);
+	});
+	it("releases pending browser preparation after Chromium rejects capture", async () => {
+		vi.mocked(window.electronAPI.getSelectedSource).mockResolvedValue({
+			id: "screen:7:0",
+			name: "Monitor",
+			display_id: "7",
+		} as never);
+		vi.mocked(window.electronAPI.isNativeWindowsCaptureAvailable).mockResolvedValue({
+			success: true,
+			available: false,
+			reason: "missing-helper",
+		});
+		browserStart.mockRejectedValue(new Error("NotAllowedError"));
+		const view = await record();
+		expect(browserStart).toHaveBeenCalled();
+		expect(window.electronAPI.setRecordingState).toHaveBeenCalledWith(false);
 		expect(view.result.current.recording).toBe(false);
 	});
 });

@@ -905,6 +905,17 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02W, Windows 11, isolated Electron/main meter guard.
+**Programmatic partial, no GUI acceptance:** real meter drained before simulated
+browser grant; native scope held through actual capabilities-child close (not screen
+capture). Window-close veto resumed admission; final quit exit0. Initial immediate
+terminal reentry stalled in three diagnostic runs; scheduled reentry fixed the final
+run. Real Whisper/preload/IPC silence requests before/after veto passed with the same
+manager, one terminal shutdown and four flushes. No user app/media touched. OS input,
+full handlers capture-to-result, audible output, DPI/border and disconnect skipped:
+no meter API/UI enabled yet; previous GUI targeting limitations remain unresolved.
+Evidence and final validation status in project/STATUS.md; not a release candidate.
+
 2026-10-14 — openScreenCopilot 02V, Windows 11, isolated Node production controller
 and native meter helper, no app UI/PCM. **Programmatic partial, GUI not run:** exact
 native readiness, four coalesced scalar events, cancel-to-close84ms. Own synthetic
