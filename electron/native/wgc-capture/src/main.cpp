@@ -15,10 +15,12 @@
 #include "wgc_session.h"
 
 #include <winrt/Windows.Foundation.h>
+#include <endpointvolume.h>
 
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <condition_variable>
 #include <cctype>
 #include <cstdint>
@@ -655,10 +657,73 @@ void readCaptureCommands(CaptureControl& control, const std::function<void(bool)
 // name) came out as bytes `utf8ToWide` could not decode, so Media Foundation was
 // handed a directory that does not exist and failed with ERROR_PATH_NOT_FOUND
 // (0x80070003) before any encoder was involved (getopenscreen/openscreen#483).
+// Read only the endpoint peak meter; never initialize IAudioClient, capture PCM,
+// start a keepalive or change volume. A main-owned stdin pipe is the lease owner.
+static int runOutputMeter(const std::wstring& requestedId) {
+    const auto error = [](const char* code) {
+        std::cout << "{\"schemaVersion\":1,\"event\":\"error\",\"code\":\"" << code << "\"}" << std::endl;
+        return 1;
+    };
+    const auto stopped = [](const char* reason) {
+        std::cout << "{\"schemaVersion\":1,\"event\":\"stopped\",\"reason\":\"" << reason << "\"}" << std::endl;
+        return 0;
+    };
+    const HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
+    if (input == INVALID_HANDLE_VALUE || GetFileType(input) != FILE_TYPE_PIPE)
+        return error("invalid-control-pipe");
+    Microsoft::WRL::ComPtr<IMMDevice> device;
+    WasapiOutputDevice info;
+    if (!resolveWasapiOutputDevice(requestedId, device, info)) return error("output-unavailable");
+    Microsoft::WRL::ComPtr<IAudioMeterInformation> meter;
+    if (FAILED(device->Activate(__uuidof(IAudioMeterInformation), CLSCTX_ALL, nullptr,
+                               reinterpret_cast<void**>(meter.GetAddressOf())))) return error("meter-unavailable");
+    DWORD support = 0;
+    if (FAILED(meter->QueryHardwareSupport(&support))) return error("meter-unavailable");
+    std::cout << "{\"schemaVersion\":1,\"event\":\"ready\",\"scope\":\"render-peak\",\"position\":\"before-endpoint-volume\",\"id\":\""
+              << jsonEscape(wideToUtf8(info.id)) << "\",\"hardwareMeter\":"
+              << ((support & ENDPOINT_HARDWARE_SUPPORT_METER) ? "true" : "false") << "}" << std::endl;
+    std::string command;
+    const auto start = std::chrono::steady_clock::now();
+    unsigned sequence = 0;
+    while (sequence < 300 && std::chrono::steady_clock::now() - start < std::chrono::seconds(30)) {
+        DWORD available = 0;
+        if (!PeekNamedPipe(input, nullptr, 0, nullptr, &available, nullptr)) {
+            if (GetLastError() == ERROR_BROKEN_PIPE) return stopped("stdin-eof");
+            return error("control-failed");
+        }
+        if (available) {
+            if (available > 64 || command.size() + available > 64) return error("invalid-command");
+            char buffer[64];
+            DWORD read = 0;
+            if (!ReadFile(input, buffer, available, &read, nullptr) || read == 0) return error("control-failed");
+            command.append(buffer, read);
+            if (command == "stop\n" || command == "stop\r\n") return stopped("stop");
+            if (std::string("stop\r\n").find(command) != 0 && std::string("stop\n").find(command) != 0)
+                return error("invalid-command");
+        }
+        DWORD state = 0;
+        if (FAILED(device->GetState(&state)) || state != DEVICE_STATE_ACTIVE) return error("output-unavailable");
+        float peak = 0;
+        if (FAILED(meter->GetPeakValue(&peak)) || !std::isfinite(peak) || peak < 0 || peak > 1)
+            return error("meter-unavailable");
+        // Quantized scalar, not audio samples. Sequence and total lifetime are bounded.
+        std::cout << "{\"schemaVersion\":1,\"event\":\"level\",\"sequence\":" << sequence++
+                  << ",\"peakPermille\":" << static_cast<int>(std::lround(peak * 1000)) << "}" << std::endl;
+        if (!std::cout.good()) return 1;
+        // Never burst/catch up after a slow COM call or scheduler stall.
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    return stopped("lease-expired");
+}
+
 int wmain(int argc, wchar_t* argv[]) {
     if (argc == 2 && std::wstring(argv[1]) == L"--capabilities") {
-        std::cout << "{\"schemaVersion\":1,\"captureRegion\":true,\"audioOutputEnumeration\":true,\"audioOutputSelection\":true}" << std::endl;
+        std::cout << "{\"schemaVersion\":1,\"captureRegion\":true,\"audioOutputEnumeration\":true,\"audioOutputSelection\":true,\"audioOutputMeter\":true}" << std::endl;
         return 0;
+    }
+    if (argc == 3 && std::wstring(argv[1]) == L"--meter-audio-output") {
+        winrt::init_apartment(winrt::apartment_type::multi_threaded);
+        return runOutputMeter(argv[2]);
     }
     if (argc == 2 && std::wstring(argv[1]) == L"--list-audio-outputs") {
         winrt::init_apartment(winrt::apartment_type::multi_threaded);

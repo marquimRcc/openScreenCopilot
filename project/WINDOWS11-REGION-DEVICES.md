@@ -300,6 +300,35 @@ Demais itens **ainda não implementados/homologados**:
 - Desconexão, mudança de formato e janela fechada devem gerar evento tipado e
   finalizar/salvar o material possível; teste de retorno e nova tomada obrigatório.
 
+## 02U — medidor nativo isolado e integração seguinte
+
+CLI --meter-audio-output ID e parser WindowsOutputMeterProtocol validados isoladamente;
+não usados pelo main/preload/HUD. Mede pico do endpoint, não PCM/loopback gravado:
+posição antes do volume da saída e zero possível no software em modo exclusivo.
+[Limitações oficiais](https://learn.microsoft.com/en-us/windows/win32/api/endpointvolume/nn-endpointvolume-iaudiometerinformation).
+Sem captura, keepalive, reprodução ou mudança de volume. ID resolvido uma vez;
+endpoint removido falha, nunca outro default. Lease30s, no máximo300amostras/10Hz;
+stop/EOF fecha, mensagens/campos/tamanho/ordem limitados. Evidências no STATUS.
+
+Próxima integração (NÃO implementada):
+
+- Um helper/owner, token main-owned, apenas janela atual HUD/editor/frame principal
+  local e escolha main-owned. Revalidar owner/estado após todos os awaits; readiness
+  não equivale a áudio gravado. Recusar helper sem capability audioOutputMeter.
+- Registrar job antes de resolver helper/capabilities. Cancelar startup pendente
+  deve impedir spawn tardio. Bounding de chunks sem newline/UTF8 parcial/total,
+  scalar-only, coalescing de UI e watchdog de startup/tempo total separados do
+  lease. COM ou stdout síncronos podem bloquear além de30s; drenar pipes e aguardar
+  close após eventual encerramento do helper próprio, sem prometer deadline nativo absoluto.
+- Parar e aguardar close na troca/desconexão/owner fechado/unmount/quit. Controlar
+  erro do stdin e eventual kill do helper próprio; nunca desanexar processo vivo.
+- Captura adquire gate primeiro, pausa admissão e aguarda helper fechar antes de
+  spawn do gravador. Não depender apenas de cleanup React. Preservar lock geral
+  da gravação e cancelamento de saída com edição não salva.
+- Reusar UI de medidor existente, separar microfone/sistema, informar limitação
+  sem apresentar zero como prova de falha. Não enviar PCM bruto ou ID arbitrário
+  pelo renderer. Homologar áudio/GUI real depois, sem declarar aceite por unit tests.
+
 ## 02D — relógio e aceite
 
 Documentar e testar T0 monotônico compartilhado por vídeo/áudio, pausas removidas

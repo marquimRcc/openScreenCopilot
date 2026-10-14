@@ -865,6 +865,45 @@ desconexão física ou input OS. Próximo incremento: medidor sistema limitado/m
 prévia parada antes da captura e homologação de endpoint audível/GUI. GIF/Compartilhar
 permanecem no final do roadmap. App do usuário e mídia preservados.
 
+## Incremento 02U — fundação isolada do medidor de saída
+
+CLI nativa --meter-audio-output ID consulta IAudioMeterInformation do endpoint
+eRender ativo resolvido uma vez, sem IAudioClient/PCM/keepalive/reprodução/alteração
+de volume. Aceita apenas stdin pipe, stop com newline e EOF; erros tipados, sem
+fallback. Ready anuncia ID efetivo/hardware/scope render-peak/posição anterior ao
+volume do endpoint. No máximo300 valores inteiros peakPermille0–1000, dez/s sem
+catch-up, lease30s. Revalida estado do mesmo endpoint, sem seguir mudança de padrão.
+Comandos/saída inválidos encerram; objetos COM são liberados no retorno. Startup COM
+e stdout bloqueado precisam de watchdog main na integração: lease30s não é prova
+de saída se uma chamada COM/escrita síncrona travar. Drenar pipes e, se necessário,
+encerrar somente o helper próprio, aguardando close antes de capturar.
+
+Parser main-only WindowsOutputMeterProtocol, ainda NÃO importado pelo runtime:
+confere ID explícito, schema/campos exatos/ordem/seq/pico/terminal, recusa PCM e
+limita20KiB/linha,128KiB total,300amostras. Futuro transporte precisa limitar também
+chunk sem newline, UTF8 parcial, eventos/UI e processos concorrentes. Não há
+IPC/preload/HUD ativo, owner/cancel/drain main ou bloqueio antes captura ainda.
+Não anunciar medidor pronto; próximo incremento conecta essas garantias primeiro.
+
+Limite documentado pela Microsoft: pico antes do volume da saída; medidor software
+em modo exclusivo pode mostrar zero. Atividade não comprova áudio capturado nem
+silêncio/falha; UI deverá explicar a limitação e não marcar gravação como homologada.
+Referência: [IAudioMeterInformation](https://learn.microsoft.com/en-us/windows/win32/api/endpointvolume/nn-endpointvolume-iaudiometerinformation).
+15focados aprovados, ambos typechecks/lint26 herdados/i18n15/980chaves/docs50
+aprovados. Build nativo completo aprovado, incluindo33encoderpass. QA real CLI
+passou com2saídas explícitas, default/EOF, stop, comando inválido, ID ausente,
+stdin não-pipe e expiração30s/274amostras; stop/EOF→close67–100ms, sem streams/PCM/
+reprodução. Script versionado scripts/test-windows-audio-output-meter.mjs;
+log privado `.cache/audio-meter-native-qa.log`. Seleção CLI anterior passou novamente.
+Suíte completa uma vez:358arquivos/5.056pass/5skip/347,44s, Node22.22.1, dois
+workers,exit0/sem signal,fim18:37:16UTC; `.cache/audio-meter-full.{json,log}`.
+Vite e pacote completos aprovados;23payloads e entry/main-B3cM0hdN/preload SHA
+iguais ao dist/origem. Main/preload continuam02T porque parser02U está isolado.
+Novo WGC SHA256aaa797a9c1adeceed256f8bce9c8c0c511bc92d55e330250a14d49d6f3c6a1d5.
+Logs `.cache/audio-meter-{native-final,lint,vite,package}.log`. Não instalar/relançar/
+publicar pacote. CLI sem GUI não homologa HUD, captura audível ou desconexão física;
+fatia e skips no results log manual. App do usuário/mídia privada preservados.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

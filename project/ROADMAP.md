@@ -54,7 +54,8 @@ Estado: crop D3D11, seletor retangular e resultado simples implementados;
 indicador persistente em validação (02E). Enumeração/resolução nativa de saídas
 preparadas em02Q/02R, consulta main/preload implementada02S. Seletor de endpoint,
 persistência e preflight main-owned implementados02T; medidor do sistema e aceite
-audível/visual real ainda pendentes.
+audível/visual real ainda pendentes. Fundação CLI/protocolo de medidor implementada
+e validada isoladamente02U, ainda sem integração main/preload/UI ou proteção antes da tomada.
 Fundação independente autorizada pelo usuário;
 aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).

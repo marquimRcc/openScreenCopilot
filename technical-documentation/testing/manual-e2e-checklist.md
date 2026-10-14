@@ -905,6 +905,15 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02U, Windows 11, read-only native endpoint meter CLI.
+**Partial, no GUI pass:** production helper peak API tested on two active outputs;
+stop/EOF/invalid command/missing endpoint/non-pipe stdin and 30s lease expiration.
+No IAudioClient/PCM/playback/volume mutation. Stop/EOF-to-close67–100ms; expiration274
+samples within bounded lease. Existing output selection CLI also passed. Native
+encoder regression33pass. GUI skipped because this foundation has no main/preload/UI
+integration yet; this is NOT an endpoint-audible, disconnect, HUD or capture-to-result
+acceptance. Full suite/package final evidence is in project/STATUS.md.
+
 2026-10-14 — openScreenCopilot 02T, Windows 11, isolated output-picker fixture
 with production React component/preload/prefs/output IPC and a separate profile.
 **Not run: OS interaction.** Fixture startup succeeded, but computer-use list_windows
