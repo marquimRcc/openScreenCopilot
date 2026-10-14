@@ -38,8 +38,9 @@ gravação baseline reproduzível. Evidência: versão/commit, logs, ffprobe e v
 
 Dependência: 01.
 
-Estado: 02A iniciada, com crop D3D11 e contrato de coordenadas testados, sem
-overlay/endpoint novo na interface. Fundação independente autorizada pelo usuário;
+Estado: crop D3D11, seletor retangular e resultado simples implementados;
+indicador persistente em validação (02E), endpoint novo ainda pendente.
+Fundação independente autorizada pelo usuário;
 aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
 
@@ -66,7 +67,8 @@ localização, Abrir pasta e Nova captura. Manter Editar em aba/ação secundár
 Em incrementos seguintes, adicionar Compartilhar (destino explícito, sem upload
 automático) e Transformar em GIF (trecho, estimativa, cancelamento e original intacto).
 Pedido registrado em 2026-10-13; especificação e aceites em
-[SIMPLE-RECORDING-UX.md](SIMPLE-RECORDING-UX.md). Ainda não implementado.
+[SIMPLE-RECORDING-UX.md](SIMPLE-RECORDING-UX.md). Primeiro incremento implementado;
+aceite completo e ações Compartilhar/GIF continuam pendentes.
 
 ## 03 — Spike e perfil de compressão ao vivo
 

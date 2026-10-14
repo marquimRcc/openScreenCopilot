@@ -147,6 +147,7 @@ import { removeEmptyCaptureOutput } from "../recording/removeEmptyCaptureOutput"
 import { createSavedRecordingActions } from "../recording/savedRecording";
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
+import { WindowsRegionIndicator } from "../recording/windowsRegionIndicator";
 import {
 	isWindowsRegionCurrent,
 	supportsWindowsRegion,
@@ -164,7 +165,7 @@ import {
 	shouldEnumerateRecordingSources,
 	shouldPersistSelectedSource,
 } from "../recording-source-settings";
-import { createRunnerWindow } from "../windows";
+import { createRegionIndicatorWindow, createRunnerWindow } from "../windows";
 import { getSourcesByType, shouldEnumerateSourceTypesSeparately } from "./desktopSourceTypes";
 import { registerNativeBridgeHandlers } from "./nativeBridge";
 import { createNativeMacMidCaptureErrorWatch } from "./nativeMacMidCaptureErrorWatch";
@@ -764,6 +765,7 @@ const MAX_CURSOR_SAMPLES = 60 * 60 * 30; // 1 hour @ 30Hz
 let cursorRecordingSession: CursorRecordingSession | null = null;
 let pendingCursorRecordingData: CursorRecordingData | null = null;
 let nativeWindowsCaptureProcess: ChildProcessWithoutNullStreams | null = null;
+const windowsRegionIndicator = new WindowsRegionIndicator(createRegionIndicatorWindow);
 let nativeWindowsCaptureOutput = "";
 let nativeWindowsCaptureTargetPath: string | null = null;
 let nativeWindowsCaptureWebcamTargetPath: string | null = null;
@@ -789,6 +791,7 @@ function detachNativeWindowsCaptureOutputDrain() {
 }
 
 function resetNativeWindowsCaptureState() {
+	windowsRegionIndicator.clear(nativeWindowsCaptureProcess ?? undefined);
 	nativeWindowsCaptureDrainCleanup = null;
 	nativeWindowsCaptureProcess = null;
 	nativeWindowsCaptureTargetPath = null;
@@ -3182,10 +3185,19 @@ export function registerIpcHandlers(
 					windowsHide: true,
 				});
 				nativeWindowsCaptureProcess = proc;
+				proc.once("exit", () => windowsRegionIndicator.clear(proc));
 				nativeWindowsCaptureDrainCleanup = attachNativeWindowsCaptureOutputDrain(proc);
 				console.info("[native-wgc] helper spawned", { pid: proc.pid });
 
 				await waitForNativeWindowsCaptureStart(proc);
+				if (crop && regionSelection && proc.exitCode === null && proc.signalCode === null) {
+					try {
+						windowsRegionIndicator.show(proc, regionSelection);
+					} catch (error) {
+						// An indicator failure must not destroy a recording already started.
+						console.warn("[native-wgc] region indicator unavailable", error);
+					}
+				}
 				const captureStartedAtMs = Date.now();
 				nativeWindowsCursorOffsetMs =
 					cursorCaptureMode === "editable-overlay"
@@ -3604,6 +3616,7 @@ export function registerIpcHandlers(
 
 	ipcMain.handle("stop-native-windows-recording", async (_, discard?: boolean) => {
 		const proc = nativeWindowsCaptureProcess;
+		if (proc) windowsRegionIndicator.clear(proc);
 		const preferredPath = nativeWindowsCaptureTargetPath;
 		const preferredWebcamPath = nativeWindowsCaptureWebcamTargetPath;
 		const recordingId = nativeWindowsCaptureRecordingId ?? Date.now();

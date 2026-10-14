@@ -285,7 +285,44 @@ App QA aberto permanece anterior e com proteção de conteúdo desativada para
 teste: verificar estado/encerrar somente instância própria ociosa e relançar
 sem a flag antes de gravações reais. Não interromper gravação/edição não salva.
 
-## Regra de atualização contínua
+## Incremento 02E — indicador persistente da região
+
+Borda vermelha pontilhada, 2 DIP, ligada por padrão para captura retangular nativa
+Windows. Janela transparente, sem foco/taskbar/preload/IPC e click-through;
+permanece com HUD oculto e durante pausa. Usa o crop físico efetivo (incluindo
+arredondamento par/interno) convertido localmente ao monitor, não o arraste bruto.
+Janela sempre protegida contra captura, mesmo com override de QA do HUD.
+Criada somente após helper anunciar início; removida ao parar/cancelar/reset/exit.
+Identidade do helper impede saída atrasada de uma tomada de fechar borda da próxima.
+Falha do indicador gera aviso no log sem destruir gravação já iniciada.
+
+Escopo atual: retângulo em monitor único. Não adiciona borda a janela móvel ou
+monitor inteiro; DPI misto, mudança de monitor e posicionamento físico da borda
+ainda dependem de aceite real. O indicador aproxima arestas em DIP inteiro, com
+erro visual possível de até meio DIP; não modifica os pixels efetivos do crop.
+
+Testes focados: 3 arquivos / 23 aprovados; typechecks app/testes e Vite aprovados;
+lint sem erros / 26 avisos herdados. Helper/payload nativo sem alteração de código.
+QA via computer-use observou fixture real, mas borda protegida é excluída das
+screenshots por definição. O primeiro smoke foi ocluído pela outra janela de QA;
+assert visual falhou (não é aceite). Repetição com fixture topmost confirmou janela
+da borda visível antes da captura e MP4 H.264 960×600, 5,034 s, 105.077 bytes,
+0 pixels vermelhos, 42.840 amarelos da referência, decode integral sem erro;
+stop 94 ms. Prova estreita de exclusão em cenário sintético, não de GUI completa.
+As duas fixtures antigas próprias (39108/10260) foram encerradas após conferir
+PID/executável/argumentos; nenhum arquivo foi apagado nem mídia privada enviada.
+
+Suíte final: 344 arquivos / 4.817 aprovados / 5 ignorados / 328,51 s, runtime
+fixado e quatro workers. Pacote isolado `.cache/indicator-package/win-unpacked`
+gerado sem instalador/publicação; 23 arquivos nativos conferidos por SHA256, zero
+diferenças (FFmpeg estático intencionalmente excluído). Não instalado/publicado.
+Após observar HUD antigo ocioso (sem fonte/gravação/editor) e conferir ausência
+de WGC ativo, encerrou-se somente o processo QA próprio 21796, com caminho
+verificado. Novo pacote relançado como PID 21240, sem
+`OPENSCREEN_DISABLE_CONTENT_PROTECTION`; janela própria retornada pelo computer-use
+e startup/atalho próprio confirmados no log. Não equivale a captura homologada.
+
+## Regra de atualização final
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.

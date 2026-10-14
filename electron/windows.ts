@@ -658,6 +658,42 @@ export function createEditorWindow(query: Record<string, string> = {}): BrowserW
  * Floating source-selector window for picking a screen or window to record.
  * Frameless, transparent, and follows the user across macOS Spaces.
  */
+export function createRegionIndicatorWindow(bounds: Electron.Rectangle): BrowserWindow {
+	const win = new BrowserWindow({
+		...bounds,
+		show: false,
+		frame: false,
+		transparent: true,
+		backgroundColor: "#00000000",
+		resizable: false,
+		movable: false,
+		focusable: false,
+		hasShadow: false,
+		skipTaskbar: true,
+		alwaysOnTop: true,
+		webPreferences: { sandbox: true, nodeIntegration: false, contextIsolation: true },
+	});
+	win.setMenu(null);
+	win.setBounds(bounds);
+	win.setIgnoreMouseEvents(true);
+	// Unlike the HUD's QA override, the border must NEVER be baked into a take.
+	win.setContentProtection(true);
+	win.setAlwaysOnTop(true, "screen-saver");
+	win.once("ready-to-show", () => {
+		if (!win.isDestroyed()) win.showInactive();
+	});
+	void win
+		.loadURL(
+			`data:text/html;charset=utf-8,${encodeURIComponent(
+				"<!doctype html><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'\"><title>Recording region</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{box-sizing:border-box;border:2px dashed #ef4444;pointer-events:none}</style>",
+			)}`,
+		)
+		.catch(() => {
+			if (!win.isDestroyed()) win.destroy();
+		});
+	return win;
+}
+
 export function createRegionSelectionWindow(bounds: Electron.Rectangle): BrowserWindow {
 	const win = new BrowserWindow({
 		...bounds,

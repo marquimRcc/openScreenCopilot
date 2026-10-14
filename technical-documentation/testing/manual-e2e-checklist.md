@@ -905,6 +905,17 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02E, Windows 11 @150%, native WGC synthetic
+indicator smoke. **Partial:** production indicator factory, protected non-focusable
+click-through window; accessibility/screenshot observed underlying synthetic fixture.
+Initial native smoke was occluded by another own QA window (assert failed).
+Repeat with fixture topmost: indicator `isVisible=true` before capture; H.264
+960×600, 5.034 s, 105077 bytes, zero red pixels, 42840 yellow reference pixels,
+clean full decode, 94 ms stop. This only validates exclusion in a synthetic scene;
+protected indicator cannot be judged from its excluded screenshot. Physical border
+appearance, real click-through, HUD hidden/pause and app stop/cancel/restart flows
+remain unapproved. Unit lifecycle/geometry/security tests are not OS-input passes.
+
 2026-10-14 — openScreenCopilot 02D, Windows 11 @150%, isolated Electron
 result-window harness using production renderer/preload and a synthetic MP4.
 **Partial / blocked visual input:** accessibility reported saved filename/path,
