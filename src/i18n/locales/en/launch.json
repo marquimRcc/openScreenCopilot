@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "Audio output",
+		"outputDefault": "Windows default",
+		"outputUnavailable": "Selected output unavailable",
+		"outputRefresh": "Refresh",
+		"outputLoading": "Loading outputs…",
+		"outputLoadFailed": "Could not load outputs. You can choose Windows default or refresh.",
+		"outputSaveFailed": "Could not save the output. Try again.",
+		"outputScope": "Records all sound played through this output, not a single app.",
 		"systemAudio": "System audio",
 		"microphone": "Microphone",
 		"inputDevice": "Input device"

@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "Đầu ra âm thanh",
+		"outputDefault": "Mặc định của Windows",
+		"outputUnavailable": "Đầu ra đã chọn không khả dụng",
+		"outputRefresh": "Làm mới",
+		"outputLoading": "Đang tải đầu ra…",
+		"outputLoadFailed": "Không thể tải đầu ra. Chọn mặc định của Windows hoặc làm mới.",
+		"outputSaveFailed": "Không thể lưu đầu ra. Hãy thử lại.",
+		"outputScope": "Ghi mọi âm thanh phát qua đầu ra này, không chỉ một ứng dụng.",
 		"systemAudio": "Âm thanh hệ thống",
 		"microphone": "Micro",
 		"inputDevice": "Thiết bị đầu vào"

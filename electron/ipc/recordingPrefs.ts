@@ -1,4 +1,4 @@
-import { app, type BrowserWindow, ipcMain } from "electron";
+import { app, type BrowserWindow, type IpcMainInvokeEvent, ipcMain } from "electron";
 import { AppSettingsStore } from "../app-settings";
 import type { RecordingPrefs } from "./handlers";
 
@@ -15,6 +15,7 @@ export function registerRecordingPrefsHandlers(
 		return mainWindow ? [mainWindow] : [];
 	},
 	onChange?: (previous: RecordingPrefs, next: RecordingPrefs) => void,
+	canSetWindowsOutput?: (event: IpcMainInvokeEvent) => boolean,
 ): { get(): RecordingPrefs; set(prefs: Partial<RecordingPrefs>): RecordingPrefs } {
 	const userData = app.getPath("userData");
 	const settings = new AppSettingsStore(userData);
@@ -37,6 +38,15 @@ export function registerRecordingPrefsHandlers(
 		return recordingPrefs;
 	};
 	ipcMain.handle("get-recording-prefs", () => recordingPrefs);
-	ipcMain.handle("set-recording-prefs", (_, prefs: Partial<RecordingPrefs>) => set(prefs));
+	ipcMain.handle("set-recording-prefs", (event, prefs: Partial<RecordingPrefs>) => {
+		if (
+			// biome-ignore lint/suspicious/noPrototypeBuiltins: Object.hasOwn is outside the app's TypeScript target library.
+			Object.prototype.hasOwnProperty.call(prefs, "windowsSystemAudioDeviceId") &&
+			!canSetWindowsOutput?.(event)
+		) {
+			throw new Error("System audio output changes require the current recording window.");
+		}
+		return set(prefs);
+	});
 	return { get: () => recordingPrefs, set };
 }

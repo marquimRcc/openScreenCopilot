@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "Sortie audio",
+		"outputDefault": "Par défaut de Windows",
+		"outputUnavailable": "Sortie sélectionnée indisponible",
+		"outputRefresh": "Actualiser",
+		"outputLoading": "Chargement des sorties…",
+		"outputLoadFailed": "Impossible de charger les sorties. Choisissez celle par défaut de Windows ou actualisez.",
+		"outputSaveFailed": "Impossible d’enregistrer la sortie. Réessayez.",
+		"outputScope": "Enregistre tous les sons de cette sortie, pas une seule application.",
 		"systemAudio": "Audio système",
 		"microphone": "Microphone",
 		"inputDevice": "Périphérique d'entrée"

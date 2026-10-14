@@ -905,6 +905,17 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02T, Windows 11, isolated output-picker fixture
+with production React component/preload/prefs/output IPC and a separate profile.
+**Not run: OS interaction.** Fixture startup succeeded, but computer-use list_windows
+and list_apps exposed no target window for it. No coordinates, screenshot or input
+were used; no inference that the desktop was locked. Only own fixture PID18580 was
+stopped after verifying executable/arguments; no streams/recording/unsaved edits.
+Backend real-helper QA passed separately, not equivalent to GUI or audible capture.
+Unit regression357files/5041pass/5skip; package02T built, not installed/relaunched.
+Pending: HUD/RecStage real layout, selection/restart, disconnect/return and audible
+capture on chosen endpoint, full capture-to-result/DPI/border acceptance.
+
 2026-10-14 — openScreenCopilot 02I, Windows 11 @150%, isolated Saved Copy QA
 with production renderer/preload/copy controller, synthetic MP4 and real native
 Save dialog. **Partial:** real click opened dialog; activation revealed owned

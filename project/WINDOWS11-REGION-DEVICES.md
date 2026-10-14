@@ -248,6 +248,27 @@ ambos typechecks/lint26/i18n15/docs50 aprovados; suíte355arquivos/5.003pass/5sk
 e pacote completos aprovados,23payloads e código conferidos por SHA256. Pacote
 não instalado/relançado; sem novo seletor UI/medidor. Detalhes no STATUS.
 
+### 02T — seletor, preferência e preflight implementados
+
+windowsSystemAudioDeviceId é separado de micDeviceId: null pede padrão por tomada,
+string é ID MMDevice, preservado após reinício/desconexão. Store recusa seleções
+inválidas no patch; IPC protege mudança por owner/frame/URL e estado ocioso Windows.
+Main toma a escolha persistida, não ID arbitrário do request renderer, reenumera
+e exige capability de seleção para ID explícito. Ausente/desconectado/helper antigo
+é erro, nunca default/Chromium silencioso. Default mantém campo nativo ausente.
+Escolha é conferida novamente antes do spawn. Startup Windows fica reservado
+até sucesso ou cleanup, com liberação idempotente, para não disputar estado global.
+
+Seletor em HUD/RecStage mostra nomes/padrão/indisponível, Atualizar sem polling,
+escrita aguardada e preferência desconectada preservada. Reset para padrão exige
+escolha explícita. Toggle de sistema e microfone independentes; textos15 idiomas.
+Medidor sistema ainda pendente. Focados store/IPC/preflight/gate/hook:83/6arquivos;
+UI:142/3arquivos. QA real isolada de persistência/preflight passou sem streams.
+Full357arquivos/5.041pass/5skip, ambos tsc/lint26/i18n15/docs50 e pacote completos
+aprovados;23payloads e código main/preload conferidos. Tentativa fixture GUI não
+expôs janela controlável; sem input OS. Não homologa captura audível/desconexão
+física/GUI integral. Validações e limitações no STATUS.
+
 Padrão de áudio implementado em código em 2026-10-14: store durável, fallback IPC,
 painel de preparação e browser shim passam a iniciar com sistema ligado; uma
 preferência booleana `false` salva continua desligada. Microfone e câmera continuam

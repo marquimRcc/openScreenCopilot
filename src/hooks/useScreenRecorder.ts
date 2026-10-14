@@ -271,6 +271,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const [webcamQuality, setWebcamQuality] = useState<WebcamQualityId>(DEFAULT_WEBCAM_QUALITY);
 	const [webcamDeviceName, setWebcamDeviceName] = useState<string | undefined>(undefined);
 	const [systemAudioEnabled, setSystemAudioEnabled] = useState(false);
+	const [windowsSystemAudioDeviceId, setWindowsSystemAudioDeviceId] = useState<string | null>(null);
 	const [webcamEnabled, setWebcamEnabledState] = useState(false);
 	const [cursorCaptureMode, setCursorCaptureMode] = useState<CursorCaptureMode>("editable-overlay");
 	const [softwareEncoderFallbackNoticeVisible, setSoftwareEncoderFallbackNoticeVisible] =
@@ -295,6 +296,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			camDeviceName?: string | null;
 			camQuality?: WebcamQualityId | null;
 			systemAudioEnabled: boolean;
+			windowsSystemAudioDeviceId?: string | null;
 			cursorCaptureMode: CursorCaptureMode;
 		}) => {
 			if (cancelled) return;
@@ -313,6 +315,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			}
 			setWebcamQuality(webcamQualityFrom(prefs.camQuality));
 			setSystemAudioEnabled(prefs.systemAudioEnabled);
+			setWindowsSystemAudioDeviceId(prefs.windowsSystemAudioDeviceId ?? null);
 			setCursorCaptureMode(prefs.cursorCaptureMode);
 			setRecordingPrefsLoaded(true);
 		};
@@ -1192,6 +1195,11 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 
 			const availability = await window.electronAPI.isNativeWindowsCaptureAvailable();
 			if (!availability.success || !availability.available) {
+				if (systemAudioEnabled && windowsSystemAudioDeviceId !== null) {
+					throw new Error(
+						"The selected system audio output requires native Windows capture. Browser fallback is disabled.",
+					);
+				}
 				if (selectedSource.captureRegion)
 					throw new Error(
 						"Region capture requires the native Windows helper. Full-screen fallback is disabled.",

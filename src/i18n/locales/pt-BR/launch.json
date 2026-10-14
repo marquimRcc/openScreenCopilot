@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "Saída de áudio",
+		"outputDefault": "Padrão do Windows",
+		"outputUnavailable": "Saída selecionada indisponível",
+		"outputRefresh": "Atualizar",
+		"outputLoading": "Carregando saídas…",
+		"outputLoadFailed": "Não foi possível carregar as saídas. Escolha o padrão do Windows ou atualize.",
+		"outputSaveFailed": "Não foi possível salvar a saída. Tente novamente.",
+		"outputScope": "Grava todos os sons reproduzidos nesta saída, não apenas um aplicativo.",
 		"systemAudio": "Áudio do sistema",
 		"microphone": "Microfone",
 		"inputDevice": "Dispositivo de entrada"

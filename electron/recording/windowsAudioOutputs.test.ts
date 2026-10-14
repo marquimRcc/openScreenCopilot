@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { listWindowsAudioOutputs, parseWindowsAudioOutputs } from "./windowsAudioOutputs";
+import {
+	listWindowsAudioOutputs,
+	parseWindowsAudioOutputs,
+	resolveWindowsAudioOutputForRecording,
+} from "./windowsAudioOutputs";
 
 const mocks = vi.hoisted(() => ({ exec: vi.fn() }));
 vi.mock("node:child_process", () => ({ execFile: mocks.exec }));
@@ -66,5 +70,74 @@ describe("native Windows audio output snapshot", () => {
 		await expect(listWindowsAudioOutputs("trusted.exe")).rejects.toThrow("enumeration failed");
 		mocks.exec.mockImplementation((_helper, _args, _opts, callback) => callback(null, "invalid"));
 		await expect(listWindowsAudioOutputs("trusted.exe")).rejects.toThrow();
+	});
+});
+
+describe("main-owned explicit output preflight", () => {
+	beforeEach(() => vi.resetAllMocks());
+	it("keeps legacy default compatible without probing old helpers", async () => {
+		await expect(
+			resolveWindowsAudioOutputForRecording("helper.exe", null),
+		).resolves.toBeUndefined();
+		expect(mocks.exec).not.toHaveBeenCalled();
+	});
+	it.each([
+		"",
+		" ",
+		"default",
+		"bad\0id",
+		"x".repeat(4097),
+	])("rejects invalid saved selection %s before running helper", async (choice) => {
+		await expect(resolveWindowsAudioOutputForRecording("helper.exe", choice)).rejects.toThrow(
+			"invalid",
+		);
+		expect(mocks.exec).not.toHaveBeenCalled();
+	});
+	it.each([
+		"{}",
+		"bad",
+		'{"schemaVersion":2,"audioOutputSelection":true}',
+		'{"schemaVersion":1,"audioOutputSelection":false}',
+	])("refuses incompatible helper capability %s without enumerating", async (answer) => {
+		mocks.exec.mockImplementation((_helper, _args, _opts, callback) => callback(null, answer));
+		await expect(resolveWindowsAudioOutputForRecording("helper.exe", device.id)).rejects.toThrow(
+			"No fallback",
+		);
+		expect(mocks.exec).toHaveBeenCalledTimes(1);
+	});
+	it("reenumerates and resolves only the exact native ID, not friendly name/default", async () => {
+		mocks.exec.mockImplementation((_helper, args, _opts, callback) =>
+			callback(
+				null,
+				args[0] === "--capabilities"
+					? '{"schemaVersion":1,"audioOutputSelection":true}'
+					: snapshot(),
+			),
+		);
+		await expect(resolveWindowsAudioOutputForRecording("helper.exe", device.id)).resolves.toBe(
+			device.id,
+		);
+		await expect(resolveWindowsAudioOutputForRecording("helper.exe", device.name)).rejects.toThrow(
+			"unavailable",
+		);
+		await expect(
+			resolveWindowsAudioOutputForRecording("helper.exe", "disconnected"),
+		).rejects.toThrow("unavailable");
+	});
+	it("does not accept a capability on timeout or fall back after failed enumeration", async () => {
+		mocks.exec.mockImplementation((_helper, _args, _opts, callback) =>
+			callback(new Error("timeout"), '{"schemaVersion":1,"audioOutputSelection":true}'),
+		);
+		await expect(resolveWindowsAudioOutputForRecording("helper.exe", device.id)).rejects.toThrow(
+			"No fallback",
+		);
+		mocks.exec.mockImplementation((_helper, args, _opts, callback) =>
+			args[0] === "--capabilities"
+				? callback(null, '{"schemaVersion":1,"audioOutputSelection":true}')
+				: callback(new Error("timeout"), snapshot()),
+		);
+		await expect(resolveWindowsAudioOutputForRecording("helper.exe", device.id)).rejects.toThrow(
+			"enumeration failed",
+		);
 	});
 });

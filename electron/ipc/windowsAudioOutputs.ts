@@ -14,6 +14,30 @@ export type WindowsAudioOutputsResult =
 				| "enumeration-failed";
 	  };
 
+export function isWindowsAudioOutputOwner(
+	window: BrowserWindow | null,
+	event: IpcMainInvokeEvent,
+): boolean {
+	if (
+		!window ||
+		window.isDestroyed() ||
+		event.sender.isDestroyed() ||
+		window.webContents !== event.sender ||
+		!event.senderFrame ||
+		event.senderFrame !== event.sender.mainFrame
+	)
+		return false;
+	try {
+		const url = new URL(event.sender.getURL());
+		const dev = process.env.VITE_DEV_SERVER_URL;
+		const local = url.protocol === "file:" || (dev && url.origin === new URL(dev).origin);
+		const role = url.searchParams.get("windowType");
+		return Boolean(local && (role === "hud-overlay" || role === "editor"));
+	} catch {
+		return false;
+	}
+}
+
 export function registerWindowsAudioOutputHandlers(context: {
 	ipc: Pick<IpcMain, "handle">;
 	window(): BrowserWindow | null;
@@ -21,27 +45,7 @@ export function registerWindowsAudioOutputHandlers(context: {
 	helper(): Promise<string | null>;
 }) {
 	let pending = false;
-	function isOwner(event: IpcMainInvokeEvent): boolean {
-		const window = context.window();
-		if (
-			!window ||
-			window.isDestroyed() ||
-			event.sender.isDestroyed() ||
-			window.webContents !== event.sender ||
-			!event.senderFrame ||
-			event.senderFrame !== event.sender.mainFrame
-		)
-			return false;
-		try {
-			const url = new URL(event.sender.getURL());
-			const dev = process.env.VITE_DEV_SERVER_URL;
-			const local = url.protocol === "file:" || (dev && url.origin === new URL(dev).origin);
-			const role = url.searchParams.get("windowType");
-			return Boolean(local && (role === "hud-overlay" || role === "editor"));
-		} catch {
-			return false;
-		}
-	}
+	const isOwner = (event: IpcMainInvokeEvent) => isWindowsAudioOutputOwner(context.window(), event);
 	context.ipc.handle(
 		"list-windows-audio-outputs",
 		async (event): Promise<WindowsAudioOutputsResult> => {

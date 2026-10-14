@@ -15,6 +15,55 @@ afterEach(() => {
 });
 
 describe("app settings store", () => {
+	it("persists a Windows output independently and keeps it after disconnection/restart", () => {
+		const dir = temp();
+		const store = new AppSettingsStore(dir);
+		expect(store.getSnapshot().recording.windowsSystemAudioDeviceId).toBeNull();
+		store.setRecordingPreferences({
+			windowsSystemAudioDeviceId: "native-output",
+			micDeviceId: "browser-mic",
+			systemAudioEnabled: false,
+		});
+		const next = new AppSettingsStore(dir).getSnapshot().recording;
+		expect(next).toMatchObject({
+			windowsSystemAudioDeviceId: "native-output",
+			micDeviceId: "browser-mic",
+			systemAudioEnabled: false,
+		});
+		store.setRecordingPreferences({ windowsSystemAudioDeviceId: null });
+		expect(store.getSnapshot().recording).toMatchObject({
+			windowsSystemAudioDeviceId: null,
+			micDeviceId: "browser-mic",
+			systemAudioEnabled: false,
+		});
+	});
+	it.each([
+		"",
+		" ",
+		"default",
+		"bad\0id",
+		"x".repeat(4097),
+		1,
+		false,
+	])("rejects invalid Windows output patch without changing stored selection: %s", (value) => {
+		const store = new AppSettingsStore(temp());
+		store.setRecordingPreferences({ windowsSystemAudioDeviceId: "native-output" });
+		expect(() =>
+			store.setRecordingPreferences({ windowsSystemAudioDeviceId: value as never }),
+		).toThrow(TypeError);
+		expect(store.getSnapshot().recording.windowsSystemAudioDeviceId).toBe("native-output");
+	});
+	it("does not migrate a legacy file merely on read, or erase a saved unavailable ID", () => {
+		const dir = temp();
+		const file = path.join(dir, "recording-settings.json");
+		writeFileSync(file, '{"micEnabled":false}');
+		expect(new AppSettingsStore(dir).getSnapshot().recording.windowsSystemAudioDeviceId).toBeNull();
+		expect(readFileSync(file, "utf8")).toBe('{"micEnabled":false}');
+		writeFileSync(file, '{"windowsSystemAudioDeviceId":"unavailable"}');
+		expect(new AppSettingsStore(dir).getSnapshot().recording.windowsSystemAudioDeviceId).toBe(
+			"unavailable",
+		);
+	});
 	it("enables system audio only by default, leaving microphone and camera off", () => {
 		const recording = new AppSettingsStore(temp()).getSnapshot().recording;
 		expect(recording).toMatchObject({

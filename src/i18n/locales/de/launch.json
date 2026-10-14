@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "Audioausgabe",
+		"outputDefault": "Windows-Standard",
+		"outputUnavailable": "Gewählte Ausgabe nicht verfügbar",
+		"outputRefresh": "Aktualisieren",
+		"outputLoading": "Ausgaben werden geladen…",
+		"outputLoadFailed": "Ausgaben konnten nicht geladen werden. Windows-Standard wählen oder aktualisieren.",
+		"outputSaveFailed": "Ausgabe konnte nicht gespeichert werden. Erneut versuchen.",
+		"outputScope": "Nimmt alle Töne dieser Ausgabe auf, nicht nur eine einzelne App.",
 		"systemAudio": "Systemton",
 		"microphone": "Mikrofon",
 		"inputDevice": "Eingabegerät"

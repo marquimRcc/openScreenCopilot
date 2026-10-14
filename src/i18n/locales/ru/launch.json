@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "Аудиовыход",
+		"outputDefault": "По умолчанию в Windows",
+		"outputUnavailable": "Выбранный выход недоступен",
+		"outputRefresh": "Обновить",
+		"outputLoading": "Загрузка выходов…",
+		"outputLoadFailed": "Не удалось загрузить выходы. Выберите выход Windows по умолчанию или обновите список.",
+		"outputSaveFailed": "Не удалось сохранить выход. Повторите попытку.",
+		"outputScope": "Записывает все звуки этого выхода, а не отдельного приложения.",
 		"systemAudio": "Системный звук",
 		"microphone": "Микрофон",
 		"inputDevice": "Устройство ввода"

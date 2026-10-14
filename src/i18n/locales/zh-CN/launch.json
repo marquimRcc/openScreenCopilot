@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "音频输出",
+		"outputDefault": "Windows 默认",
+		"outputUnavailable": "所选输出不可用",
+		"outputRefresh": "刷新",
+		"outputLoading": "正在加载输出…",
+		"outputLoadFailed": "无法加载输出。请选择 Windows 默认输出或刷新。",
+		"outputSaveFailed": "无法保存输出。请重试。",
+		"outputScope": "录制此输出播放的所有声音，而不是单个应用的声音。",
 		"systemAudio": "系统音频",
 		"microphone": "麦克风",
 		"inputDevice": "输入设备"

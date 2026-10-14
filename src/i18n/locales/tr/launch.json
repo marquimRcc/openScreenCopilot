@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "Ses çıkışı",
+		"outputDefault": "Windows varsayılanı",
+		"outputUnavailable": "Seçilen çıkış kullanılamıyor",
+		"outputRefresh": "Yenile",
+		"outputLoading": "Çıkışlar yükleniyor…",
+		"outputLoadFailed": "Çıkışlar yüklenemedi. Windows varsayılanını seçin veya yenileyin.",
+		"outputSaveFailed": "Çıkış kaydedilemedi. Yeniden deneyin.",
+		"outputScope": "Tek bir uygulamayı değil, bu çıkıştan çalınan tüm sesleri kaydeder.",
 		"systemAudio": "Sistem sesi",
 		"microphone": "Mikrofon",
 		"inputDevice": "Giriş cihazı"

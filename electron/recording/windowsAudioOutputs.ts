@@ -77,3 +77,51 @@ export function listWindowsAudioOutputs(helper: string): Promise<WindowsAudioOut
 		);
 	});
 }
+
+/** Main-owned preference only. Null preserves old-helper default compatibility. */
+export async function resolveWindowsAudioOutputForRecording(
+	helper: string,
+	choice: string | null,
+): Promise<string | undefined> {
+	if (choice === null) return undefined;
+	if (
+		!choice.trim() ||
+		choice === "default" ||
+		choice.length > 4096 ||
+		hasControlCharacters(choice)
+	) {
+		throw new Error("The selected system audio output is invalid. Choose it again.");
+	}
+	const supportsSelection = await new Promise<boolean>((resolve) => {
+		execFile(
+			helper,
+			["--capabilities"],
+			{ timeout: 3000, windowsHide: true, maxBuffer: 4096 },
+			(error, stdout) => {
+				try {
+					const capability: unknown = JSON.parse(stdout);
+					resolve(
+						!error &&
+							!!capability &&
+							typeof capability === "object" &&
+							"schemaVersion" in capability &&
+							capability.schemaVersion === 1 &&
+							"audioOutputSelection" in capability &&
+							capability.audioOutputSelection === true,
+					);
+				} catch {
+					resolve(false);
+				}
+			},
+		);
+	});
+	if (!supportsSelection)
+		throw new Error("This Windows helper cannot select an audio output. No fallback was used.");
+	const devices = await listWindowsAudioOutputs(helper);
+	if (!devices.some((device) => device.id === choice)) {
+		throw new Error(
+			"The selected system audio output is unavailable. Reconnect it or choose another output.",
+		);
+	}
+	return choice;
+}

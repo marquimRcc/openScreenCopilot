@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "音訊輸出",
+		"outputDefault": "Windows 預設",
+		"outputUnavailable": "所選輸出無法使用",
+		"outputRefresh": "重新整理",
+		"outputLoading": "正在載入輸出…",
+		"outputLoadFailed": "無法載入輸出。請選擇 Windows 預設輸出或重新整理。",
+		"outputSaveFailed": "無法儲存輸出。請重試。",
+		"outputScope": "錄製此輸出播放的所有聲音，而非單一應用程式的聲音。",
 		"systemAudio": "系統音訊",
 		"microphone": "麥克風",
 		"inputDevice": "輸入裝置"

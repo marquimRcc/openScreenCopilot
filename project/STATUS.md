@@ -818,7 +818,54 @@ Continuidade15min restaurada neste chat. Finalização02S sem repetir a suíte j
 aprovada; próximo trabalho é persistência/seletor Windows e validação antes da
 tomada, sem fallback silencioso. Nenhuma escolha de saída foi ativada na UI ainda.
 
-## Regra de atualização contínua (final)
+## Incremento 02T — seletor Windows, escolha persistida e preflight
+
+Preferência Windows independente windowsSystemAudioDeviceId:null significa
+padrão por tomada; ID MMDevice explícito persiste entre reinícios e desconexão.
+Store recusa patch vazio/default literal/controle/tipo inválido; leitura legada
+não reescreve arquivo. Escrita IPC desse campo exige HUD/editor/frame principal
+atual e não pode ocorrer durante preparação/captura Windows; setter main legítimo
+continua disponível. Campo opcional no tipo IPC preserva compatibilidade de clientes.
+
+Main lê escolha própria, confere capability audioOutputSelection e reenumera IDs
+ativos antes de passar systemAudioDeviceId ao helper. Default omite o campo para
+compatibilidade; ID ausente não vira default. Revalida escolha após awaits e antes
+do spawn. Hook recusa fallback Chromium quando sistema ligado e saída explícita.
+Gate de startup serializa preparação/cleanup Windows, impedindo que falha de um
+segundo start limpe o processo de outra tomada; liberação idempotente no finally.
+
+Seletor simples nas configurações de dispositivos do HUD e no RecStage, apenas
+Windows com API disponível. Mostra nomes amigáveis, padrão e escolha indisponível;
+Atualizar reenumera sem polling. Não altera toggle sistema/mic nem o padrão do OS.
+Escolha desconectada permanece salva/visível; usuário pode escolher explicitamente
+o padrão mesmo após falha de enumeração. Aguarda persistência, trata erro e snapshots
+mais novos sem sobrescrevê-los com resposta antiga. Bloqueado durante captura no
+HUD e durante escrita. Oito textos novos nos15 idiomas.
+
+83 testes backend focados/6arquivos e142 UI/3arquivos aprovados. Typecheck detectou
+Object.hasOwn fora do lib alvo; usar hasOwnProperty.call com supressão localizada
+para impedir autofix incompatível. QA real isolada preload/prefs/store/helper PASS:
+2saídas, ID exato persistido/preflight, foreign owner/startup recusados, ID ausente
+preservado e reset explícito para default. Sem streams; recibo privado
+`.cache/audio-output-choice-qa-WkS7vn/metrics.json`.
+Ambos typechecks finais aprovados, incluindo correção do tipo do mock UI;
+lint26 avisos herdados, i18n15/980chaves e docs50 aprovados. Suíte completa uma vez:
+357arquivos/5.041aprovados/5ignorados/369,40s, Node22.22.1, dois workers,
+exit0/sem signal, fim18:17:41UTC; recibo/log `.cache/audio-output-picker-full.{json,log}`.
+Vite e pacote completos aprovados; entry/chunk main-B3cM0hdN/preload e23payloads
+nativos SHA256 iguais ao dist/origem. WGCbd69b1e1…48bfbbd inalterado, sem novo
+build C++/Rust. Logs `.cache/audio-output-picker-{lint,vite,package}.log`.
+Pacote não instalado/relançado. Tentativa GUI em fixture própria com perfil separado:
+processo iniciou, mas janela não apareceu em list_windows/list_apps do computer-use.
+Sem input OS, screenshot ou aceite visual; não inferir desktop bloqueado. Fixture18580
+encerrada somente após conferir caminho/argumento, sem streams ou edição. Perfil/logs
+privados preservados. Ver results log manual; app do usuário intacto.
+Ainda sem medidor novo ou homologação de gravação audível, main completo,
+desconexão física ou input OS. Próximo incremento: medidor sistema limitado/main-owned,
+prévia parada antes da captura e homologação de endpoint audível/GUI. GIF/Compartilhar
+permanecem no final do roadmap. App do usuário e mídia preservados.
+
+## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.

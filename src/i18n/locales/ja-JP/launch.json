@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "音声出力",
+		"outputDefault": "Windows の既定",
+		"outputUnavailable": "選択した出力は利用できません",
+		"outputRefresh": "更新",
+		"outputLoading": "出力を読み込み中…",
+		"outputLoadFailed": "出力を読み込めませんでした。Windows の既定を選ぶか更新してください。",
+		"outputSaveFailed": "出力を保存できませんでした。もう一度お試しください。",
+		"outputScope": "特定のアプリだけでなく、この出力で再生されるすべての音声を録音します。",
 		"systemAudio": "システム音声",
 		"microphone": "マイク",
 		"inputDevice": "入力デバイス"

@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "مخرج الصوت",
+		"outputDefault": "افتراضي Windows",
+		"outputUnavailable": "المخرج المحدد غير متاح",
+		"outputRefresh": "تحديث",
+		"outputLoading": "جارٍ تحميل المخارج…",
+		"outputLoadFailed": "تعذر تحميل المخارج. اختر مخرج Windows الافتراضي أو حدّث القائمة.",
+		"outputSaveFailed": "تعذر حفظ المخرج. حاول مرة أخرى.",
+		"outputScope": "يسجل جميع الأصوات عبر هذا المخرج، وليس تطبيقًا واحدًا فقط.",
 		"systemAudio": "صوت النظام",
 		"microphone": "الميكروفون",
 		"inputDevice": "جهاز الإدخال"

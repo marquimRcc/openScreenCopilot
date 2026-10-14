@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "오디오 출력",
+		"outputDefault": "Windows 기본값",
+		"outputUnavailable": "선택한 출력을 사용할 수 없음",
+		"outputRefresh": "새로 고침",
+		"outputLoading": "출력 불러오는 중…",
+		"outputLoadFailed": "출력을 불러오지 못했습니다. Windows 기본값을 선택하거나 새로 고치세요.",
+		"outputSaveFailed": "출력을 저장하지 못했습니다. 다시 시도하세요.",
+		"outputScope": "특정 앱이 아닌 이 출력에서 재생되는 모든 소리를 녹음합니다.",
 		"systemAudio": "시스템 오디오",
 		"microphone": "마이크",
 		"inputDevice": "입력 장치"

@@ -106,4 +106,30 @@ describe("Windows region capture never falls back to the full monitor", () => {
 		expect(nativeStart).not.toHaveBeenCalled();
 		expect(browserStart).not.toHaveBeenCalled();
 	});
+	it.each([
+		"missing-helper",
+		"unsupported-os",
+	])("does not fall back for an explicit audio output on a non-region source: %s", async (reason) => {
+		vi.mocked(window.electronAPI.getRecordingPrefs).mockResolvedValue({
+			micEnabled: false,
+			camEnabled: false,
+			systemAudioEnabled: true,
+			windowsSystemAudioDeviceId: "native-output",
+			cursorCaptureMode: "system",
+		} as Awaited<ReturnType<Window["electronAPI"]["getRecordingPrefs"]>>);
+		vi.mocked(window.electronAPI.getSelectedSource).mockResolvedValue({
+			id: "screen:7:0",
+			name: "Monitor",
+			display_id: "7",
+		} as never);
+		vi.mocked(window.electronAPI.isNativeWindowsCaptureAvailable).mockResolvedValue({
+			success: true,
+			available: false,
+			reason,
+		});
+		const view = await record();
+		expect(browserStart).not.toHaveBeenCalled();
+		expect(nativeStart).not.toHaveBeenCalled();
+		expect(view.result.current.recording).toBe(false);
+	});
 });

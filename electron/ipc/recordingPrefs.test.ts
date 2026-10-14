@@ -21,6 +21,7 @@ const defaults: RecordingPrefs = {
 	camDeviceName: null,
 	camQuality: "2160p",
 	systemAudioEnabled: true,
+	windowsSystemAudioDeviceId: null,
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
@@ -54,6 +55,33 @@ function start(
 }
 
 describe("recording preferences IPC", () => {
+	it("requires explicit owner approval for Windows output changes before persisting", () => {
+		const authorize = vi.fn().mockReturnValue(false);
+		registerRecordingPrefsHandlers(defaults, () => null, undefined, undefined, authorize);
+		const handler = electron.handle.mock.calls.find(
+			([name]) => name === "set-recording-prefs",
+		)?.[1];
+		const event = {};
+		expect(() => handler?.(event, { windowsSystemAudioDeviceId: "native-output" })).toThrow(
+			"current recording window",
+		);
+		expect(authorize).toHaveBeenCalledWith(event);
+		expect(start().get().windowsSystemAudioDeviceId).toBeNull();
+	});
+	it("allows an approved output choice and restores it after restart", () => {
+		registerRecordingPrefsHandlers(
+			defaults,
+			() => null,
+			undefined,
+			undefined,
+			() => true,
+		);
+		const handler = electron.handle.mock.calls.find(
+			([name]) => name === "set-recording-prefs",
+		)?.[1];
+		handler?.({}, { windowsSystemAudioDeviceId: "native-output" });
+		expect(start().get().windowsSystemAudioDeviceId).toBe("native-output");
+	});
 	it("defaults system audio on and preserves an explicit off choice through IPC and restart", () => {
 		const first = start();
 		expect(first.get()).toMatchObject({

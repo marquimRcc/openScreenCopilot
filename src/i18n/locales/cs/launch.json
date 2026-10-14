@@ -37,6 +37,14 @@
 		}
 	},
 	"audio": {
+		"outputDevice": "Zvukový výstup",
+		"outputDefault": "Výchozí ve Windows",
+		"outputUnavailable": "Vybraný výstup není dostupný",
+		"outputRefresh": "Obnovit",
+		"outputLoading": "Načítání výstupů…",
+		"outputLoadFailed": "Výstupy se nepodařilo načíst. Vyberte výchozí výstup Windows nebo obnovte seznam.",
+		"outputSaveFailed": "Výstup se nepodařilo uložit. Zkuste to znovu.",
+		"outputScope": "Nahrává všechny zvuky tohoto výstupu, ne pouze jednu aplikaci.",
 		"systemAudio": "Systémový zvuk",
 		"microphone": "Mikrofon",
 		"inputDevice": "Vstupní zařízení"

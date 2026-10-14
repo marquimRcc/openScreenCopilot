@@ -151,6 +151,8 @@ import {
 } from "../recording/savedRecordingCopy";
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
+import { resolveWindowsAudioOutputForRecording } from "../recording/windowsAudioOutputs";
+import { WindowsCaptureStartGate } from "../recording/windowsCaptureStartGate";
 import { WindowsRegionIndicator } from "../recording/windowsRegionIndicator";
 import {
 	isWindowsRegionCurrent,
@@ -177,7 +179,10 @@ import { registerRecordingPrefsHandlers } from "./recordingPrefs";
 import { RecordingStreamRegistry, registerRecordingStreamHandlers } from "./recordingStream";
 import { isRecordingResultOwner, registerSavedRecordingGifHandlers } from "./savedRecordingGif";
 import { type SelectSourceContext, selectSourceWithOwnership } from "./selectSourceOwnership";
-import { registerWindowsAudioOutputHandlers } from "./windowsAudioOutputs";
+import {
+	isWindowsAudioOutputOwner,
+	registerWindowsAudioOutputHandlers,
+} from "./windowsAudioOutputs";
 
 const PROJECT_FILE_EXTENSION = "openscreen";
 export const SHORTCUTS_FILE = path.join(app.getPath("userData"), "shortcuts.json");
@@ -708,6 +713,7 @@ export interface RecordingPrefs {
 	/** Capture resolution for the camera. See WEBCAM_QUALITY_PRESETS. */
 	camQuality: WebcamQualityId;
 	systemAudioEnabled: boolean;
+	windowsSystemAudioDeviceId?: string | null;
 	cursorCaptureMode: CursorCaptureMode;
 	hideDesktopIcons: boolean;
 	/** Whether a fresh take gets automatic zooms on import. Persisted; defaults on. */
@@ -722,6 +728,7 @@ const defaultRecordingPrefs: RecordingPrefs = {
 	camDeviceName: null,
 	camQuality: DEFAULT_WEBCAM_QUALITY,
 	systemAudioEnabled: true,
+	windowsSystemAudioDeviceId: null,
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
@@ -771,6 +778,7 @@ const MAX_CURSOR_SAMPLES = 60 * 60 * 30; // 1 hour @ 30Hz
 let cursorRecordingSession: CursorRecordingSession | null = null;
 let pendingCursorRecordingData: CursorRecordingData | null = null;
 let nativeWindowsCaptureProcess: ChildProcessWithoutNullStreams | null = null;
+const nativeWindowsStartGate = new WindowsCaptureStartGate();
 const windowsRegionIndicator = new WindowsRegionIndicator(createRegionIndicatorWindow);
 let nativeWindowsCaptureOutput = "";
 let nativeWindowsCaptureTargetPath: string | null = null;
@@ -2424,6 +2432,10 @@ export function registerIpcHandlers(
 					.catch((error) => console.warn("[permissions] system audio request failed:", error));
 			}
 		},
+		(event) =>
+			isWindowsAudioOutputOwner(getMainWindow(), event) &&
+			!nativeWindowsCaptureProcess &&
+			!nativeWindowsStartGate.isBusy(),
 	);
 
 	// Asked before every take starts. A disk that fills up mid-take used to be found only
@@ -3078,6 +3090,11 @@ export function registerIpcHandlers(
 	ipcMain.handle(
 		"start-native-windows-recording",
 		async (_, request: NativeWindowsRecordingRequest) => {
+			if (nativeWindowsCaptureProcess)
+				return { success: false, error: "Native Windows capture is already running." };
+			const releaseStart = nativeWindowsStartGate.tryAcquire();
+			if (!releaseStart)
+				return { success: false, error: "Native Windows capture is being prepared." };
 			try {
 				if (!isWindowsGraphicsCaptureOsSupported()) {
 					return {
@@ -3155,6 +3172,13 @@ export function registerIpcHandlers(
 					request.preferSoftwareEncoder === true ||
 					envPreferSoftwareEncoder === "true" ||
 					envPreferSoftwareEncoder === "1";
+				const outputChoice = recordingPrefs.get().windowsSystemAudioDeviceId ?? null;
+				const systemAudioDeviceId = request.audio.system.enabled
+					? await resolveWindowsAudioOutputForRecording(helperPath, outputChoice)
+					: undefined;
+				if ((recordingPrefs.get().windowsSystemAudioDeviceId ?? null) !== outputChoice) {
+					throw new Error("System audio output changed during preparation. Try again.");
+				}
 				const config = {
 					schemaVersion: 2,
 					recordingId,
@@ -3178,6 +3202,7 @@ export function registerIpcHandlers(
 					regionWidth: crop?.width,
 					regionHeight: crop?.height,
 					captureSystemAudio: request.audio.system.enabled,
+					...(systemAudioDeviceId ? { systemAudioDeviceId } : {}),
 					captureMic: request.audio.microphone.enabled,
 					microphoneDeviceId: request.audio.microphone.deviceId ?? null,
 					microphoneDeviceName: request.audio.microphone.deviceName ?? null,
@@ -3253,6 +3278,9 @@ export function registerIpcHandlers(
 					pendingCursorRecordingData = null;
 				}
 
+				if ((recordingPrefs.get().windowsSystemAudioDeviceId ?? null) !== outputChoice) {
+					throw new Error("System audio output changed during preparation. Try again.");
+				}
 				const proc = spawn(helperPath, [JSON.stringify(config)], {
 					cwd: RECORDINGS_DIR,
 					stdio: ["pipe", "pipe", "pipe"],
@@ -3356,6 +3384,8 @@ export function registerIpcHandlers(
 				}
 				await stopCursorRecording();
 				return { success: false, error: String(error) };
+			} finally {
+				releaseStart();
 			}
 		},
 	);

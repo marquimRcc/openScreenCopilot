@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import { WindowsAudioOutputPicker } from "@/components/launch/WindowsAudioOutputPicker";
 import { AudioLevelMeter } from "@/components/ui/audio-level-meter";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useScopedT } from "@/contexts/I18nContext";
@@ -88,6 +89,7 @@ export function RecStage({
 	onClose?: () => void;
 }) {
 	const t = useScopedT("editor");
+	const tLaunch = useScopedT("launch");
 	const [prefs, setPrefsState] = useState<RecordingPrefsState>(DEFAULT_PREFS);
 	// Bumped by every local change and every pushed snapshot, so the re-read after a
 	// failed write can tell that something newer has landed since.
@@ -461,6 +463,18 @@ export function RecStage({
 						</Tooltip>
 					</div>
 
+					<WindowsAudioOutputPicker
+						labels={{
+							device: tLaunch("audio.outputDevice"),
+							default: tLaunch("audio.outputDefault"),
+							unavailable: tLaunch("audio.outputUnavailable"),
+							refresh: tLaunch("audio.outputRefresh"),
+							loading: tLaunch("audio.outputLoading"),
+							loadFailed: tLaunch("audio.outputLoadFailed"),
+							saveFailed: tLaunch("audio.outputSaveFailed"),
+							scope: tLaunch("audio.outputScope"),
+						}}
+					/>
 					{canRecordMicrophone() ? (
 						<div className={styles.recRow}>
 							<div id={rowLabelId("microphone")} className={styles.recRowLabel}>

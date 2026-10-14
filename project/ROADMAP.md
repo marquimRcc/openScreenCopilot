@@ -52,8 +52,9 @@ Dependência: 01.
 
 Estado: crop D3D11, seletor retangular e resultado simples implementados;
 indicador persistente em validação (02E). Enumeração/resolução nativa de saídas
-preparadas em02Q/02R, consulta main/preload implementada02S; seletor de endpoint,
-persistência da escolha e medidor do sistema ainda pendentes.
+preparadas em02Q/02R, consulta main/preload implementada02S. Seletor de endpoint,
+persistência e preflight main-owned implementados02T; medidor do sistema e aceite
+audível/visual real ainda pendentes.
 Fundação independente autorizada pelo usuário;
 aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
