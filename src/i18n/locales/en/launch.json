@@ -57,6 +57,20 @@
 		"editableTip": "Editable cursor: recorded separately, so you can restyle it and auto-zoom in the editor",
 		"systemTip": "System cursor: your real cursor, recorded in the video. No restyling, no auto-zoom."
 	},
+	"recordingResult": {
+		"saved": "Recording saved",
+		"title": "Recording",
+		"loading": "Loading recording…",
+		"unavailable": "The saved recording could not be found. The original has not been deleted by this screen.",
+		"actionFailed": "The action could not be completed. Your recording has not been changed.",
+		"preview": "Recording preview",
+		"previewFailed": "Preview unavailable. You can still open the folder or try the editor.",
+		"location": "Saved location",
+		"openFolder": "Open folder",
+		"newCapture": "New capture",
+		"edit": "Edit",
+		"retry": "Try again"
+	},
 	"regionSelection": {
 		"tab": "Region",
 		"monitorHint": "Choose a monitor, then draw the area to record.",

@@ -1,6 +1,25 @@
-# Pós-gravação simples — proposta
+# Pós-gravação simples — execução incremental
 
-Pedido do usuário em 2026-10-13. **Registrado para os próximos passos; não implementado.**
+Pedido do usuário em 2026-10-13. Primeiro incremento implementado em 2026-10-14;
+homologação do fluxo real e ações Compartilhar/GIF permanecem pendentes.
+
+## Primeiro incremento
+
+Finalização bem-sucedida abre resultado com prévia do MP4 original, nome, caminho,
+tamanho, duração, Abrir pasta, Nova captura e Editar secundário. O processo principal
+confere arquivo existente, tamanho positivo e identidade atual antes de revelar/editar;
+gravação ativa e edição não salva impedem transições incompatíveis. Nova captura
+apenas prepara o HUD: não começa outra gravação. CLI/MCP preservam entrada no editor.
+
+A prévia é do vídeo original, não da composição exportada pelo editor. Webcam,
+cursor editável, zoom e demais camadas separadas não são incorporados pela tela
+simples. Compartilhamento/conversão devem esclarecer original versus composição.
+Não há upload nem conversão automática neste incremento.
+
+Testes automatizados aprovados; árvore de acessibilidade da janela Electron isolada
+mostrou arquivo sintético, 00:05, 266,1 KB e as três ações. A captura de tela retornou
+outra janela sobreposta mesmo após ativação: layout, reprodução e cliques reais não
+foram aprovados. Não equivale ao fluxo completo captura → parar → resultado.
 
 ## Princípio
 

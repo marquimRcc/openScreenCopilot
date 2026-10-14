@@ -57,6 +57,10 @@ YouTube capturados no endpoint escolhido, com aviso claro do escopo de loopback.
 
 ### 02B — prioridade de UX pós-gravação
 
+Primeiro incremento implementado (02D), ainda sem homologação GUI completa;
+Compartilhar e GIF continuam pendentes. Prévia mostra o MP4 original, sem compor
+camadas de webcam/cursor/zoom. Detalhes e limites em [SIMPLE-RECORDING-UX.md](SIMPLE-RECORDING-UX.md).
+
 Adotar resultado simples como tela principal após Parar: prévia, arquivo salvo,
 localização, Abrir pasta e Nova captura. Manter Editar em aba/ação secundária.
 Em incrementos seguintes, adicionar Compartilhar (destino explícito, sem upload

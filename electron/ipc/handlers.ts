@@ -144,6 +144,7 @@ import {
 	waitForNativeWindowsCaptureStop,
 } from "../recording/nativeWindowsCaptureStop";
 import { removeEmptyCaptureOutput } from "../recording/removeEmptyCaptureOutput";
+import { createSavedRecordingActions } from "../recording/savedRecording";
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
 import {
@@ -1996,7 +1997,7 @@ export async function exportDiagnosticFile(payload: {
 }
 
 export function registerIpcHandlers(
-	createEditorWindow: () => void,
+	createEditorWindow: (query?: Record<string, string>) => void,
 	createSourceSelectorWindow: () => BrowserWindow,
 	createCountdownOverlayWindow: () => BrowserWindow,
 	createNotesWindowWrapper: () => BrowserWindow,
@@ -2587,6 +2588,35 @@ export function registerIpcHandlers(
 		// transparent windows and compounding the HUD shadow each cycle.
 		createEditorWindow();
 	});
+	const savedRecordingActions = createSavedRecordingActions({
+		getCurrentPath: () => currentVideoPath,
+		isAllowed: isPathAllowed,
+		isRecording: () =>
+			appRecording ||
+			!!nativeWindowsCaptureProcess ||
+			!!nativeMacCaptureProcess ||
+			!!linuxNativeCaptureSession,
+		isEditorDirty: () => editorHasUnsavedChanges?.() ?? false,
+		stat: (file) => fs.stat(file),
+		reveal: (file) => shell.showItemInFolder(file),
+		openResult: () => {
+			// MCP clients need the editor's document host after a take. Preserve
+			// that automation contract while manual captures get the simple view.
+			createEditorWindow(
+				mcpAppRecorder.isClientTakeActive() ? undefined : { windowType: "recording-result" },
+			);
+		},
+		prepareCapture: () => {
+			if (!_switchToHud) throw new Error("Capture preparation is unavailable.");
+			_switchToHud();
+		},
+	});
+	ipcMain.handle("show-recording-result", () => savedRecordingActions.showResult());
+	ipcMain.handle("get-saved-recording-info", () => savedRecordingActions.getInfo());
+	ipcMain.handle("reveal-saved-recording", (_, expectedPath: string) =>
+		savedRecordingActions.reveal(expectedPath),
+	);
+	ipcMain.handle("prepare-new-capture", () => savedRecordingActions.prepare());
 
 	ipcMain.handle("switch-to-hud", () => {
 		_switchToHud?.();

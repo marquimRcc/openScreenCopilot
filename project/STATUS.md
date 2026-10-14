@@ -261,7 +261,31 @@ rebuild/reempacotamento. Aceite de áudio audível em perfil novo, fonte escolhi
 desconexão e medidor seguem pendentes. Detalhes em
 [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
 
-## Regra de atualização
+## Incremento 02D — resultado simples inicial
+
+Implementado em 2026-10-14: prévia do original, nome/local/tamanho/duração,
+Abrir pasta, Nova captura sem auto-início e Editar secundário após salvamento.
+Validação de arquivo e transições pertence ao main; CLI/MCP mantêm editor.
+Compartilhar/GIF, indicador persistente e aceite GUI completo seguem pendentes.
+Prévia não compõe webcam/cursor editável/zoom separados do MP4 original.
+
+Suíte completa: 343 arquivos, 4.812 testes aprovados, 5 ignorados, 278,48 s,
+Node22.22.1/npm10.9.4, quatro workers. Typechecks app/testes, Vite e i18n15
+aprovados; lint sem erros e 26 avisos herdados. Testes focados: 39 aprovados.
+QA isolada com Electron real observou metadados e ações via acessibilidade;
+screenshot mostrou janela sobreposta mesmo após ativação, sem aprovar layout,
+reprodução, cliques ou fluxo captura → resultado. Não repetir cliques cegos.
+Pacote local atualizado gerado em `.cache/result-package/win-unpacked`, com
+`--dir --publish never --config.npmRebuild=false`; não instalado nem aberto.
+23 arquivos do payload nativo conferem por SHA256; `ffmpeg.exe` estático é
+excluído intencionalmente pelo builder (usa `ffmpeg-shared.exe` e DLLs).
+WGC permanece ca762c882370794abf63575ae9e0f037a5d6e609e059a5e9b3f183c9578a6a48;
+sem mudança nativa neste incremento. Docs:check aprovado (50 arquivos).
+App QA aberto permanece anterior e com proteção de conteúdo desativada para
+teste: verificar estado/encerrar somente instância própria ociosa e relançar
+sem a flag antes de gravações reais. Não interromper gravação/edição não salva.
+
+## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.

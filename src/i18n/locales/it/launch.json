@@ -57,6 +57,20 @@
 		"editableTip": "Cursore modificabile: registrato separatamente, così puoi cambiarne lo stile e usare lo zoom automatico nell'editor",
 		"systemTip": "Cursore di sistema: il tuo cursore reale, registrato nel video. Nessun cambio di stile, nessuno zoom automatico."
 	},
+	"recordingResult": {
+		"saved": "Registrazione salvata",
+		"title": "Registrazione",
+		"loading": "Caricamento…",
+		"unavailable": "Registrazione non trovata. Questa schermata non ha eliminato l’originale.",
+		"actionFailed": "Impossibile completare l’azione. La registrazione non è stata modificata.",
+		"preview": "Anteprima",
+		"previewFailed": "Anteprima non disponibile. Puoi aprire la cartella o provare l’editor.",
+		"location": "Posizione salvata",
+		"openFolder": "Apri cartella",
+		"newCapture": "Nuova cattura",
+		"edit": "Modifica",
+		"retry": "Riprova"
+	},
 	"regionSelection": {
 		"tab": "Area",
 		"monitorHint": "Scegli un monitor, poi disegna l’area da registrare.",

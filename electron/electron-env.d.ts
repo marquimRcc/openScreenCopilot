@@ -67,6 +67,12 @@ interface Window {
 			options?: { persist?: boolean },
 		) => Promise<ProcessedDesktopSource | null>;
 		getSelectedSource: () => Promise<ProcessedDesktopSource | null>;
+		showRecordingResult?: () => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
+		getSavedRecordingInfo?: () => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
+		revealSavedRecording?: (
+			expectedPath: string,
+		) => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
+		prepareNewCapture?: () => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
 		selectSourceRegion?: (sourceId: string) => Promise<{ selected: boolean }>;
 		getRegionSelectionInfo?: () => Promise<
 			import("../src/lib/windowsCaptureRegion").RegionSelectionInfo | null

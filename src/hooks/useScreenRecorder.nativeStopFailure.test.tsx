@@ -124,6 +124,18 @@ describe("useScreenRecorder native Windows stop failure", () => {
 		expect(toast.error).toHaveBeenCalledWith("IPC channel closed");
 	});
 
+	it("shows the simple result after a successful take when the preload supports it", async () => {
+		const showRecordingResult = vi.fn().mockResolvedValue({ success: true });
+		stubElectronAPI({ showRecordingResult });
+		api.stopNativeWindowsRecording.mockResolvedValue({ success: true, path: "C:\\rec\\a.mp4" });
+		const view = renderHook(() => useScreenRecorder());
+		await startNativeRecording(view);
+		await pressStop(view);
+		expect(showRecordingResult).toHaveBeenCalledOnce();
+		expect(api.switchToEditor).not.toHaveBeenCalled();
+		expect(api.setCurrentVideoPath).toHaveBeenCalledWith("C:\\rec\\a.mp4");
+	});
+
 	it("still opens the editor when the stop succeeds", async () => {
 		api.stopNativeWindowsRecording.mockResolvedValue({
 			success: true,

@@ -102,6 +102,8 @@ export interface AppRecorderDeps {
 }
 
 export interface AppRecorder extends TakeRecorder {
+	/** A client awaits the editor/project handoff rather than the simple result view. */
+	isClientTakeActive(): boolean;
 	/** The app's recording state changed (`set-recording-state`). */
 	recordingChanged(recording: boolean): void;
 	/** The recording bar handed a saved take to the editor (`set-current-recording-session`). */
@@ -214,6 +216,7 @@ export function createAppRecorder(deps: AppRecorderDeps): AppRecorder {
 	}
 
 	return {
+		isClientTakeActive: () => current !== null,
 		recordingChanged(recording) {
 			if (!current) return;
 			if (recording && current.phase === "starting") {

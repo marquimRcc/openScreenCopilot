@@ -57,6 +57,20 @@
 		"editableTip": "Düzenlenebilir imleç: ayrı kaydedilir; düzenleyicide stilini değiştirebilir, otomatik yakınlaştırma kullanabilirsiniz",
 		"systemTip": "Sistem imleci: gerçek imleciniz, videoya kaydedilir. Stil değişikliği ve otomatik yakınlaştırma yok."
 	},
+	"recordingResult": {
+		"saved": "Kayıt kaydedildi",
+		"title": "Kayıt",
+		"loading": "Kayıt yükleniyor…",
+		"unavailable": "Kaydedilen kayıt bulunamadı. Bu ekran özgün dosyayı silmedi.",
+		"actionFailed": "İşlem tamamlanamadı. Kayıt değiştirilmedi.",
+		"preview": "Kayıt önizlemesi",
+		"previewFailed": "Önizleme kullanılamıyor. Klasörü açabilir veya düzenleyiciyi deneyebilirsiniz.",
+		"location": "Kayıt konumu",
+		"openFolder": "Klasörü aç",
+		"newCapture": "Yeni kayıt",
+		"edit": "Düzenle",
+		"retry": "Yeniden dene"
+	},
 	"regionSelection": {
 		"tab": "Bölge",
 		"monitorHint": "Bir ekran seçin, ardından kayıt alanını çizin.",

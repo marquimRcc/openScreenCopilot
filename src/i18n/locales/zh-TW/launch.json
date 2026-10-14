@@ -57,6 +57,20 @@
 		"editableTip": "可編輯游標：單獨錄製，可在編輯器中修改樣式並使用自動縮放",
 		"systemTip": "系統游標：真實游標，直接錄進影片。無法修改樣式，沒有自動縮放。"
 	},
+	"recordingResult": {
+		"saved": "錄製已儲存",
+		"title": "錄製",
+		"loading": "正在載入錄製…",
+		"unavailable": "找不到已儲存的錄製。此畫面未刪除原始檔。",
+		"actionFailed": "無法完成操作。錄製未被修改。",
+		"preview": "錄製預覽",
+		"previewFailed": "無法預覽。您仍可開啟資料夾或嘗試編輯器。",
+		"location": "儲存位置",
+		"openFolder": "開啟資料夾",
+		"newCapture": "新錄製",
+		"edit": "編輯",
+		"retry": "重試"
+	},
 	"regionSelection": {
 		"tab": "區域",
 		"monitorHint": "選擇螢幕，然後框選錄製區域。",

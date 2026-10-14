@@ -57,6 +57,20 @@
 		"editableTip": "Upravitelný kurzor: nahrává se zvlášť, takže v editoru můžete změnit jeho styl a použít automatické přiblížení",
 		"systemTip": "Systémový kurzor: váš skutečný kurzor, zaznamenaný ve videu. Bez změny stylu a bez automatického přiblížení."
 	},
+	"recordingResult": {
+		"saved": "Záznam uložen",
+		"title": "Záznam",
+		"loading": "Načítání záznamu…",
+		"unavailable": "Uložený záznam nebyl nalezen. Tato obrazovka původní soubor nesmazala.",
+		"actionFailed": "Akci nelze dokončit. Záznam nebyl změněn.",
+		"preview": "Náhled záznamu",
+		"previewFailed": "Náhled není dostupný. Můžete otevřít složku nebo zkusit editor.",
+		"location": "Místo uložení",
+		"openFolder": "Otevřít složku",
+		"newCapture": "Nový záznam",
+		"edit": "Upravit",
+		"retry": "Zkusit znovu"
+	},
 	"regionSelection": {
 		"tab": "Oblast",
 		"monitorHint": "Vyberte monitor a vyznačte oblast záznamu.",

@@ -19,6 +19,7 @@ import {
 	parseWindowHandleFromSourceId,
 } from "@/lib/nativeWindowsRecording";
 import type { CursorCaptureMode, RecordedVideoAssetInput } from "@/lib/recordingSession";
+import { showSavedRecording } from "@/lib/savedRecording";
 import { loadUserPreferences, saveUserPreferences } from "@/lib/userPreferences";
 import { canRecordMicrophone } from "@/utils/platformUtils";
 import { createRecorderHandle, type RecorderHandle } from "./recorderHandle";
@@ -673,7 +674,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 						await window.electronAPI.setCurrentVideoPath(result.path);
 					}
 
-					await window.electronAPI.switchToEditor();
+					await showSavedRecording(window.electronAPI);
 				} catch (error) {
 					console.error("Error saving recording:", error);
 				} finally {
@@ -757,7 +758,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				await window.electronAPI.setCurrentVideoPath(result.path);
 			}
 
-			await window.electronAPI.switchToEditor();
+			await showSavedRecording(window.electronAPI);
 			return true;
 		} catch (error) {
 			console.error("Error saving native Windows recording:", error);
@@ -867,7 +868,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					await window.electronAPI.setCurrentVideoPath(result.path);
 				}
 
-				await window.electronAPI.switchToEditor();
+				await showSavedRecording(window.electronAPI);
 				return true;
 			} catch (error) {
 				console.error("Error saving native macOS recording:", error);
@@ -985,7 +986,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					await window.electronAPI.setCurrentVideoPath(result.path);
 				}
 
-				await window.electronAPI.switchToEditor();
+				await showSavedRecording(window.electronAPI);
 				return true;
 			} catch (error) {
 				console.error("Error saving native Linux recording:", error);

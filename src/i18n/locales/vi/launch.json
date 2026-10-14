@@ -52,6 +52,20 @@
 		"quality1440p": "1440p",
 		"quality2160p": "4K"
 	},
+	"recordingResult": {
+		"saved": "Đã lưu bản ghi",
+		"title": "Bản ghi",
+		"loading": "Đang tải bản ghi…",
+		"unavailable": "Không tìm thấy bản ghi đã lưu. Màn hình này không xóa bản gốc.",
+		"actionFailed": "Không thể hoàn tất thao tác. Bản ghi chưa bị thay đổi.",
+		"preview": "Xem trước bản ghi",
+		"previewFailed": "Không có bản xem trước. Bạn vẫn có thể mở thư mục hoặc thử trình chỉnh sửa.",
+		"location": "Vị trí lưu",
+		"openFolder": "Mở thư mục",
+		"newCapture": "Ghi mới",
+		"edit": "Chỉnh sửa",
+		"retry": "Thử lại"
+	},
 	"regionSelection": {
 		"tab": "Vùng",
 		"monitorHint": "Chọn màn hình, rồi vẽ vùng muốn ghi.",

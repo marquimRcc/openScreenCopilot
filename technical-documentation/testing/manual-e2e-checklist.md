@@ -905,6 +905,14 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02D, Windows 11 @150%, isolated Electron
+result-window harness using production renderer/preload and a synthetic MP4.
+**Partial / blocked visual input:** accessibility reported saved filename/path,
+00:05, 266.1 KB, Open folder / New capture / Edit. Screenshot showed another
+overlapping window even after one activation recovery; no blind clicks followed.
+Layout, playback, reveal action and capture→stop→result are NOT approved. Harness
+has no full capture/editor handoff; automated tests are not an OS-input pass.
+
 Fork checkpoint, 2026-10-13 (not a full checklist pass): after correcting the
 Windows timing sink, all 33 encoder tests pass, including hardware irregular
 timing. Actual packaged CLI export of synthetic Portuguese speech/video succeeds

@@ -57,6 +57,20 @@
 		"editableTip": "Cursor editable: se graba por separado, así puedes cambiar su estilo y usar el zoom automático en el editor",
 		"systemTip": "Cursor del sistema: tu cursor real, grabado en el video. Sin cambios de estilo ni zoom automático."
 	},
+	"recordingResult": {
+		"saved": "Grabación guardada",
+		"title": "Grabación",
+		"loading": "Cargando grabación…",
+		"unavailable": "No se encontró la grabación guardada. Esta pantalla no eliminó el original.",
+		"actionFailed": "No se pudo completar la acción. La grabación no se modificó.",
+		"preview": "Vista previa",
+		"previewFailed": "Vista previa no disponible. Puedes abrir la carpeta o probar el editor.",
+		"location": "Ubicación guardada",
+		"openFolder": "Abrir carpeta",
+		"newCapture": "Nueva captura",
+		"edit": "Editar",
+		"retry": "Reintentar"
+	},
 	"regionSelection": {
 		"tab": "Región",
 		"monitorHint": "Elige un monitor y dibuja el área que quieres grabar.",

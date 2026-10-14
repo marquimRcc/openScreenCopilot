@@ -8,6 +8,7 @@ installBrowserShims();
 import { CountdownOverlay } from "./components/launch/CountdownOverlay.tsx";
 import { LaunchWindow } from "./components/launch/LaunchWindow";
 import { NotesWindow } from "./components/launch/NotesWindow.tsx";
+import { RecordingResult } from "./components/launch/RecordingResult";
 import { RegionSelector } from "./components/launch/RegionSelector";
 import { SourceSelector } from "./components/launch/SourceSelector";
 import { PermissionsWindow } from "./components/permissions/PermissionsWindow";
@@ -93,6 +94,8 @@ export default function App() {
 				return <LaunchWindow />;
 			case "source-selector":
 				return <SourceSelector />;
+			case "recording-result":
+				return <RecordingResult />;
 			case "region-selector":
 				return <RegionSelector />;
 			case "countdown-overlay":

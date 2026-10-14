@@ -57,6 +57,20 @@
 		"editableTip": "可编辑光标：单独记录光标，可在编辑器中修改样式并使用自动缩放",
 		"systemTip": "系统光标：直接录制到视频中，无法修改样式或使用自动缩放"
 	},
+	"recordingResult": {
+		"saved": "录制已保存",
+		"title": "录制",
+		"loading": "正在加载录制…",
+		"unavailable": "找不到已保存的录制。此页面未删除原文件。",
+		"actionFailed": "无法完成操作。录制未被修改。",
+		"preview": "录制预览",
+		"previewFailed": "无法预览。您仍可打开文件夹或尝试编辑器。",
+		"location": "保存位置",
+		"openFolder": "打开文件夹",
+		"newCapture": "新录制",
+		"edit": "编辑",
+		"retry": "重试"
+	},
 	"regionSelection": {
 		"tab": "区域",
 		"monitorHint": "选择显示器，然后框选录制区域。",

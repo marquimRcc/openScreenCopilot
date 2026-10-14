@@ -1019,14 +1019,14 @@ function forceCloseEditorWindow(windowToClose: BrowserWindow | null) {
 	});
 }
 
-function createEditorWindowWrapper() {
+function createEditorWindowWrapper(query: Record<string, string> = {}) {
 	if (mainWindow) {
 		isForceClosing = true;
 		mainWindow.close();
 		isForceClosing = false;
 		mainWindow = null;
 	}
-	mainWindow = createEditorWindow();
+	mainWindow = createEditorWindow(query);
 	editorHasUnsavedChanges = false;
 
 	mainWindow.on("close", (event) => {
