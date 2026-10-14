@@ -113,6 +113,10 @@ e editor capaz de abrir/exportar. Qualidade tem prioridade sobre tamanho; os
 
 ## 04 — Extrair speech-core e sidecar
 
+Inventário inicial somente leitura registrado em
+[SPEECH-CORE-INVENTORY.md](SPEECH-CORE-INVENTORY.md); nenhuma extração/runtime novo
+implementado, sem dispensar dependências/aceites.
+
 Pode iniciar depois de 01; integração depende de 02/03.
 
 - Inventariar dependências Tauri/FFI/Whisper/ONNX e licenças de modelos.

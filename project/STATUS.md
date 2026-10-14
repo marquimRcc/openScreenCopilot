@@ -1083,6 +1083,16 @@ intactos. Arraste/Escape/borda física/DPI/captura→resultado ainda NÃO homolo
 Trabalho independente seguro pode continuar sem essa autorização; não tratar
 dependência de GUI como aceite nem repetir pedidos a cada wake.
 
+## Preparação independente — inventário speech-core
+
+Enquanto autorização visual02Z está pendente, leitura do snapshot congelado
+registrou [SPEECH-CORE-INVENTORY.md](SPEECH-CORE-INVENTORY.md). Mapa de fronteiras
+Tauri/captura/provider/VAD/persistência, versões do Cargo.lock raiz e riscos de
+filas unbounded/relógios/engines duplicados. Ruído mic já tem candidato nnnoiseless
+no snapshot, mas permanece backlog: comentários e comportamento de buffering
+precisam testes. Nada foi extraído, executado, instalado ou alterado em vendor.
+Documento não é auditoria completa de licenças/modelos nem aceite etapa04.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
