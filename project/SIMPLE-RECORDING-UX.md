@@ -67,6 +67,42 @@ segundo encoder, fallback renderer ou pipeline FFmpeg independente. Reutilizar
 `resolveClipSourceEndSec` e o gerenciamento `ExportJobs`, extraindo somente a
 orquestração necessária à tela simples. Não importar o shell inteiro do editor.
 
+### 02J — preflight de GIF por trecho (isolado)
+
+Contrato puro `src/lib/savedRecordingGif.ts`, ainda NÃO ligado a IPC/UI ou encoder.
+Pedido explícito `mode: original`, início/fim, FPS 15/20/25/30 existentes, altura
+480/720 e repetição. Rejeita campos extras, inclusive caminhos/cena; metadados
+precisam vir do probe do original aprovado pelo main, nunca do renderer.
+Não concede autorização de fonte/destino nem substitui guardas de sessão/owner.
+
+Política inicial SOMENTE da ação simples: trecho até 60 s dentro da fonte,
+maior aresta até 1280 px, sem upscale, proporção com arredondamento inteiro e
+até 1 bilhão de pixel-frames. Trecho longo pode exigir menos FPS/resolução;
+essa guarda limita trabalho, não garante tempo/consumo máximo nem tamanho GIF.
+Não impõe limites novos ao editor existente ou à gravação de vídeo.
+Contagem de frames reutiliza `clipOutputFrameCount` e epsilon do compositor;
+trecho sem frames é recusado. Repetição usa o contrato nativo existente 0/1.
+
+`pixelFrames` é estimativa de trabalho, NÃO bytes GIF ou RAM simultânea. Não
+mostrar como tamanho estimado ao usuário. Estimativa de arquivo permanece
+pendente de amostras reais pelo compositor; GIF pode ser maior que MP4 e não tem
+áudio. Nenhuma composição de webcam/cursor/edições foi adicionada implicitamente.
+Próximo: conectar probe main-owned, cena/trecho original explícito, ExportJobs,
+diálogo/destino 02G e validação decode/codec, depois UI/progresso/cancelamento.
+Teste unitário desse preflight não homologa GIF real ou o fluxo por input OS.
+
+Integração mapeada (ainda não implementada): reutilizar
+`electron/mcp/hidden-video.ts:openVideoInHiddenWindow` para obter metadados da
+fonte já autorizada; sempre fechar a janela oculta em `finally` e revalidar
+sessão/dono após o await. Não confiar no `video.duration` enviado pela UI.
+Documento efêmero/cena compartilhada devem desabilitar layout/zoom/cursor
+automático no modo original, sem alterar configurações reais do usuário.
+Não passar JSON de cena arbitrário do renderer ao novo endpoint. `startGifExport`
+exige addon com controles de cancelamento; ausência deve falhar explicitamente.
+Publicação do destino 02G somente após término do writer e decode válido, nunca
+porque a promessa retornou estatísticas. Validar conteúdo/duração/frame count e
+medir bytes finais; atraso GIF em centésimos pode quantizar a duração.
+
 | Ação proposta | Fluxo | Proteção necessária antes de habilitar |
 |---|---|---|
 | Compartilhar original | Escolher arquivo original e destino explicitamente; adaptador de plataforma abre a escolha de destino | Não enviar automaticamente; não tratar caminho local como link público; cancelamento não é erro nem envio |

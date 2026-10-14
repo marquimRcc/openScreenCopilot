@@ -432,6 +432,35 @@ mais cliques cegos. Cancel nativo, layout final após ajustes CSS/ordem, wiring 
 janela completa e fluxo captura→resultado seguem sem aceite real; unidade/harness
 não os substituem. App protegido PID21240 não tocado. Sem novo GIF/Compartilhar.
 
+## Incremento 02J — contrato limitado de GIF por trecho
+
+Preflight puro e isolado em `src/lib/savedRecordingGif.ts`: pedido sem caminhos,
+fonte/probe main-owned obrigatório na futura integração, trecho original explícito,
+intervalo válido até 60 s, FPS existentes e alturas 480/720. Sem upscale,
+maior aresta 1280 px, proporção com arredondamento inteiro, limite de trabalho de
+1 bilhão pixel-frames e contagem reutilizando grid/epsilon do compositor.
+Nenhum novo encoder/fallback, IPC, botão ou GIF habilitado. Não modifica o editor.
+Estimativa de trabalho NÃO equivale a bytes/RAM; estimativa de arquivo ainda pendente.
+Contrato e integração restante em [SIMPLE-RECORDING-UX.md](SIMPLE-RECORDING-UX.md).
+Preflight + grid: 2 arquivos/55 testes aprovados. Ambos tsc, lint26 herdados,
+i18n15/964chaves e docs50 aprovados inicialmente. Primeira suíte final encontrou
+timeout15s em teste herdado MCP `runs one export at a time`: esperava 20ms antes
+da segunda chamada, sem confirmar runner iniciado. Leitura mostrou que o segundo
+pedido podia chegar antes do primeiro sob carga; diagnóstico de corrida de teste,
+não regressão de exportação demonstrada. Duas esperas fixas dos testes de export
+foram substituídas por Promise sinalizada pelo FakeRunners após instalar release.
+Primeira suíte: 1 falha/4.882 aprovados/5 skip/324,08s; log preservado em
+`.cache/gif-plan-full.log`. Após corrigir a sincronização: 3 arquivos/94 focados
+aprovados; ambos tsc novamente aprovados e lint26 sem novos avisos. Suíte final
+corrigida: 347 arquivos/4.883 aprovados/5 ignorados/283,42s, runtime fixado e
+quatro workers, log `.cache/gif-plan-final-full.log`. Sem mudança de produção MCP.
+Docs50 e i18n15 aprovados; Vite/pacote completos aprovados, 23 payloads nativos
+SHA256 idênticos. Pacote `.cache/result-package/win-unpacked` atualizado, não
+relançado/instalado. Sem fonte nativa alterada, build C++/Rust não necessário.
+App aberto não tocado. Preflight isolado não importado pelo runtime: sem mudança
+visual/encoder nesta rodada, portanto sem novo teste GUI/GIF real; integração e
+homologação nativa seguem pendentes, não inferidas da suíte unitária.
+
 ## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

@@ -37,6 +37,11 @@ class FakeRunners {
 	/** Set: exports stay running until `releaseExport` is called. */
 	holdExport = false;
 	releaseExport: () => void = () => undefined;
+	private notifyExportStarted: () => void = () => undefined;
+	/** Synchronize with runner readiness, not a filesystem-dependent sleep. */
+	readonly exportStarted = new Promise<void>((resolve) => {
+		this.notifyExportStarted = resolve;
+	});
 	open = 0;
 
 	constructor(private readonly videoPath: string) {}
@@ -71,6 +76,7 @@ class FakeRunners {
 		const result = this.results[request.kind] ?? { success: true };
 		if (request.kind === "export" && this.holdExport) {
 			this.releaseExport = () => finish(result);
+			this.notifyExportStarted();
 		} else if (request.kind !== "record") {
 			finish(result);
 		} else if (this.recordStarts) {
@@ -662,7 +668,7 @@ describe("exportVideo", () => {
 		const { projectId } = await recordTake();
 		runners.holdExport = true;
 		const first = call("exportVideo", { projectId, path: path.join(dir, "a.mp4") });
-		await new Promise((resolve) => setTimeout(resolve, 20));
+		await runners.exportStarted;
 		const second = await call("exportVideo", { projectId, path: path.join(dir, "b.mp4") });
 		expect(second.isError).toBe(true);
 		expect(textOf(second)).toContain("already running");
@@ -721,7 +727,7 @@ describe("getFrames on a project", () => {
 
 		runners.holdExport = true;
 		const exporting = call("exportVideo", { projectId: first.projectId, path: out });
-		await new Promise((resolve) => setTimeout(resolve, 20));
+		await runners.exportStarted;
 		await call("addTrim", { projectId: first.projectId, startSec: 2, endSec: 4 });
 		runners.releaseExport();
 		expect(textOf(await exporting)).toContain("changed while it exported");
