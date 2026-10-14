@@ -588,6 +588,48 @@ O retorno de `registerIpcHandlers` é o ponto disponível para fornecer essa
 barreira ao main, sem criar outro encoder ou alterar vendor. Esta rodada fez
 somente inspeção/documentação; runtime e pacote permanecem no incremento 02M.
 
+## Incremento 02N — barreira de quit para cópia/GIF
+
+`pauseAndDrain` congela admissão sincronamente e solicita cancelamento dos jobs
+atuais, aguardando stream/writer/decoder e finally de limpeza própria. A fronteira
+de publicação continua não cancelável; espera em vez de desfazer arquivo publicado.
+Pausas balanceadas/idempotentes permitem retomar admissão se o fechamento for
+vetado. Não há timer que force saída, remoção recursiva ou varredura por prefixo.
+
+Main recebe a barreira pelo retorno de registerIpcHandlers e a integra ao único
+before-quit existente com `createQuitBarrier`. Quit repetido durante espera não
+contorna jobs; reentrada passa uma vez. Admissão é liberada imediatamente antes
+da reentrada síncrona, permitindo novas cópias/GIFs se a janela vetar close; a
+próxima tentativa drena novamente. STT e flush seguem depois dos derivados;
+flush com erro mantém app aberto e pode ser tentado novamente. Falha de limpeza
+pode deixar órfão, mas não antecipa espera do writer nem apaga original/destino.
+
+QA isolada Electron + compositor real Windows: dois GIFs sintéticos cancelados
+por app.quit, duas barreiras; primeiro close vetado, segundo job admitido e
+segundo quit finalizado exit0. will-quit escreveu PASS; zero staging/derivados
+restantes e SHA256 original d6a51061…2365 preservado em ambas as esperas.
+Evidências `.cache/derivative-quit-qa-SDOvub/metrics.json` e
+`.cache/derivative-quit-final.*`. Primeira execução sem recibo final verificável
+ficou apenas diagnóstica; harness passou a escrever recibo síncrono em will-quit
+e a capturar exit com Start-Process -Wait. Processo do usuário não tocado.
+
+Limites: fixture usa veto programático e callback de shutdown sintético, não
+cliques OS/diálogo de edição nem Whisper real. O comportamento herdado do STT
+após cancelar quit continua pendente: shutdownStt marca sttShuttingDown e o IPC
+retém manager; não afirmar retomada de ASR após veto. Esta barreira restaura
+admissão de cópia/GIF, não reformula o ciclo STT legado. app.exit/crash/kill não
+passam por before-quit; recuperação de órfãos e exportador legado fora do escopo.
+Botão GIF e homologação GUI continuam pendentes. Validações finais aprovadas:
+4 arquivos/52 testes focados; ambos tsc, lint26 avisos herdados, i18n15/964chaves,
+docs50, Vite e pacote completo. Suíte completa uma vez:352 arquivos/4.953
+aprovados/5 ignorados/320,92s, Node22.22.1/npm10.9.4 e quatro workers.
+23 payloads nativos idênticos por SHA256; FFmpeg estático excluído conforme
+configuração. WGC ca762c88…a48, sem mudança/rebuild de fonte Rust/C++.
+Pacote `.cache/result-package/win-unpacked` atualizado, não instalado/relançado.
+Logs finais `.cache/derivative-quit-{full,lint,vite,package}.log`.
+Typecheck inicial detectou Promise<void> versus Promise<undefined> no callback
+neutro; corrigido e ambos checks repetidos com sucesso antes do build final.
+
 ## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

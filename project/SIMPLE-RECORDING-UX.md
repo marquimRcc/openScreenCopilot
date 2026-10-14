@@ -183,7 +183,21 @@ falhou clone; corrigido retorno void, sem alterar API por causa desse erro.
 Interface principal continua sem botão GIF; opções/aviso/estimativa/progresso,
 teste manual OS e shutdown/recuperação permanecem próximos incrementos.
 
-Integração mapeada (ainda não implementada): reutilizar
+### 02N — encerramento coordenado dos derivados
+
+Cópia/GIF congelam novas operações e aguardam cancelamento, writer/decoder e
+limpeza própria antes da reentrada em app.quit. Publicação já iniciada é
+aguardada, não desfeita. Se uma janela vetar o fechamento, admissão de novos
+derivados é restaurada; outra tentativa de quit drena novamente. Não forçar
+saída por timeout nem limpar temporários por prefixo. Crash/app.exit e falhas de
+limpeza podem deixar órfãos; recuperação continua pendente. STT legado após veto
+de quit não foi redesenhado/homologado por este incremento.
+
+Teste isolado real de lifecycle/compositor passou duas tentativas, com veto
+programático entre elas, original intacto e sem staging final. Não equivale a
+input OS, diálogo real ou ASR. App do usuário e pacote em uso não tocados.
+
+Integração mapeada (agora implementada em 02M): reutilizar
 `electron/mcp/hidden-video.ts:openVideoInHiddenWindow` para obter metadados da
 fonte já autorizada; sempre fechar a janela oculta em `finally` e revalidar
 sessão/dono após o await. Não confiar no `video.duration` enviado pela UI.

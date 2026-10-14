@@ -5484,6 +5484,17 @@ export function registerIpcHandlers(
 	// `openscreen mcp` serves the same tools on stdio, from the CLI process.
 	return {
 		mcpController,
+		pauseRecordingDerivatives: () => {
+			const copies = savedRecordingCopies.pauseAndDrain();
+			const gifs = savedRecordingGifs.pauseAndDrain();
+			return {
+				settled: Promise.all([copies.settled, gifs.settled]).then(() => undefined),
+				resume: () => {
+					copies.resume();
+					gifs.resume();
+				},
+			};
+		},
 		mcpAppChannel: { deps: mcpToolDeps, runTool: mcpRunTool },
 		agentServices: {
 			mcpToolDeps,

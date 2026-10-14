@@ -38,13 +38,14 @@ const digest = async (file: string, signal: AbortSignal) => {
 };
 
 /** Main-only orchestration. No renderer paths/scenes or native controls escape.
- * Not connected to runtime until real dependencies and mutual busy guards exist. */
+ * Runtime dependencies and mutual admission guards are supplied by the main process. */
 export class SavedRecordingGifs {
 	private readonly jobs = new ExportJobs();
 	private readonly active = new Map<
 		ExportOwner,
-		{ id: string; abort: AbortController; publishing: boolean }
+		{ id: string; abort: AbortController; publishing: boolean; done: Promise<void>; finish(): void }
 	>();
+	private pauses = 0;
 	private readonly targets: DerivedRecordingTargets;
 	constructor(private readonly deps: Deps) {
 		this.targets = new DerivedRecordingTargets(() => {
@@ -54,6 +55,21 @@ export class SavedRecordingGifs {
 	}
 	isBusy() {
 		return this.active.size > 0;
+	}
+	/** Never detach a native writer/decoder during quit; release admission if quit is canceled. */
+	pauseAndDrain() {
+		this.pauses++;
+		const jobs = [...this.active.entries()];
+		for (const [owner] of jobs) this.cancel(owner);
+		let resumed = false;
+		return {
+			settled: Promise.all(jobs.map(([, job]) => job.done)).then(() => undefined),
+			resume: () => {
+				if (resumed) return;
+				resumed = true;
+				this.pauses--;
+			},
+		};
 	}
 	cancel(owner: ExportOwner): boolean {
 		const job = this.active.get(owner);
@@ -74,6 +90,7 @@ export class SavedRecordingGifs {
 		const live = this.deps.current();
 		const source = live ? { key: live.key, path: live.path } : null;
 		if (
+			this.pauses > 0 ||
 			!source ||
 			source.path !== expectedPath ||
 			this.isBusy() ||
@@ -86,7 +103,11 @@ export class SavedRecordingGifs {
 		if (![".mp4", ".webm"].includes(path.extname(source.path).toLowerCase())) {
 			return { success: false, error: "Original GIF supports MP4 and WebM recordings." };
 		}
-		const job = { id: randomUUID(), abort: new AbortController(), publishing: false };
+		let finish!: () => void;
+		const done = new Promise<void>((resolve) => {
+			finish = resolve;
+		});
+		const job = { id: randomUUID(), abort: new AbortController(), publishing: false, done, finish };
 		this.active.set(owner, job);
 		const onDestroyed = () => {
 			this.cancel(owner);
@@ -216,6 +237,7 @@ export class SavedRecordingGifs {
 			} finally {
 				owner.removeListener("destroyed", onDestroyed);
 				this.active.delete(owner);
+				job.finish();
 			}
 		}
 	}

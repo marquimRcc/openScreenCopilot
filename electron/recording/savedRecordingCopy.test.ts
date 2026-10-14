@@ -51,6 +51,76 @@ afterEach(async () => {
 	await fs.rm(directory, { recursive: true, force: true });
 });
 describe("saved-original copy", () => {
+	it("waits for copy staging cleanup even when publication is already noncancelable", async () => {
+		let entered!: () => void, release!: () => void;
+		const cleaning = new Promise<void>((resolve) => {
+			entered = resolve;
+		});
+		const held = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		const rmdir = fs.rmdir.bind(fs);
+		const spy = vi.spyOn(fs, "rmdir").mockImplementation(async (folder) => {
+			entered();
+			await held;
+			await rmdir(folder);
+		});
+		try {
+			const pending = copies.copy(owner, original);
+			await cleaning;
+			expect(copies.cancel(owner)).toBe(false);
+			const drain = copies.pauseAndDrain();
+			let settled = false;
+			void drain.settled.then(() => {
+				settled = true;
+			});
+			await Promise.resolve();
+			expect(settled).toBe(false);
+			release();
+			expect((await pending).success).toBe(true);
+			await drain.settled;
+			expect((await fs.readdir(directory)).sort()).toEqual(
+				[path.basename(original), path.basename(destination)].sort(),
+			);
+			drain.resume();
+		} finally {
+			release();
+			spy.mockRestore();
+		}
+	});
+	it("freezes admission and waits for the pending picker; balanced resume permits work after quit veto", async () => {
+		let entered!: () => void, release!: (value: string | null) => void;
+		const opening = new Promise<void>((resolve) => {
+			entered = resolve;
+		});
+		const picking = new Promise<string | null>((resolve) => {
+			release = resolve;
+		});
+		pick.mockImplementation(() => {
+			entered();
+			return picking;
+		});
+		const pending = copies.copy(owner, original);
+		await opening;
+		const first = copies.pauseAndDrain(),
+			second = copies.pauseAndDrain();
+		let settled = false;
+		void first.settled.then(() => {
+			settled = true;
+		});
+		await Promise.resolve();
+		expect(settled).toBe(false);
+		release(destination);
+		expect(await pending).toEqual({ success: false, canceled: true });
+		await Promise.all([first.settled, second.settled]);
+		expect(await fs.readdir(directory)).toEqual([path.basename(original)]);
+		first.resume();
+		first.resume();
+		expect((await copies.copy(owner, original)).success).toBe(false);
+		second.resume();
+		pick.mockResolvedValue(destination);
+		expect((await copies.copy(owner, original)).success).toBe(true);
+	});
 	it.each([
 		"mp4",
 		"webm",

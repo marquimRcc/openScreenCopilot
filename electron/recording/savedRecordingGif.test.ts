@@ -64,6 +64,112 @@ afterEach(async () => {
 	await fs.rm(dir, { recursive: true, force: true });
 });
 describe("saved-original GIF controller with synthetic writer/validator", () => {
+	it("drains a native writer even when cancel throws, blocks new jobs and resumes after a veto", async () => {
+		const entered = deferred<void>(),
+			writing = deferred<unknown>();
+		deps.start = vi.fn(() => {
+			entered.resolve();
+			return {
+				result: writing.promise,
+				cancel: () => {
+					throw new Error("native cancel failed");
+				},
+			};
+		});
+		const pending = gifs.export(owner, original, request);
+		await entered.promise;
+		const drain = gifs.pauseAndDrain();
+		let settled = false;
+		void drain.settled.then(() => {
+			settled = true;
+		});
+		await Promise.resolve();
+		expect(settled).toBe(false);
+		expect(gifs.isBusy()).toBe(true);
+		writing.resolve({ frames: 30 });
+		expect(await pending).toEqual({ success: false, canceled: true });
+		await drain.settled;
+		expect(await fs.readdir(dir)).toEqual([path.basename(original)]);
+		expect((await gifs.export(owner, original, request)).success).toBe(false);
+		drain.resume();
+		drain.resume();
+		deps.start = vi.fn((_prepared, staged) => ({
+			result: fs.writeFile(staged, "fixture").then(() => ({})),
+			cancel: () => true,
+		}));
+		expect((await gifs.export(owner, original, request)).success).toBe(true);
+	});
+	it("waits for a canceled decoder AND owned cleanup before the drain completes", async () => {
+		const entered = deferred<void>(),
+			validation = deferred<void>(),
+			cleaning = deferred<void>(),
+			releaseCleanup = deferred<void>();
+		deps.validate = vi.fn(async () => {
+			entered.resolve();
+			await validation.promise;
+		});
+		const rmdir = fs.rmdir.bind(fs);
+		const spy = vi.spyOn(fs, "rmdir").mockImplementation(async (folder) => {
+			cleaning.resolve();
+			await releaseCleanup.promise;
+			await rmdir(folder);
+		});
+		try {
+			const pending = gifs.export(owner, original, request);
+			await entered.promise;
+			const drain = gifs.pauseAndDrain();
+			let settled = false;
+			void drain.settled.then(() => {
+				settled = true;
+			});
+			await Promise.resolve();
+			expect(settled).toBe(false);
+			validation.resolve();
+			await cleaning.promise;
+			expect(settled).toBe(false);
+			releaseCleanup.resolve();
+			expect(await pending).toEqual({ success: false, canceled: true });
+			await drain.settled;
+			expect(await fs.readdir(dir)).toEqual([path.basename(original)]);
+			drain.resume();
+		} finally {
+			releaseCleanup.resolve();
+			validation.resolve();
+			spy.mockRestore();
+		}
+	});
+	it("waits for publication already past the cancellation boundary without undoing it", async () => {
+		const entered = deferred<void>(),
+			release = deferred<void>();
+		const link = fs.link.bind(fs);
+		const spy = vi.spyOn(fs, "link").mockImplementation(async (from, to) => {
+			entered.resolve();
+			await release.promise;
+			await link(from, to);
+		});
+		try {
+			const pending = gifs.export(owner, original, request);
+			await entered.promise;
+			expect(gifs.cancel(owner)).toBe(false);
+			const drain = gifs.pauseAndDrain();
+			let settled = false;
+			void drain.settled.then(() => {
+				settled = true;
+			});
+			await Promise.resolve();
+			expect(settled).toBe(false);
+			release.resolve();
+			expect((await pending).success).toBe(true);
+			await drain.settled;
+			expect((await fs.readdir(dir)).sort()).toEqual(
+				[path.basename(destination), path.basename(original)].sort(),
+			);
+			drain.resume();
+		} finally {
+			release.resolve();
+			spy.mockRestore();
+		}
+	});
 	it("does not detach the writer when the progress transport fails", async () => {
 		deps.progress = vi.fn(() => {
 			throw new Error("UI closed during send");

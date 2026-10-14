@@ -26,7 +26,11 @@ interface CopyDeps {
 
 /** Copies ORIGINAL bytes only. No recompression, webcam composition or upload. */
 export class SavedRecordingCopies {
-	private readonly active = new Map<Owner, { abort: AbortController; publishing: boolean }>();
+	private readonly active = new Map<
+		Owner,
+		{ abort: AbortController; publishing: boolean; done: Promise<void>; finish(): void }
+	>();
+	private pauses = 0;
 	private readonly targets: DerivedRecordingTargets;
 	constructor(private readonly deps: CopyDeps) {
 		this.targets = new DerivedRecordingTargets(() => {
@@ -37,6 +41,21 @@ export class SavedRecordingCopies {
 	isBusy() {
 		return this.active.size > 0;
 	}
+	/** Freeze admission synchronously; wait for streams AND owned cleanup, not just abort. */
+	pauseAndDrain() {
+		this.pauses++;
+		const jobs = [...this.active.entries()];
+		for (const [owner] of jobs) this.cancel(owner);
+		let resumed = false;
+		return {
+			settled: Promise.all(jobs.map(([, job]) => job.done)).then(() => undefined),
+			resume: () => {
+				if (resumed) return;
+				resumed = true;
+				this.pauses--;
+			},
+		};
+	}
 	cancel(owner: Owner): boolean {
 		const job = this.active.get(owner);
 		if (!job || job.publishing) return false;
@@ -46,6 +65,7 @@ export class SavedRecordingCopies {
 	async copy(owner: Owner, expectedPath: string): Promise<SavedRecordingCopyResult> {
 		const source = this.deps.current();
 		if (
+			this.pauses > 0 ||
 			!source ||
 			source.path !== expectedPath ||
 			this.deps.isBusy() ||
@@ -57,7 +77,11 @@ export class SavedRecordingCopies {
 		const extension = path.extname(source.path).slice(1).toLowerCase();
 		if (extension !== "mp4" && extension !== "webm")
 			return { success: false, error: "Original copy supports MP4 and WebM recordings." };
-		const job = { abort: new AbortController(), publishing: false };
+		let finish!: () => void;
+		const done = new Promise<void>((resolve) => {
+			finish = resolve;
+		});
+		const job = { abort: new AbortController(), publishing: false, done, finish };
 		this.active.set(owner, job);
 		const onDestroyed = () => job.abort.abort();
 		owner.once("destroyed", onDestroyed);
@@ -131,6 +155,7 @@ export class SavedRecordingCopies {
 			} finally {
 				owner.removeListener("destroyed", onDestroyed);
 				this.active.delete(owner);
+				job.finish();
 			}
 		}
 	}

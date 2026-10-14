@@ -69,6 +69,7 @@ import {
 	showPermissionsWindow,
 	showPermissionsWindowIfNeeded,
 } from "./permissions";
+import { createQuitBarrier } from "./quitBarrier";
 import { setDisplaySleepBlocked } from "./recording/displaySleepBlocker";
 import { RecordingsDirManager } from "./recording/recordingsDirManager";
 import { offersStarPrompt, REPO_URL, storeReviewUrl } from "./star-prompt";
@@ -1135,34 +1136,33 @@ app.on("activate", () => {
 	}
 });
 
-let sttShutdownPromise: Promise<void> | null = null;
-let sttShutdownFinished = false;
+let pauseRecordingDerivatives: ReturnType<typeof registerIpcHandlers>["pauseRecordingDerivatives"] =
+	() => ({ settled: Promise.resolve(undefined), resume: () => undefined });
 
 // Electron does not wait for an async event listener. Hold the first quit long
 // enough to terminate the long-lived Whisper helper, then re-enter app.quit()
 // with a guard so the second before-quit event can proceed normally. Without
 // this, a normal Cmd+Q orphaned the helper under launchd with the model and GPU
 // resources still resident after every OpenScreen window had gone away.
+const quitBarrier = createQuitBarrier({
+	pauseDerivatives: () => pauseRecordingDerivatives(),
+	shutdown: () =>
+		shutdownStt()
+			.catch((error) => {
+				console.error("[stt] Failed to stop whisper helper during app quit:", error);
+			})
+			// Retry a failed persistence flush on the next quit attempt.
+			.then(flushChatPersistence),
+	quit: () => app.quit(),
+	onError: (error) => console.error("[quit] Failed to finish shutdown; app remains open:", error),
+});
 app.on("before-quit", (event) => {
 	// A check started seconds ago must not settle after the app is gone and try to open a
 	// dialog on a quitting app. Aborting on the FIRST quit is deliberate even though that
 	// quit is deferred below: the user asked to leave, and a check they can re-run from the
 	// tray is not worth holding the helper's teardown behind.
 	updateCheckAbort?.abort();
-	if (sttShutdownFinished) return;
-	event.preventDefault();
-	if (sttShutdownPromise) return;
-	sttShutdownPromise = shutdownStt()
-		.catch((error) => {
-			console.error("[stt] Failed to stop whisper helper during app quit:", error);
-		})
-		// Chat history is written asynchronously. Flushing after the helper stops also
-		// catches a reply that landed meanwhile; a turn still running is not waited for.
-		.then(flushChatPersistence)
-		.finally(() => {
-			sttShutdownFinished = true;
-			app.quit();
-		});
+	quitBarrier(event);
 });
 
 app.on("will-quit", () => {
@@ -1393,7 +1393,7 @@ appReady?.then(async () => {
 		showMainWindow();
 	}
 
-	const { mcpController, mcpAppChannel } = registerIpcHandlers(
+	const ipcServices = registerIpcHandlers(
 		createEditorWindowWrapper,
 		createSourceSelectorWindowWrapper,
 		createCountdownOverlayWindowWrapper,
@@ -1418,6 +1418,8 @@ appReady?.then(async () => {
 		switchToHudWrapper,
 		() => editorHasUnsavedChanges,
 	);
+	const { mcpController, mcpAppChannel } = ipcServices;
+	pauseRecordingDerivatives = ipcServices.pauseRecordingDerivatives;
 
 	// Native STT (whisper.cpp + forced alignment) — single instance per app.
 	registerSttIpc(ipcMain);
