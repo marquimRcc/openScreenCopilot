@@ -1,0 +1,14 @@
+.root { border: 1px solid #333a45; border-radius: 10px; padding: 16px; background: #151a22; color: #f5f7fa; }
+.root h2 { font-size: 17px; margin: 0 0 8px; }
+.root p { font-size: 13px; color: #abb4c2; }
+.root fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+.range label { display: grid; gap: 6px; font-size: 13px; }
+.range input, .range select { box-sizing: border-box; min-width: 0; width: 100%; background: #09090b; color: inherit; border: 1px solid #394150; border-radius: 6px; padding: 8px; }
+.root summary { cursor: pointer; font-size: 13px; }
+.loop { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.output { display: block; margin: 12px 0; font-size: 13px; }
+.root button { border: 1px solid #394150; border-radius: 7px; padding: 8px 12px; background: #09090b; color: inherit; font: inherit; font-size: 13px; margin-top: 10px; cursor: pointer; }
+.root button:disabled { opacity: .45; cursor: default; }
+.root input:focus-visible, .root select:focus-visible, .root button:focus-visible, .root summary:focus-visible { outline: 2px solid #10b981; outline-offset: 3px; }
+@media (max-width: 420px) { .range { grid-template-columns: 1fr; } }

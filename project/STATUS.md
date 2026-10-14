@@ -682,6 +682,39 @@ main-ClSkljfg.js e preload.mjs dentro de app.asar iguais ao dist atual, além do
 23 payloads nativos. Verificador privado `.cache/check-stt-package.cjs`.
 Pacote não instalado/relançado; app do usuário intacto. Botão GIF ainda ausente.
 
+## Incremento 02P — opções GIF isoladas, ainda sem botão no resultado
+
+`RecordingGifOptions` oferece início/fim, opções adicionais de resolução/FPS e
+repetição, aviso fornecido pelo chamador e dimensões/duração previstas. Padrão
+trecho0–10s limitado pela fonte,480p/15FPS/loop. Usa o preflight compartilhado:
+recusa vazio, intervalo inválido, mais de60s, metadados ausentes e orçamento
+excedido; não upscala. NaN/Infinity não viram atributos max do input.
+
+Componente NÃO importado/montado por RecordingResult. Só chama onReview com as
+seis opções permitidas, nunca caminho, cena ou plan/pixelFrames. Nenhum IPC,
+encoder, upload, arquivo ou conversão automática. Campos/submit bloqueados
+durante revisão, trava síncrona evita duplicatas; Cancelar permanece disponível
+e delega ao pai. Erro não anuncia arquivo salvo. Metadados são consultivos na UI;
+integração main ainda deve re-probar a fonte aprovada e manter identidade/owner.
+
+Labels/locale são props explícitas para futura integração com os15 idiomas;
+nenhuma string nova fixa em inglês/português foi ligada ao runtime. Testes usam
+labels sintéticas. Antes de montar: fornecer traduções reais, estimativa honesta
+de bytes por serviço main-owned, progresso/cancelamento/arquivo final e focus
+apropriado à abertura inline. Não confundir dimensões/duração com tamanho GIF.
+
+3 arquivos/69 testes focados aprovados (formulário, preflight e resultado).
+Validações finais aprovadas: ambos tsc, lint26 avisos herdados, i18n15/964chaves,
+docs50, Vite e pacote completo. Suíte completa uma vez, isolada com dois workers:
+353 arquivos/4.970 aprovados/5 ignorados/355,40s, Node22.22.1, exit0 sem signal.
+Recibo `.cache/gif-options-full.json` e log correspondente, fim13:59:09UTC.
+Entry main.js/chunk atual/preload no app.asar conferidos por SHA256, mais23
+payloads nativos idênticos; código runtime efetivo igual ao02O, como esperado
+para componente não importado. Sem fonte Rust/C++ alterada/rebuild nativo.
+Pacote `.cache/result-package/win-unpacked` atualizado, não lançado/instalado.
+Logs `.cache/gif-options-{lint,vite,package}.log`. Sem homologação visual/OS:
+componente isolado não aparece no app; app do usuário não tocado.
+
 ## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

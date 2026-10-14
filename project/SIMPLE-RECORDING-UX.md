@@ -210,6 +210,21 @@ sintético antes/depois de veto, mesmo gerente, um shutdown final e exit0.
 Não mede precisão da fala, transcrição longa em andamento nem diálogo OS real.
 Pacote/app em uso não tocados; a limitação de STT descrita em 02N é histórica.
 
+### 02P — opções GIF preparadas, não ativadas
+
+Componente RecordingGifOptions isolado reutiliza preflight para início/fim,
+resolução/FPS/repetição e mostra dimensões/duração, sem estimar bytes pelo MP4.
+Padrão curto0–10s/480p/15FPS; opções avançadas recolhidas. Revisão recebe somente
+as seis opções permitidas, nunca caminhos/cena/plan. Bloqueia duplicatas e campos
+enquanto aguarda, mantendo Cancelar disponível. Labels/locale vêm do pai para
+futura integração traduzida; ainda não importa IPC nem chama compositor.
+
+Não montado por RecordingResult: conversão continua indisponível na interface.
+Antes de habilitar: estimativa main-owned, traduções15 idiomas, fonte/owner
+revalidados, progresso UUID, cancelamento e resposta final publicada. Nenhum
+valor em bytes é inventado. UI metadata não concede permissões de arquivos.
+JSdom valida comportamento, não layout físico/acessibilidade por OS ou export.
+
 Integração mapeada (agora implementada em 02M): reutilizar
 `electron/mcp/hidden-video.ts:openVideoInHiddenWindow` para obter metadados da
 fonte já autorizada; sempre fechar a janela oculta em `finally` e revalidar
