@@ -51,7 +51,8 @@ gravação baseline reproduzível. Evidência: versão/commit, logs, ffprobe e v
 Dependência: 01.
 
 Estado: crop D3D11, seletor retangular e resultado simples implementados;
-indicador persistente em validação (02E), endpoint novo ainda pendente.
+indicador persistente em validação (02E). Enumeração nativa de saídas preparada
+em02Q; seletor de endpoint e medidor do sistema ainda pendentes.
 Fundação independente autorizada pelo usuário;
 aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).

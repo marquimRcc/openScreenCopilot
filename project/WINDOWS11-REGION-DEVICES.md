@@ -174,6 +174,32 @@ ausente/erro do shell sem apresentar sucesso falso. Critérios em
 
 ## 02C — saída de áudio, microfone e falhas
 
+### 02Q — enumeração nativa de saídas (fundação, sem seletor ativo)
+
+Helper oferece `--list-audio-outputs`: snapshot JSON v1 com escopo
+`render-loopback`, endpoints WASAPI eRender ativos, ID MMDevice, nome amigável e
+marcador do padrão eConsole. Não abre stream nem altera dispositivos. Erro de
+enumeração/propriedade é erro, não uma lista vazia de sucesso. Limite256 endpoints;
+lista genuinamente vazia e ausência de padrão são representáveis.
+`--capabilities` anuncia `audioOutputEnumeration`, sem prometer seleção ou medidor.
+
+Adaptador main-only `windowsAudioOutputs.ts` executa somente esse comando, com
+timeout3s/saída1MiB, valida schema/escopo/tipos/limites/IDs duplicados e padrão
+ambíguo. Preserva Unicode e IDs opacos; não casa por nome nem confunde IDs Chromium.
+Ainda NÃO importado pelo runtime, sem IPC/preload/UI ou escolha efetiva de saída.
+Captura existente continua usando o padrão; seleção explícita, revalidação antes
+da tomada, falhas de desconexão e medidores seguem pendentes.
+
+QA real isolada em14/10/2026: helper recompilado + adaptador real retornaram duas
+saídas ativas, um padrão, IDs estáveis em duas consultas. Não capturou áudio e não
+homologa dispositivo selecionado, troca/desconexão ou GUI. Métricas privadas em
+`.cache/audio-output-qa.json`, sem nomes/IDs publicados. Build nativo completo
+aprovado, incluindo crop e33 testes do encoder; SHA256 WGC
+`e7fc8d7457480b9e7e725586cc28e57b9c09adad9e016a4b23dffd361075f4cd`.
+Primeiro build falhou por ordem de headers do SDK; corrigida incluindo mmdeviceapi
+antes das property keys. Testes focados30/2arquivos, ambos typechecks e lint26
+avisos herdados aprovados. Validação final/pacote registrados no STATUS.
+
 Padrão de áudio implementado em código em 2026-10-14: store durável, fallback IPC,
 painel de preparação e browser shim passam a iniciar com sistema ligado; uma
 preferência booleana `false` salva continua desligada. Microfone e câmera continuam

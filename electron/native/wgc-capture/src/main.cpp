@@ -8,6 +8,7 @@
 #include "monitor_utils.h"
 #include "wasapi_device_watcher.h"
 #include "wasapi_loopback_capture.h"
+#include "wasapi_output_devices.h"
 #include "wasapi_render_keepalive.h"
 #include "frame_visibility.h"
 #include "webcam_capture.h"
@@ -649,7 +650,24 @@ void readCaptureCommands(CaptureControl& control, const std::function<void(bool)
 // (0x80070003) before any encoder was involved (getopenscreen/openscreen#483).
 int wmain(int argc, wchar_t* argv[]) {
     if (argc == 2 && std::wstring(argv[1]) == L"--capabilities") {
-        std::cout << "{\"schemaVersion\":1,\"captureRegion\":true}" << std::endl;
+        std::cout << "{\"schemaVersion\":1,\"captureRegion\":true,\"audioOutputEnumeration\":true}" << std::endl;
+        return 0;
+    }
+    if (argc == 2 && std::wstring(argv[1]) == L"--list-audio-outputs") {
+        winrt::init_apartment(winrt::apartment_type::multi_threaded);
+        std::vector<WasapiOutputDevice> devices;
+        if (!enumerateWasapiOutputDevices(devices)) {
+            std::cerr << "ERROR: Failed to enumerate WASAPI output devices" << std::endl;
+            return 1;
+        }
+        std::cout << "{\"schemaVersion\":1,\"scope\":\"render-loopback\",\"devices\":[";
+        for (size_t i = 0; i < devices.size(); ++i) {
+            if (i) std::cout << ",";
+            std::cout << "{\"id\":\"" << jsonEscape(wideToUtf8(devices[i].id))
+                      << "\",\"name\":\"" << jsonEscape(wideToUtf8(devices[i].name))
+                      << "\",\"isDefault\":" << (devices[i].isDefault ? "true" : "false") << "}";
+        }
+        std::cout << "]}" << std::endl;
         return 0;
     }
     // Before anything reads a coordinate. `findMonitorForCapture` matches the

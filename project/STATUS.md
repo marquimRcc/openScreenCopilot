@@ -725,7 +725,33 @@ Pacote `.cache/result-package/win-unpacked` atualizado, não lançado/instalado.
 Logs `.cache/gif-options-{lint,vite,package}.log`. Sem homologação visual/OS:
 componente isolado não aparece no app; app do usuário não tocado.
 
-## Regra de atualização contínua
+## Incremento 02Q — enumeração WASAPI, ainda sem UI
+
+Helper `--list-audio-outputs` enumera somente eRender ativos com
+ID/nome/padrão eConsole, sem abrir stream. Capability separada, sem prometer seleção.
+Adaptador main-only valida schema/escopo/dados, limita tempo/saída e recusa erro,
+duplicatas ou padrão ambíguo sem inventar default/fallback Chromium. Não importado
+pelo runtime; sem IPC/preload/UI novo. Captura continua no padrão até integrar
+escolha explícita com validação de fluxo/estado, ID nativo e erro sem fallback.
+
+Build nativo aprovado após corrigir ordem de headers Windows; inclui33 testes
+encoder e regressões de crop/áudio existentes. QA real helper+adaptador detectou
+2 saídas ativas,1padrão e IDs estáveis em duas consultas, sem capturar ou alterar
+dispositivos. `.cache/audio-output-qa.json`, SHA WGC e7fc8d74…75f4cd.
+30 testes focados/2arquivos, ambos tsc e lint26 herdados aprovados.
+Primeiro lint recusou regex de controle; substituída por verificação de caracteres,
+sem supressão de regra. Suíte completa isolada uma vez:354 arquivos/4.991 aprovados/
+5 ignorados/352,39s, Node22.22.1, dois workers, exit0/sem signal; recibo/log
+`.cache/audio-output-full.{json,log}`, fim14:35:37UTC. i18n15/964chaves e docs50
+aprovados. Vite e pacote completo local gerados com sucesso; sem instalação,
+publicação ou relançamento do app do usuário. Logs `.cache/audio-output-{vite,package}.log`.
+Conferência SHA256: entry/chunk/preload iguais ao dist e23 payloads nativos iguais
+à origem atual; FFmpeg estático permanece excluído. Novo helper de enumeração
+empacotado, mas não instalado/relançado. Adaptador ainda não importado no main.
+Nenhuma homologação de seleção, medidor, GUI ou captura nova foi feita; não são
+oferecidos na interface. App do usuário não tocado, nenhuma mídia enviada.
+
+## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.
