@@ -33,6 +33,10 @@ interface Window {
 		 *  navigator.clipboard.writeText, so Copy message crosses to main's
 		 *  clipboard module. Optional: shim/web contexts have no bridge. */
 		copyToClipboard?: (text: string) => Promise<void>;
+		/** Read-only MMDevice outputs; does not change selection or open audio streams. */
+		listWindowsAudioOutputs?: () => Promise<
+			import("./ipc/windowsAudioOutputs").WindowsAudioOutputsResult
+		>;
 		/** Native (D3D) export progress — frames encoded so far, pushed at ~10 Hz max while
 		 *  `compositor.export`/`compositor.exportMulti` runs. Distinct from `exportOnFrameAck`,
 		 *  the OLD web/CPU pipeline's per-frame ack, not a progress signal. */

@@ -64,6 +64,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	copyToClipboard: (text: string) =>
 		ipcRenderer.invoke("clipboard:write-text", text) as Promise<void>,
 
+	listWindowsAudioOutputs: () =>
+		ipcRenderer.invoke("list-windows-audio-outputs") as Promise<
+			import("./ipc/windowsAudioOutputs").WindowsAudioOutputsResult
+		>,
+
 	// --- Native export encoder -------------------------------------------------
 	// The renderer composites and extracts frames but cannot spawn ffmpeg (it is
 	// sandboxed, deliberately), so frames cross to main and it feeds ffmpeg's

@@ -177,6 +177,7 @@ import { registerRecordingPrefsHandlers } from "./recordingPrefs";
 import { RecordingStreamRegistry, registerRecordingStreamHandlers } from "./recordingStream";
 import { isRecordingResultOwner, registerSavedRecordingGifHandlers } from "./savedRecordingGif";
 import { type SelectSourceContext, selectSourceWithOwnership } from "./selectSourceOwnership";
+import { registerWindowsAudioOutputHandlers } from "./windowsAudioOutputs";
 
 const PROJECT_FILE_EXTENSION = "openscreen";
 export const SHORTCUTS_FILE = path.join(app.getPath("userData"), "shortcuts.json");
@@ -2748,6 +2749,13 @@ export function registerIpcHandlers(
 
 		overlayWindow.webContents.send("countdown-overlay-value", null, runId);
 		overlayWindow.hide();
+	});
+
+	registerWindowsAudioOutputHandlers({
+		ipc: ipcMain,
+		window: getMainWindow,
+		isSupported: isWindowsGraphicsCaptureOsSupported,
+		helper: findNativeWindowsCaptureHelperPath,
 	});
 
 	ipcMain.handle("is-native-windows-capture-available", async () => {

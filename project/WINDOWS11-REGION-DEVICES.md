@@ -232,6 +232,22 @@ revalidar dono após awaits, limitar chamadas concorrentes e resolver caminho do
 helper no main; renderer não escolhe executável/argumentos. Medidor deve usar
 mesma saída, enviar só níveis limitados e fechar prévia antes da tomada real.
 
+### 02S — consulta protegida para HUD/editor
+
+Main/preload oferecem `listWindowsAudioOutputs`, somente leitura. Janela atual,
+frame principal e papel HUD/editor locais são exigidos, com revalidação depois
+dos awaits. Helper/argumentos são escolhidos no main; chamadas concorrentes são
+limitadas e erros retornam códigos, sem stderr privado ou caminho do executável.
+Não persiste escolha, não abre stream nem inicia gravação. Sem novo seletor/medidor.
+
+QA programática real com preload compilado, factory IPC e helper: HUD/editor
+recebem2 saídas/1padrão; outra janela e papel resultado recusados; exit0 e recibo
+PASS `.cache/audio-output-ipc-qa-rC9gkm/metrics.json`. Não equivale a input OS,
+main completo, layout do seletor ou gravação audível. 33 testes focados/2arquivos,
+ambos typechecks/lint26/i18n15/docs50 aprovados; suíte355arquivos/5.003pass/5skip
+e pacote completos aprovados,23payloads e código conferidos por SHA256. Pacote
+não instalado/relançado; sem novo seletor UI/medidor. Detalhes no STATUS.
+
 Padrão de áudio implementado em código em 2026-10-14: store durável, fallback IPC,
 painel de preparação e browser shim passam a iniciar com sistema ligado; uma
 preferência booleana `false` salva continua desligada. Microfone e câmera continuam

@@ -777,7 +777,48 @@ Script de QA versionado não abre stream nem captura a tela. Não homologados á
 audível escolhido, troca/desconexão física, GUI ou evento numa tomada real.
 App do usuário intacto. GIF/estimativa/Compartilhar continuam adiados.
 
-## Regra de atualização contínua (registro)
+## Incremento 02S — consulta de saídas main/preload
+
+`list-windows-audio-outputs` registrado no main e preload/tipos opcionais.
+Consulta somente janela atual HUD/editor, frame principal e URL file/origem dev
+configurada. Revalida dono após resolver helper e após enumerar; uma consulta
+pendente por registro, helper/argumento fixos main-owned e erros tipados sem
+diagnóstico privado. Não abre stream, grava nem altera escolha/padrão do Windows.
+Sem seletor UI, persistência de saída, mudança no request de captura ou medidor novo.
+Helper/captura ainda usam padrão porque main não envia seleção explícita.
+
+33 testes focados/2arquivos (IPC e parser), ambos typechecks, lint26 avisos herdados,
+i18n15/964chaves e docs50 aprovados. QA programática real Electron/preload/IPC/helper
+passou com exit0:HUD/editor atuais receberam2saídas/1padrão; outra janela e papel
+resultado recusados. Sem streams/alteração de dispositivos ou teste GUI. Recibo
+`.cache/audio-output-ipc-qa-rC9gkm/metrics.json`, logs `audio-output-ipc-qa.*`.
+Suíte completa própria concluída uma vez:355 arquivos/5.003 aprovados/5 ignorados/
+346,40s, Node22.22.1, dois workers, exit0/sem signal, fim15:05:17UTC;
+recibo/log `.cache/audio-output-ipc-full.{json,log}`. Pacote02S completo aprovado
+após renovação em14/10/2026 às14h30Brasília; docs50 revalidado. Entry/chunk/preload
+e23payloads nativos conferidos por SHA256; WGCbd69b1e1…48bfbbd preservado.
+Log `.cache/audio-output-ipc-package.log`. Sem instalação/relançamento/publicação.
+Não confundir full02R anterior com validação desta integração. App do usuário
+intacto; pacote anterior02R não foi instalado ou relançado.
+
+Pausa95 real confirmada em14/10/2026 ~15:05UTC:janela5h95%, semanal60%.
+Não iniciar novos trabalhos antes de17:27:34UTC (14:27:34Brasília), reset
+1791998554+300s. 02R commit03dd3212 enviado;02S ainda NÃO COMMITADO, preservado
+em handlers/preload/tipos, módulo IPC/testes e documentação. A suíte02S já passou;
+não repetir sem mudança/necessidade. Ao retomar: conferir Git/STATUS/limites,
+revalidar docs, gerar pacote completo02S e conferir23payloads/codehash antes de
+commit/push. Vite02S já aprovado, helperbd69b1e1…48bfbbd inalterado neste incremento.
+Não instalar/lançar pacote parcial, nem anunciar seletor UI/medidor disponíveis.
+Automação agora aponta a este chat openScreenCopilot (2), evitando continuar no
+chat original sobre o mesmo checkout. Sem prazo final; continuar até pedido humano.
+
+Retomada confirmada17:30:30UTC/14h30Brasília:janela5h0%,semanal61%,allowedtrue.
+A pausa95 acima foi cumprida e é registro histórico, não bloqueio atual.
+Continuidade15min restaurada neste chat. Finalização02S sem repetir a suíte já
+aprovada; próximo trabalho é persistência/seletor Windows e validação antes da
+tomada, sem fallback silencioso. Nenhuma escolha de saída foi ativada na UI ainda.
+
+## Regra de atualização contínua (final)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.
