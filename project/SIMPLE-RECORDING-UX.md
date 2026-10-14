@@ -20,6 +20,26 @@ sem abrir configuração extra nem obrigar exportação para acessar o original.
 
 ## Compartilhar e GIF — desenho do próximo incremento
 
+Fundação 02G implementada isoladamente em `electron/recording/derivedRecordingTarget.ts`;
+**ainda não conectada ao IPC, diálogo, compositor ou botões**. Tokens opacos de uso
+único vinculam dono e snapshot main-owned de fontes; nenhuma autorização genérica
+de caminho é criada no renderer. Um job por dono, revalidação de sessão/estado e
+parent canônico. Qualquer destino existente é recusado (inclui original/aliases).
+Temporário em diretório exclusivo no mesmo filesystem; publicação com hardlink
+exclusivo, nunca rename sobrescritor, seguido de remoção apenas do temporário próprio.
+Filesystem sem hardlink falha explicitamente; suporte FAT/exFAT/rede não homologado.
+
+Limites: integração deve obter destino do diálogo da mesma janela, fornecer fontes
+aprovadas e identidade atual, aguardar término/cancelamento do writer antes de
+`discard`, e validar codec/decode em `publish`. Fechar dono invalida publicação,
+mas não apaga arquivo em uso nem cancela o compositor por si só. O futuro job
+deve distinguir cancelamento antes da publicação de uma publicação já iniciada.
+Não é defesa contra outro processo local malicioso com os mesmos privilégios.
+Crash pode deixar o diretório temporário para recuperação; não existe varredura
+automática de órfãos neste incremento. Uma integração posterior deve registrar
+propriedade/estado antes de adicionar limpeza de startup, sem apagar só por prefixo.
+Bridge exportador legado não foi alterado; não anunciar essa proteção como global.
+
 Análise do código em 2026-10-14: GIF já usa compositor nativo, mesma cena/lista
 de clipes do MP4, progresso por ID e cancelamento por dono da janela. Não criar
 segundo encoder, fallback renderer ou pipeline FFmpeg independente. Reutilizar

@@ -342,7 +342,37 @@ nativos com SHA256 idêntico. Não relançado: instância em uso continua 02E,
 PID21240 de `.cache/indicator-package`, protegida, anterior somente à legenda.
 Nenhum novo aceite GUI alegado para esta legenda; fluxo completo ainda pendente.
 
-## Regra de atualização
+## Incremento 02G — fundação isolada de destinos seguros
+
+Implementado `DerivedRecordingTargets` com capacidade opaca/uso único por dono,
+snapshot de sessão/fontes, janela fechada/estado ocupado e um job por janela.
+Destino deve vir de diálogo nativo main-owned (contrato; IPC ainda não ligado).
+Recusa arquivos existentes, inclusive original/hardlinks/aliases, extensões
+incompatíveis, caminho relativo, ADS e nomes reservados portáveis. Resolve parent
+canônico, usa diretório temporário exclusivo e publicação por hardlink sem
+substituição; corrida EEXIST mantém destino alheio intacto. Limpeza usa somente
+unlink/rmdir de paths próprios, nunca recursive delete nem destino publicado.
+
+Testes com filesystem real Windows e dados sintéticos: 3 arquivos / 33 aprovados,
+incluindo hash SHA256 do original inalterado, hardlink, corrida de criação,
+owner estrangeiro/token antigo/replay, sessão/fontes trocadas, owner fechado,
+estado ocupado após await, arquivo vazio/hardlink staged e validação rejeitada.
+Primeira expectativa do caminho curto 8.3 foi corrigida para o parent canônico;
+reexecução aprovada. Lint: 0 erros / 26 avisos herdados.
+
+Backend isolado e não importado pelo runtime: nenhum botão/API novo, mudança no
+exportador legado, publicação de mídia ou alteração no app aberto. Integração
+com diálogo/compositor/decoder/cancelamento continua pendente. Typechecks app e
+testes aprovados. Suíte final: 345 arquivos / 4.827 aprovados / 5 ignorados,
+306,54 s, Node22.22.1/npm10.9.4, quatro workers. Docs:check50 e Vite aprovados.
+Pacote local `.cache/result-package/win-unpacked` regerado sem instalador/publicação;
+23 arquivos nativos SHA256 idênticos. Stub main.js preservou hash
+6d17a3b30bc2b92bc6257196e5e4041f8e68a1ab2d9a4731ea48b49f01002683;
+não alegar que classe isolada está ativa ou que filesystem sem hardlink é suportado.
+Nenhuma fonte nativa/i18n alterada; não houve novo aceite GUI ou build C++/Rust.
+App em uso não foi fechado/reaberto; nenhuma mídia privada foi usada.
+
+## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.
