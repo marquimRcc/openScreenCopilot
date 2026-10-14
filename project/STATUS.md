@@ -2,6 +2,16 @@
 
 Data da inicialização: 2026-10-13.
 
+## Repriorização humana — 2026-10-14
+
+Estimativa de tamanho do GIF e Compartilhar ficam para o final, somente depois
+de concluir o restante do roadmap. Nenhuma implementação existente foi removida;
+formulário GIF continua isolado, sem botão ativo. Esta decisão substitui a indicação
+anterior de começar pela estimativa/GIF. Próximo trabalho: áudio/dispositivos e
+homologação das etapas 01/02, seguido das dependências de qualidade, ASR, recuperação,
+Windows e Linux. Os aceites das duas ações adiadas ficam no backlog final e não
+bloqueiam o restante. Mudança apenas de planejamento, sem alteração de runtime.
+
 ## Implementado nesta etapa
 
 - Fork GitHub OpenScreen criado como marquimRcc/openScreenCopilot.

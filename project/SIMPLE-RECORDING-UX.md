@@ -1,5 +1,14 @@
 # Pós-gravação simples — execução incremental
 
+## Prioridade revisada pelo usuário — 2026-10-14
+
+Estimativa de tamanho do GIF e Compartilhar foram adiados explicitamente para
+depois de todo o restante do roadmap. Não são próximos incrementos nem bloqueiam
+a conclusão da captura, áudio, qualidade, transcrição, recuperação e portabilidade.
+Preservar o backend/formulário GIF já feitos, sem ativar integração incompleta ou
+inventar bytes. A sequência e os requisitos dessas ações abaixo documentam o desenho
+futuro; não prevalecem sobre esta prioridade. Retomar as duas pendências no final.
+
 Pedido do usuário em 2026-10-13. Primeiro incremento implementado em 2026-10-14;
 homologação do fluxo real e ações Compartilhar/GIF permanecem pendentes.
 

@@ -1,5 +1,17 @@
 # Plano passo a passo
 
+## Prioridade atualizada — 2026-10-14
+
+Por pedido explícito do usuário, **estimativa de tamanho do GIF** e
+**Compartilhar** ficam para o final, somente após concluir o restante do roadmap.
+Não bloqueiam os aceites das etapas 01–09 nem devem ocupar os próximos incrementos.
+Preservar a base de GIF já implementada; a ação simples continua não ativada enquanto
+seus requisitos de integração estiverem pendentes, sem inventar estimativas.
+Próxima prioridade: áudio/dispositivos e homologação da captura/resultado nas etapas
+01/02; depois qualidade/compressão, transcrição, recuperação, Windows e Linux conforme
+as dependências abaixo. Aceites de GIF/Compartilhar descritos adiante são backlog final,
+não requisitos para encerrar a etapa 02 nesta ordem revisada.
+
 Sequência deliberada: estabilizar gravação antes de juntar ASR. Uma etapa só termina
 quando os critérios abaixo têm evidência em [STATUS.md](STATUS.md). Abrir branch e PR
 por etapa; não fazer push direto em main. Não confundir este plano com o roadmap do upstream.
