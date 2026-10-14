@@ -310,7 +310,15 @@ Sem captura, keepalive, reprodução ou mudança de volume. ID resolvido uma vez
 endpoint removido falha, nunca outro default. Lease30s, no máximo300amostras/10Hz;
 stop/EOF fecha, mensagens/campos/tamanho/ordem limitados. Evidências no STATUS.
 
-Próxima integração (NÃO implementada):
+02V: transporte/controller WindowsOutputMeter validado isoladamente. Reserva antes
+de lookup/capability, verifica owner, coalesce de níveis100ms, limita UTF8/pending/
+stdout/stderr e aguarda close em todas as saídas. Watchdogs e cancelamento escalado
+não desanexam helper se kill falhar. pauseAndDrain congela admissão sincronamente.
+35focados e QA real do controller/helper passaram, incluindo helper sintético
+travado que foi encerrado/aguardado. Não há instância no main de produção ainda;
+IPC/preload/UI, captura/quit continuam sem essa proteção. Evidências finais no STATUS.
+
+Próxima integração runtime (NÃO implementada):
 
 - Um helper/owner, token main-owned, apenas janela atual HUD/editor/frame principal
   local e escolha main-owned. Revalidar owner/estado após todos os awaits; readiness

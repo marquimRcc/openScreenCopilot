@@ -905,6 +905,16 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-14 — openScreenCopilot 02V, Windows 11, isolated Node production controller
+and native meter helper, no app UI/PCM. **Programmatic partial, GUI not run:** exact
+native readiness, four coalesced scalar events, cancel-to-close84ms. Own synthetic
+Node helper ignored stop; grace escalation killed it and waited for close in769ms;
+both its capability and meter processes closed. Unit tests cover deferred lookup,
+owner loss, malformed/oversized messages, split UTF8, watchdogs and kill failure.
+Controller is not imported by production main yet. No capture/quit integration or
+GUI exists to exercise in this increment; no audible/DPI/disconnect/HUD acceptance.
+No user recording/editor/process touched. Full/package evidence in project/STATUS.md.
+
 2026-10-14 — openScreenCopilot 02U, Windows 11, read-only native endpoint meter CLI.
 **Partial, no GUI pass:** production helper peak API tested on two active outputs;
 stop/EOF/invalid command/missing endpoint/non-pipe stdin and 30s lease expiration.

@@ -904,6 +904,43 @@ Logs `.cache/audio-meter-{native-final,lint,vite,package}.log`. Não instalar/re
 publicar pacote. CLI sem GUI não homologa HUD, captura audível ou desconexão física;
 fatia e skips no results log manual. App do usuário/mídia privada preservados.
 
+## Incremento 02V — transporte/controller do medidor validado isoladamente
+
+WindowsOutputMeter reserva job/UUID antes de lookup, verifica owner/destroyed e
+admissão global. Lookup somente resolve caminho (não pode possuir subprocesso);
+timeout/cancelamento libera essa fase e impede spawn tardio. Capability obrigatória
+audioOutputMeter para default/ID explícito, com processo separado e fechamento
+aguardado. Depois usa argumento fixo e escolha main-owned no helper de pico.
+UTF8 incremental fatal,20KiB pending sem newline,128KiB stdout/4KiB stderr,
+parser estrito e coalescing100ms de níveis. Nenhum PCM ou diagnóstico privado
+vai ao callback. Ready só após evento validado/entregue; terminal só no resultado
+depois de close. Error/exit não liberam ownership nem autorizam outro helper.
+
+Watchdogs3s lookup/startup/capability e32s meter; cancel envia stop, grace750ms
+e eventual kill só do filho próprio. Falha/throw no kill não libera job vivo:
+continua aguardando close, sem saída forçada que finja drain completo. Owner
+destruído cancela, listener removido no finally, pauseAndDrain bloqueia admissão
+sincronamente e pausas são balanceadas/idempotentes. Callback inválido/throw é
+contido e encaminhado como erro tipado, sem desanexar processo.
+
+Controller ainda NÃO IMPORTADO pelo runtime/main de produção, sem IPC/preload/UI
+e sem proteção real do gravador/quit. Próximo incremento precisa conectar gate de
+captura e barreira quit existentes antes de habilitar API/UI; não anunciar medidor pronto.
+35focados/2arquivos aprovados; ambos tsc aprovados após tipar mock onEvent e remover
+import de teste não usado. QA real Node/controller/helper PASS,4eventos escalares,
+stop→close84ms; helper Node sintético que ignora stop foi encerrado e teve close
+aguardado em769ms,2processos próprios confirmados fechados (capability+meter).
+Recibo privado `.cache/audio-meter-controller-qa.json`; sem streams/UI/captura.
+Lint26 herdados/i18n15/980chaves/docs50 aprovados. Full uma vez:359arquivos/
+5.076pass/5skip/347,83s, Node22.22.1,2workers,exit0/sem signal,
+fim18:58:07UTC; `.cache/meter-controller-full.{json,log}`. Vite e pacote completos
+aprovados;23payloads nativos e entry/main-B3cM0hdN/preload SHA iguais ao dist/origem.
+Como o controller continua isolado, main/preload ainda02T e WGC02U inalterados:
+aaa797a9c1adeceed256f8bce9c8c0c511bc92d55e330250a14d49d6f3c6a1d5.
+Sem rebuild C++/Rust, instalação/relançamento/publicação. Logs
+`.cache/meter-controller-{lint,vite,package}.log`. Fatia programática e skips GUI/
+captura/quit no results log manual. App do usuário e mídia privada preservados.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
