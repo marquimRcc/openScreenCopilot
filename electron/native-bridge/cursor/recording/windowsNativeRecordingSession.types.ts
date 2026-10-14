@@ -48,6 +48,8 @@ export type WindowsCursorEvent =
 	| WindowsCursorErrorEvent;
 
 export interface WindowsNativeRecordingSessionOptions {
+	/** Exact physical crop bounds, without a second DPI conversion. */
+	getPhysicalBounds?: () => Rectangle | null;
 	getDisplayBounds: () => Rectangle | null;
 	maxSamples: number;
 	sampleIntervalMs: number;

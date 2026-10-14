@@ -19,7 +19,7 @@ Data da inicialização: 2026-10-13.
 
 ## Ainda não implementado
 
-Seleção retangular pela interface, seletor novo de endpoint de saída, encoder AV1 na captura,
+Homologação da seleção retangular, seletor novo de endpoint de saída, encoder AV1 na captura,
 perfil de compressão por qualidade, core Rust extraído, sidecar novo,
 transcrição durante gravação, persistência nova e homologação RegataOS.
 
@@ -134,8 +134,9 @@ do usuário para avançar.
 - Requests inválidos recusados pelo executável sem criar gravação.
 - Regressão nativa de timestamps permanece aprovada: 33 testes do encoder.
 
-**Ainda não disponível pela interface:** arrastar o retângulo, integração IPC e
-cursor recortado, seleção de endpoint de saída e novo medidor de sistema/mic.
+**Atualização noturna:** seletor Região, arraste/confirmar/cancelar, IPC validado,
+capacidade do helper e cursor recortado implementados em código/pacote local.
+Ainda não homologados por input real; endpoint de saída e medidor seguem pendentes.
 WARP/contratos não homologam recorte real WGC ou DPI misto físico.
 Escopo, protocolo e próximos passos: [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
 
@@ -203,6 +204,44 @@ Pedido adicional pós-gravação: mostrar "Nova captura" de forma evidente na te
 de edição, junto do acesso ao arquivo salvo. Abrir preparação sem gravar
 automaticamente, preservar a tomada anterior e tratar alterações não salvas.
 Registrado para 02B; ainda não implementado como ação destacada pós-gravação.
+
+## Direção de UX registrada — simplicidade primeiro
+
+Pedido adicional de 2026-10-13: a tela principal pós-gravação deve mostrar a
+gravação salva, sua localização e ações diretas (Abrir pasta, Compartilhar,
+Transformar em GIF e Nova captura). A edição permanece em aba/ação secundária,
+sem abrir obrigatoriamente após parar. Referência de simplicidade: Windows 11 nativo.
+Escopo, critérios e sequência em [SIMPLE-RECORDING-UX.md](SIMPLE-RECORDING-UX.md).
+**Somente planejamento neste registro; nenhuma dessas ações está sendo declarada pronta.**
+
+## Checkpoint noturno — seleção visual de região
+
+Branch continua `feat/windows-region-foundation`. Pacote local não instalado
+regerado com crop e capability; helper `ca762c88…a48`, idêntico ao payload de origem.
+Reprojeção de cursor e proibição de fallback Chromium cobertas por testes.
+UI/IPC/componentes, guardas e limitações em [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).
+
+Manual parcial com computer-use: HUD observado; cliques bloqueados por hit-test
+em coordenadas fora da janela a 150%. Região não declarada aprovada pela interface.
+Smoke nativo isolado produziu crop 960×600 e parou/decodificou corretamente,
+mas imagem preta; controle do monitor inteiro também preto. Conteúdo visual e
+causa inicialmente sem aceite. Após o usuário confirmar bloqueio e desbloquear
+o desktop, reteste isolado aprovado: 960×600, 5,033733 s, 266.116 bytes, texto e
+movimento presentes, quatro cantos corretos, conteúdo externo excluído e decode
+integral sem erro. Isso não aprova arraste/IPC/HUD ou DPI misto físicos.
+Nenhuma mídia do usuário foi enviada ou alterada.
+O indicador persistente e o redesenho simples ainda são próximos incrementos.
+
+Validação final do código de região: 340 arquivos, 4.781 testes aprovados,
+5 ignorados, 0 falhas; 305,50 s com Node22.22.1/npm10.9.4 e maxWorkers=4.
+TypeScript app/testes aprovados; Biome 0 erros / 26 avisos herdados; i18n 15 línguas.
+Build Vite e pacote `--win --dir --publish never --config.npmRebuild=false`
+aprovados. Docs:check aprovado (50 arquivos), antes do registro final de QA.
+
+Autorização adicional: avançar autonomamente pelas etapas/pontos registrados,
+respeitando dependências, permissões e testes, até 2026-10-14 às 12h Brasília;
+pausar aos 95% do limite e retomar após reset + 5 minutos. Não dispensa aceites
+manuais, liberações de distribuição ou testes em hardware/SO indisponível.
 
 ## Regra de atualização
 

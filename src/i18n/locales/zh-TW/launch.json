@@ -57,6 +57,15 @@
 		"editableTip": "可編輯游標：單獨錄製，可在編輯器中修改樣式並使用自動縮放",
 		"systemTip": "系統游標：真實游標，直接錄進影片。無法修改樣式，沒有自動縮放。"
 	},
+	"regionSelection": {
+		"tab": "區域",
+		"monitorHint": "選擇螢幕，然後框選錄製區域。",
+		"draw": "框選區域",
+		"hint": "拖曳以框選錄製區域。",
+		"keys": "Enter：確認 · Esc：取消",
+		"confirm": "使用此區域",
+		"error": "無法選擇區域，請重試。"
+	},
 	"sourceSelector": {
 		"loading": "正在載入來源...",
 		"screens": "螢幕 ({{count}})",

@@ -178,6 +178,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	getSelectedSource: () => {
 		return ipcRenderer.invoke("get-selected-source");
 	},
+	selectSourceRegion: (sourceId: string) => ipcRenderer.invoke("select-source-region", sourceId),
+	getRegionSelectionInfo: () => ipcRenderer.invoke("region-selection-info"),
+	finishRegionSelection: (
+		rectangle: import("../src/lib/windowsCaptureRegion").CaptureRectangle | null,
+	) => ipcRenderer.invoke("region-selection-finish", rectangle),
 	getRecordingPrefs: () => {
 		return ipcRenderer.invoke("get-recording-prefs");
 	},

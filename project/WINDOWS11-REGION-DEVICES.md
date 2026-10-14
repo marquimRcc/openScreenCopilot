@@ -1,7 +1,7 @@
 # Etapa 02 — região e dispositivos no Windows
 
-Estado: **02A implementada em código e testada no nível de textura/contrato**;
-overlay e seletor de saída de áudio ainda não implementados. Não é aceite da
+Estado: **02A implementada; 02B com seletor visual em código e pacote local**;
+o aceite visual do retângulo continua pendente, assim como o seletor de saída de áudio. Não é aceite da
 etapa 02 nem substitui a rodada visual/sob carga pendente da etapa 01.
 O usuário autorizou avançar; esta fundação independente foi preparada enquanto
 o controlador do Windows não conseguia ativar a janela de QA.
@@ -21,7 +21,7 @@ o controlador do Windows não conseguia ativar a janela de QA.
 - Mudança posterior de tamanho da textura interrompe o caminho de região com
   erro, em vez de deslocar a seleção ou vazar pixels. Isso não cobre todas as
   mudanças de display/dispositivo ou fechamento de janela do restante da etapa.
-- `src/lib/windowsCaptureRegion.ts`: contrato puro para o futuro overlay,
+- `src/lib/windowsCaptureRegion.ts`: contrato puro usado pelo overlay,
   com snapshot de display, origens negativas, escala por monitor, bordas
   arredondadas para dentro e ajuste par também para dentro. Cancelar retorna null.
 
@@ -44,10 +44,8 @@ Extensão do JSON do helper (schemaVersion 2, opcional e desligada por padrão):
 ```
 
 Os campos normais de output/áudio continuam necessários. Exemplo só de geometria,
-não comando pronto. O HUD/IPC ainda não envia esses campos: o acesso via interface
-fica retido até implementar seleção e reprojeção do cursor editável, sem oferecer
-um retângulo que grava vídeo correto mas cursor/zooms em coordenadas erradas.
-O helper isolado não produz o sidecar editável do aplicativo.
+não comando pronto. O IPC agora envia o crop validado no main; o helper isolado
+continua sem produzir o sidecar editável do aplicativo.
 
 Validação local Windows 11, 2026-10-13:
 
@@ -68,7 +66,65 @@ H.264, DPI misto em múltiplos monitores físicos e interação mouse/Escape do 
 Não houve nova compressão: codec, bitrate e resolução não selecionada permanecem
 herdados. Otimização por qualidade/tamanho pertence à etapa 03.
 
-## 02B — overlay e integração com o aplicativo (próximo)
+## 02B — seletor visual implementado, aceite manual pendente
+
+Incremento de 2026-10-13 à noite:
+
+- Fonte → Região → monitor → Marcar área → arrastar → Usar esta área.
+- Contorno tracejado durante a seleção, dimensões físicas, confirmação explícita,
+  Escape/Cancelar e suporte a arraste nos quatro sentidos. Uma região por monitor.
+- Overlay fecha antes da captura. **Não é ainda o indicador persistente durante a tomada.**
+- Main confere o remetente IPC, mantém snapshot confiável, revalida a geometria e
+  publica fonte + crop atomicamente; não há seleção transitória de tela inteira.
+- Crop não é persistido entre relançamentos. Reenumerar fontes não remove seu
+  marcador; região inválida fica explícita até nova escolha, sem restaurar monitor inteiro.
+- `--capabilities` distingue helper com crop de executáveis antigos que ignoram
+  campos JSON desconhecidos. Sem compatibilidade, região não é oferecida.
+- Cursor editável normalizado contra origem/tamanho físicos do recorte, sem
+  segunda conversão DPI; pontos externos ficam invisíveis. Snapshot fixo por tomada.
+- Hook recusa captura Chromium de tela inteira se o helper de região faltar/falhar.
+- WGC compilado e copiado no pacote local: SHA256
+  `ca762c882370794abf63575ae9e0f037a5d6e609e059a5e9b3f183c9578a6a48`.
+
+### Evidência e limites desta rodada
+
+Testes focados cobrem geometria, UI React, ownership, cancelamento, capacidade,
+cursor e proibição de fallback; TypeScript aplicativo/testes e i18n aprovados.
+Build nativo aprovado, incluindo 33 regressões do encoder. Não há novo codec,
+perfil de qualidade ou seletor de endpoint neste incremento.
+
+Tentativa de input real com computer-use no pacote: HUD observado, mas cliques
+convertidos para `(664, 1080)` ficaram sobre outro processo, mesmo após restaurar
+e reobservar a janela; teclado não confirmou foco no documento. **Não aprovado:**
+abrir a aba Região, arrastar, Escape e gravar pelo fluxo completo de interface.
+
+Smoke isolado WGC, monitor 1920×1200 a 150%: crop 960×600, H.264 hardware,
+5,033700 s, 11.418 bytes, parada limpa (~61 ms), decodificação integral sem erro.
+**Imagem preta**, portanto tamanho/duração/decodificação não aprovam conteúdo.
+Controle sem crop: 1920×1200, 5,034133 s, 19.004 bytes, também preto. Não há
+evidência para atribuir esse resultado só ao novo recorte ou afirmar uma causa
+de sessão/driver. Investigar com referência visual no desktop acessível.
+Um harness Electron inicial não encerrou pelo timer: seus processos sintéticos
+foram identificados por PID/parentesco/caminho e encerrados; não houve interrupção
+da gravação do usuário. A repetição em Node encerrou normalmente.
+
+### Reteste nativo após desbloqueio
+
+O usuário informou que a tela estava bloqueada e a desbloqueou. A repetição
+isolada, com os mesmos bounds e helper, produziu **conteúdo correto**: 960×600,
+5,033733 s, 266.116 bytes, H.264 hardware, decodificação integral sem erro,
+parada limpa (~82 ms). Os quatro cantos do quadro amarelo sintético estão no
+recorte (RGB 232/253/0), fundo verde medido (21/127/59), texto legível e relógio/
+bola em movimento (14.299 canais mudaram >15 entre frames em 1 s e 3 s).
+O aviso laranja externo ficou fora da imagem. Isto valida o crop WGC real a
+150% neste monitor, não o arraste/IPC pelo fluxo completo do HUD.
+
+Pendentes: pixels/legibilidade/movimento pelo fluxo completo, 100%/125%/150% pela interface,
+múltiplos monitores físicos/DPI misto, cursor fora da região no MP4/editor e
+regressão captura→edição→exportação. Evidência de textura WARP e smoke isolado
+não substituem esses aceites.
+
+### Critérios de homologação
 
 1. Seletor de fonte oferece Monitor / Janela / Região, com monitor explícito.
 2. Main abre um overlay nesse monitor e fornece snapshot confiável. Arrastar gera
@@ -76,7 +132,7 @@ herdados. Otimização por qualidade/tamanho pertence à etapa 03.
 3. Main revalida display e região, converte para pixels locais e passa a seleção
    ao helper. Nunca aceitar bounds arbitrários do renderer sem conferir o display.
 4. Cursor/zoom recebem origem e tamanho recortados; pontos externos são excluídos.
-   Até essa parte existir, não habilitar região com editable-overlay no HUD.
+   Reprojeção implementada e coberta por testes; homologar no MP4/editor antes de release.
 5. Testar bordas por imagem exportada, não só thumbnail, em 100%/125%/150% e DPI misto.
 
 ### Indicador persistente — solicitado para a próxima versão

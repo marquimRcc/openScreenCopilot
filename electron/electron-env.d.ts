@@ -67,6 +67,13 @@ interface Window {
 			options?: { persist?: boolean },
 		) => Promise<ProcessedDesktopSource | null>;
 		getSelectedSource: () => Promise<ProcessedDesktopSource | null>;
+		selectSourceRegion?: (sourceId: string) => Promise<{ selected: boolean }>;
+		getRegionSelectionInfo?: () => Promise<
+			import("../src/lib/windowsCaptureRegion").RegionSelectionInfo | null
+		>;
+		finishRegionSelection?: (
+			rectangle: import("../src/lib/windowsCaptureRegion").CaptureRectangle | null,
+		) => Promise<void>;
 		onSelectedSourceChanged: (
 			callback: (source: ProcessedDesktopSource | null) => void,
 		) => () => void;
@@ -151,6 +158,7 @@ interface Window {
 			cursorCaptureMode?: import("../src/lib/recordingSession").CursorCaptureMode,
 		) => Promise<void>;
 		isNativeWindowsCaptureAvailable: () => Promise<{
+			supportsRegion?: boolean;
 			success: boolean;
 			available: boolean;
 			helperPath?: string;
@@ -552,6 +560,7 @@ interface Window {
 }
 
 interface ProcessedDesktopSource {
+	captureRegion?: import("../src/lib/windowsCaptureRegion").WindowsCaptureRegion;
 	id: string;
 	name: string;
 	display_id: string;

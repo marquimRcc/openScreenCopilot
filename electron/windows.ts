@@ -658,6 +658,37 @@ export function createEditorWindow(query: Record<string, string> = {}): BrowserW
  * Floating source-selector window for picking a screen or window to record.
  * Frameless, transparent, and follows the user across macOS Spaces.
  */
+export function createRegionSelectionWindow(bounds: Electron.Rectangle): BrowserWindow {
+	const win = new BrowserWindow({
+		...bounds,
+		show: false,
+		frame: false,
+		resizable: false,
+		movable: false,
+		hasShadow: false,
+		transparent: true,
+		backgroundColor: "#00000000",
+		alwaysOnTop: true,
+		skipTaskbar: true,
+		webPreferences: {
+			preload: path.join(__dirname, "preload.mjs"),
+			additionalArguments: [ASSET_BASE_URL_ARG],
+			nodeIntegration: false,
+			contextIsolation: true,
+		},
+	});
+	win.setMenu(null);
+	win.setBounds(bounds);
+	if (VITE_DEV_SERVER_URL) {
+		void win.loadURL(VITE_DEV_SERVER_URL + "?windowType=region-selector");
+	} else {
+		void win.loadFile(path.join(RENDERER_DIST, "index.html"), {
+			query: { windowType: "region-selector" },
+		});
+	}
+	return win;
+}
+
 export function createSourceSelectorWindow(): BrowserWindow {
 	const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 

@@ -147,6 +147,12 @@ import { removeEmptyCaptureOutput } from "../recording/removeEmptyCaptureOutput"
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
 import {
+	isWindowsRegionCurrent,
+	supportsWindowsRegion,
+	type TrustedWindowsRegion,
+	WindowsRegionPicker,
+} from "../recording/windowsRegionPicker";
+import {
 	describeMacPickerSource,
 	describeRecordingSource,
 	enumerationIncludesSourceKind,
@@ -638,8 +644,11 @@ type SelectedSource = {
 	name: string;
 	id?: string;
 	display_id?: string;
+	captureRegion?: import("../../src/lib/windowsCaptureRegion").WindowsCaptureRegion;
 	[key: string]: unknown;
 };
+
+let trustedWindowsRegion: TrustedWindowsRegion | null = null;
 
 type AttachNativeMacWebcamRecordingInput = {
 	screenVideoPath?: string;
@@ -1326,8 +1335,22 @@ async function startCursorRecording(recordingId?: number) {
 	}
 
 	pendingCursorRecordingData = null;
+	const cursorRegion = selectedSource?.captureRegion ? trustedWindowsRegion : null;
 	cursorRecordingSession = createCursorRecordingSession({
 		getDisplayBounds: getSelectedSourceBounds,
+		getPhysicalBounds: () => {
+			if (!cursorRegion) return null;
+			const {
+				boundsPx,
+				region: { regionPx },
+			} = cursorRegion;
+			return {
+				x: boundsPx.x + regionPx.x,
+				y: boundsPx.y + regionPx.y,
+				width: regionPx.width,
+				height: regionPx.height,
+			};
+		},
 		maxSamples: MAX_CURSOR_SAMPLES,
 		platform: process.platform,
 		sampleIntervalMs: CURSOR_SAMPLE_INTERVAL_MS,
@@ -1988,6 +2011,7 @@ export function registerIpcHandlers(
 ) {
 	/** The HUD is recording a take, the user's or an MCP client's (`set-recording-state`). */
 	let appRecording = false;
+	const regionPicker = new WindowsRegionPicker();
 	const appSettings = new AppSettingsStore(app.getPath("userData"));
 	const broadcastSelectedSource = (source: SelectedSource | null) => {
 		for (const window of BrowserWindow.getAllWindows()) {
@@ -2065,8 +2089,9 @@ export function registerIpcHandlers(
 			: null;
 		if (currentLive) {
 			selectedSource = {
+				...selectedSource,
 				id: currentLive.id,
-				name: currentLive.name,
+				name: selectedSource?.captureRegion ? selectedSource.name : currentLive.name,
 				display_id: currentLive.display_id,
 			};
 			selectedDesktopSource = currentLive;
@@ -2079,7 +2104,7 @@ export function registerIpcHandlers(
 				sources,
 				{ waylandPortal: process.platform === "linux" && Boolean(findPipeWireCursorHelperPath()) },
 			);
-			if (restored) {
+			if (restored && !previousSelectedSource?.captureRegion) {
 				selectedSource = {
 					id: restored.id,
 					name: restored.name,
@@ -2087,6 +2112,11 @@ export function registerIpcHandlers(
 				};
 				selectedDesktopSource = lastEnumeratedSources.get(restored.id) ?? null;
 			}
+		}
+		if (previousSelectedSource?.captureRegion && !currentLive) {
+			// Keep a stale region explicit until the user chooses a replacement.
+			// Restoring lastSource later must not turn it into full-screen capture.
+			selectedSource = previousSelectedSource;
 		}
 		if (!sameSelectedSource(previousSelectedSource, selectedSource)) {
 			broadcastSelectedSource(selectedSource);
@@ -2114,7 +2144,11 @@ export function registerIpcHandlers(
 		},
 	};
 
-	async function selectSource(source: SelectedSource, options?: { persist?: boolean }) {
+	async function selectSource(
+		source: SelectedSource,
+		options?: { persist?: boolean },
+		region?: TrustedWindowsRegion,
+	) {
 		const next = await selectSourceWithOwnership(
 			selectSourceContext,
 			{ id: source.id, name: source.name, display_id: source.display_id },
@@ -2133,6 +2167,19 @@ export function registerIpcHandlers(
 				},
 				broadcast: broadcastSelectedSource,
 				shouldPersist: shouldPersistSelectedSource,
+				decorate: (live) => {
+					if (region && (live.id !== region.sourceId || !isWindowsRegionCurrent(region))) {
+						throw new Error("Display changed. Select the area again.");
+					}
+					trustedWindowsRegion = region ?? null;
+					return region
+						? {
+								...live,
+								name: `${live.name} · ${region.region.regionPx.width} × ${region.region.regionPx.height}`,
+								captureRegion: region.region,
+							}
+						: live;
+				},
 			},
 		);
 		if (next) {
@@ -2146,6 +2193,50 @@ export function registerIpcHandlers(
 	ipcMain.handle("select-source", (_, source: SelectedSource, options?: { persist?: boolean }) =>
 		selectSource(source, options),
 	);
+	ipcMain.handle("select-source-region", async (event, sourceId: string) => {
+		const owner = getSourceSelectorWindow();
+		if (
+			process.platform !== "win32" ||
+			!owner ||
+			owner.webContents !== event.sender ||
+			appRecording ||
+			nativeWindowsCaptureProcess
+		) {
+			throw new Error("Region selection is not available.");
+		}
+		const source = lastEnumeratedSources.get(sourceId);
+		const display = screen.getAllDisplays().find((item) => String(item.id) === source?.display_id);
+		const helper = await findNativeWindowsCaptureHelperPath();
+		if (
+			!source?.id.startsWith("screen:") ||
+			!display ||
+			!helper ||
+			!(await supportsWindowsRegion(helper))
+		) {
+			throw new Error("A compatible Windows region capture helper is required.");
+		}
+		const generation = selectSourceGeneration.value;
+		if (owner.isDestroyed() || getSourceSelectorWindow() !== owner) {
+			throw new Error("Source picker closed before region selection.");
+		}
+		const hud = getMainWindow();
+		const restoreHud = hud && !hud.isDestroyed() && hud.isVisible();
+		if (restoreHud) hud.hide();
+		try {
+			const region = await regionPicker.pick(source.id, display, owner);
+			if (!region || generation !== selectSourceGeneration.value) return { selected: false };
+			if (appRecording || nativeWindowsCaptureProcess)
+				throw new Error("Recording already started.");
+			const next = await selectSource(
+				{ id: source.id, name: source.name, display_id: source.display_id },
+				{ persist: false },
+				region,
+			);
+			return { selected: !!next?.captureRegion };
+		} finally {
+			if (restoreHud && !hud.isDestroyed()) hud.showInactive();
+		}
+	});
 
 	/**
 	 * The HUD and the notes window belong to this process, not to the helper, so a display
@@ -2218,6 +2309,9 @@ export function registerIpcHandlers(
 	);
 
 	ipcMain.handle("get-selected-source", async () => {
+		// A region is session-local. Never restore its monitor as a full-screen
+		// source if it becomes stale: native start validates the snapshot and fails.
+		if (selectedSource?.captureRegion) return selectedSource;
 		const previousSelectedSource = selectedSource;
 		if (process.platform === "linux" && findPipeWireCursorHelperPath()) {
 			selectedSource = null;
@@ -2564,7 +2658,12 @@ export function registerIpcHandlers(
 
 		const helperPath = await findNativeWindowsCaptureHelperPath();
 		return helperPath
-			? { success: true, available: true, helperPath }
+			? {
+					success: true,
+					available: true,
+					helperPath,
+					supportsRegion: await supportsWindowsRegion(helperPath),
+				}
 			: { success: true, available: false, reason: "missing-helper" };
 	});
 
@@ -2915,6 +3014,24 @@ export function registerIpcHandlers(
 				// `getSelectedSourceBounds` — the cursor session shares that getter and
 				// converts on its own side.
 				const helperBounds = toHelperRect(bounds);
+				const regionSelection = trustedWindowsRegion;
+				const regionRequested =
+					request.source.captureRegion === true || !!selectedSource?.captureRegion;
+				if (
+					regionRequested &&
+					(!regionSelection ||
+						request.source.type !== "display" ||
+						request.source.sourceId !== regionSelection.sourceId ||
+						!sourceDisplay ||
+						sourceDisplay.id !== regionSelection.region.displayId ||
+						!isWindowsRegionCurrent(regionSelection) ||
+						!(await supportsWindowsRegion(helperPath)))
+				) {
+					throw new Error(
+						"Capture region is no longer valid. Select the area again; full-screen fallback is disabled.",
+					);
+				}
+				const crop = regionRequested ? regionSelection?.region.regionPx : undefined;
 				const displayId =
 					typeof request.source.displayId === "number" && Number.isFinite(request.source.displayId)
 						? request.source.displayId
@@ -2948,6 +3065,11 @@ export function registerIpcHandlers(
 					displayW: helperBounds.width,
 					displayH: helperBounds.height,
 					hasDisplayBounds: true,
+					hasCaptureRegion: !!crop,
+					regionX: crop?.x,
+					regionY: crop?.y,
+					regionWidth: crop?.width,
+					regionHeight: crop?.height,
 					captureSystemAudio: request.audio.system.enabled,
 					captureMic: request.audio.microphone.enabled,
 					microphoneDeviceId: request.audio.microphone.deviceId ?? null,

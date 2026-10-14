@@ -8,6 +8,8 @@ export type NativeWindowsRecordingRequest = {
 		sourceId: string;
 		displayId?: number;
 		windowHandle?: string;
+		/** Marker only. Actual crop coordinates are owned and validated by main. */
+		captureRegion?: boolean;
 	};
 	video: {
 		fps: number;

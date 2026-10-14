@@ -57,6 +57,15 @@
 		"editableTip": "可编辑光标：单独记录光标，可在编辑器中修改样式并使用自动缩放",
 		"systemTip": "系统光标：直接录制到视频中，无法修改样式或使用自动缩放"
 	},
+	"regionSelection": {
+		"tab": "区域",
+		"monitorHint": "选择显示器，然后框选录制区域。",
+		"draw": "框选区域",
+		"hint": "拖动以框选录制区域。",
+		"keys": "Enter：确认 · Esc：取消",
+		"confirm": "使用此区域",
+		"error": "无法选择区域，请重试。"
+	},
 	"sourceSelector": {
 		"loading": "正在加载源...",
 		"screens": "屏幕 ({{count}})",

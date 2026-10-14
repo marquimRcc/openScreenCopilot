@@ -1,4 +1,4 @@
-/** Contract for the upcoming overlay. DIPs are desktop coordinates; helper
+/** DIPs are desktop coordinates; helper
  * pixels are relative to a single monitor, not a scaled desktop origin. */
 export interface CaptureRectangle {
 	x: number;
@@ -15,6 +15,31 @@ export interface WindowsCaptureRegion {
 	regionPx: CaptureRectangle;
 }
 
+export interface RegionSelectionInfo {
+	boundsDip: CaptureRectangle;
+	widthPx: number;
+	heightPx: number;
+}
+
+/** Local viewport DIPs. Drag in any direction; never cross monitor edges. */
+export function rectangleFromDrag(
+	start: { x: number; y: number },
+	end: { x: number; y: number },
+	viewport: { width: number; height: number },
+): CaptureRectangle {
+	const clamp = (value: number, max: number) => Math.max(0, Math.min(value, max));
+	const x1 = clamp(start.x, viewport.width);
+	const y1 = clamp(start.y, viewport.height);
+	const x2 = clamp(end.x, viewport.width);
+	const y2 = clamp(end.y, viewport.height);
+	return {
+		x: Math.min(x1, x2),
+		y: Math.min(y1, y2),
+		width: Math.abs(x2 - x1),
+		height: Math.abs(y2 - y1),
+	};
+}
+
 function finiteRectangle(rect: CaptureRectangle): boolean {
 	return [rect.x, rect.y, rect.width, rect.height].every(Number.isFinite);
 }
@@ -22,7 +47,7 @@ function finiteRectangle(rect: CaptureRectangle): boolean {
 /** Round inward, never include unselected pixels, and align H.264 dimensions
  * inward to even values. The main process must supply the display snapshot.
  * Returns null for cancellation, tiny selections, or a cross-monitor region.
- * This contract is not yet connected to the HUD or its cursor sidecar. */
+ */
 export function resolveWindowsCaptureRegion(
 	display: {
 		id: number;

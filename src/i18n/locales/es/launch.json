@@ -57,6 +57,15 @@
 		"editableTip": "Cursor editable: se graba por separado, así puedes cambiar su estilo y usar el zoom automático en el editor",
 		"systemTip": "Cursor del sistema: tu cursor real, grabado en el video. Sin cambios de estilo ni zoom automático."
 	},
+	"regionSelection": {
+		"tab": "Región",
+		"monitorHint": "Elige un monitor y dibuja el área que quieres grabar.",
+		"draw": "Marcar área",
+		"hint": "Arrastra para marcar el área que quieres grabar.",
+		"keys": "Enter: confirmar · Esc: cancelar",
+		"confirm": "Usar esta área",
+		"error": "No se pudo seleccionar el área. Inténtalo de nuevo."
+	},
 	"sourceSelector": {
 		"loading": "Cargando fuentes...",
 		"screens": "Pantallas ({{count}})",

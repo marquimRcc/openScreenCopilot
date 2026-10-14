@@ -1191,6 +1191,10 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 
 			const availability = await window.electronAPI.isNativeWindowsCaptureAvailable();
 			if (!availability.success || !availability.available) {
+				if (selectedSource.captureRegion)
+					throw new Error(
+						"Region capture requires the native Windows helper. Full-screen fallback is disabled.",
+					);
 				if (availability.reason === "unsupported-os") {
 					return false;
 				}
@@ -1209,6 +1213,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			const activeRecordingId = Date.now();
 			const displayId = Number(selectedSource.display_id);
 			const sourceType = selectedSource.id.startsWith("window:") ? "window" : "display";
+			if (selectedSource.captureRegion && !availability.supportsRegion) {
+				throw new Error("This capture helper does not support regions. Select the area again.");
+			}
 			const windowHandle = parseWindowHandleFromSourceId(selectedSource.id);
 			let webcamIdentity = { deviceId: webcamDeviceId, deviceName: webcamDeviceName };
 			if (webcamEnabled) {
@@ -1234,6 +1241,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				source: {
 					type: sourceType,
 					sourceId: selectedSource.id,
+					captureRegion: !!selectedSource.captureRegion,
 					...(Number.isFinite(displayId) ? { displayId } : {}),
 					...(windowHandle ? { windowHandle } : {}),
 				},
@@ -1840,6 +1848,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				)
 			) {
 				return;
+			}
+			if (selectedSource.captureRegion) {
+				throw new Error("Native region capture is unavailable. Full-screen fallback is disabled.");
 			}
 			if (
 				await startNativeMacRecordingIfAvailable(

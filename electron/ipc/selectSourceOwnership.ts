@@ -2,6 +2,7 @@ export type SelectedSourceSnapshot = {
 	name: string;
 	id?: string;
 	display_id?: string;
+	captureRegion?: import("../../src/lib/windowsCaptureRegion").WindowsCaptureRegion;
 };
 
 export type SelectSourceContext<TLive extends { id: string; name: string; display_id: string }> = {
@@ -17,6 +18,8 @@ export type SelectSourceDeps<TLive extends { id: string; name: string; display_i
 	persist: (source: SelectedSourceSnapshot) => void;
 	broadcast: (source: SelectedSourceSnapshot | null) => void;
 	shouldPersist: (options?: { persist?: boolean }) => boolean;
+	/** Main-owned metadata, applied only after live source ownership is verified. */
+	decorate?: (source: SelectedSourceSnapshot) => SelectedSourceSnapshot;
 };
 
 export function bumpSelectSourceGeneration(generation: { value: number }): number {
@@ -61,11 +64,12 @@ export async function selectSourceWithOwnership<
 		return null;
 	}
 
-	const next: SelectedSourceSnapshot = {
+	const base: SelectedSourceSnapshot = {
 		id: live.id,
 		name: live.name,
 		display_id: live.display_id,
 	};
+	const next = deps.decorate ? deps.decorate(base) : base;
 	ctx.setSelected(next, live);
 	if (deps.shouldPersist(options)) {
 		try {

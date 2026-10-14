@@ -52,6 +52,15 @@
 		"quality1440p": "1440p",
 		"quality2160p": "4K"
 	},
+	"regionSelection": {
+		"tab": "Vùng",
+		"monitorHint": "Chọn màn hình, rồi vẽ vùng muốn ghi.",
+		"draw": "Vẽ vùng",
+		"hint": "Kéo để đánh dấu vùng muốn ghi.",
+		"keys": "Enter: xác nhận · Esc: hủy",
+		"confirm": "Dùng vùng này",
+		"error": "Không thể chọn vùng. Hãy thử lại."
+	},
 	"sourceSelector": {
 		"loading": "Đang tải nguồn...",
 		"screens": "Màn hình ({{count}})",

@@ -57,6 +57,15 @@
 		"editableTip": "Düzenlenebilir imleç: ayrı kaydedilir; düzenleyicide stilini değiştirebilir, otomatik yakınlaştırma kullanabilirsiniz",
 		"systemTip": "Sistem imleci: gerçek imleciniz, videoya kaydedilir. Stil değişikliği ve otomatik yakınlaştırma yok."
 	},
+	"regionSelection": {
+		"tab": "Bölge",
+		"monitorHint": "Bir ekran seçin, ardından kayıt alanını çizin.",
+		"draw": "Alan çiz",
+		"hint": "Kaydedilecek alanı işaretlemek için sürükleyin.",
+		"keys": "Enter: onayla · Esc: iptal",
+		"confirm": "Bu alanı kullan",
+		"error": "Alan seçilemedi. Yeniden deneyin."
+	},
 	"sourceSelector": {
 		"loading": "Kaynaklar yükleniyor...",
 		"screens": "Ekranlar ({{count}})",

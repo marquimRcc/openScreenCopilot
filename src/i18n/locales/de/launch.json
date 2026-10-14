@@ -57,6 +57,15 @@
 		"editableTip": "Bearbeitbarer Cursor: wird getrennt aufgenommen, damit du im Editor sein Aussehen ändern und Auto-Zoom nutzen kannst",
 		"systemTip": "System-Cursor: dein echter Cursor, im Video aufgenommen. Aussehen nicht änderbar, kein Auto-Zoom."
 	},
+	"regionSelection": {
+		"tab": "Bereich",
+		"monitorHint": "Wähle einen Monitor und markiere den Aufnahmebereich.",
+		"draw": "Bereich markieren",
+		"hint": "Ziehe, um den Aufnahmebereich zu markieren.",
+		"keys": "Enter: bestätigen · Esc: abbrechen",
+		"confirm": "Diesen Bereich verwenden",
+		"error": "Bereich konnte nicht ausgewählt werden. Erneut versuchen."
+	},
 	"sourceSelector": {
 		"loading": "Quellen werden geladen…",
 		"screens": "Bildschirme ({{count}})",

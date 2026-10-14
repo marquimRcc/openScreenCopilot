@@ -8,6 +8,7 @@ installBrowserShims();
 import { CountdownOverlay } from "./components/launch/CountdownOverlay.tsx";
 import { LaunchWindow } from "./components/launch/LaunchWindow";
 import { NotesWindow } from "./components/launch/NotesWindow.tsx";
+import { RegionSelector } from "./components/launch/RegionSelector";
 import { SourceSelector } from "./components/launch/SourceSelector";
 import { PermissionsWindow } from "./components/permissions/PermissionsWindow";
 import { Toaster } from "./components/ui/sonner";
@@ -52,7 +53,12 @@ export default function App() {
 			setWindowType(type);
 		}
 
-		if (type === "hud-overlay" || type === "source-selector" || type === "countdown-overlay") {
+		if (
+			type === "hud-overlay" ||
+			type === "source-selector" ||
+			type === "region-selector" ||
+			type === "countdown-overlay"
+		) {
 			document.body.style.background = "transparent";
 			document.documentElement.style.background = "transparent";
 			document.getElementById("root")?.style.setProperty("background", "transparent");
@@ -60,7 +66,7 @@ export default function App() {
 
 		// HUD is a fixed-size BrowserWindow; pin the document shell and hide overflow
 		// so the renderer can't introduce scrollbars (see issue #305).
-		if (type === "hud-overlay") {
+		if (type === "hud-overlay" || type === "region-selector") {
 			document.documentElement.style.height = "100%";
 			document.documentElement.style.overflow = "hidden";
 			document.body.style.height = "100%";
@@ -87,6 +93,8 @@ export default function App() {
 				return <LaunchWindow />;
 			case "source-selector":
 				return <SourceSelector />;
+			case "region-selector":
+				return <RegionSelector />;
 			case "countdown-overlay":
 				return <CountdownOverlay />;
 			case "permissions":

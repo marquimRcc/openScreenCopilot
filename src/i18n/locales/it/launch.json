@@ -57,6 +57,15 @@
 		"editableTip": "Cursore modificabile: registrato separatamente, così puoi cambiarne lo stile e usare lo zoom automatico nell'editor",
 		"systemTip": "Cursore di sistema: il tuo cursore reale, registrato nel video. Nessun cambio di stile, nessuno zoom automatico."
 	},
+	"regionSelection": {
+		"tab": "Area",
+		"monitorHint": "Scegli un monitor, poi disegna l’area da registrare.",
+		"draw": "Disegna area",
+		"hint": "Trascina per selezionare l’area da registrare.",
+		"keys": "Invio: conferma · Esc: annulla",
+		"confirm": "Usa quest’area",
+		"error": "Impossibile selezionare l’area. Riprova."
+	},
 	"sourceSelector": {
 		"loading": "Caricamento sorgenti...",
 		"screens": "Schermi ({{count}})",

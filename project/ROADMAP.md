@@ -55,6 +55,15 @@ aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 Aceite: monitor/janela/retângulo com pixels corretos em DPI misto; Teams, Slack e
 YouTube capturados no endpoint escolhido, com aviso claro do escopo de loopback.
 
+### 02B — prioridade de UX pós-gravação
+
+Adotar resultado simples como tela principal após Parar: prévia, arquivo salvo,
+localização, Abrir pasta e Nova captura. Manter Editar em aba/ação secundária.
+Em incrementos seguintes, adicionar Compartilhar (destino explícito, sem upload
+automático) e Transformar em GIF (trecho, estimativa, cancelamento e original intacto).
+Pedido registrado em 2026-10-13; especificação e aceites em
+[SIMPLE-RECORDING-UX.md](SIMPLE-RECORDING-UX.md). Ainda não implementado.
+
 ## 03 — Spike e perfil de compressão ao vivo
 
 Dependência: 02.

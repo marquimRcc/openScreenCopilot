@@ -57,6 +57,15 @@
 		"editableTip": "Upravitelný kurzor: nahrává se zvlášť, takže v editoru můžete změnit jeho styl a použít automatické přiblížení",
 		"systemTip": "Systémový kurzor: váš skutečný kurzor, zaznamenaný ve videu. Bez změny stylu a bez automatického přiblížení."
 	},
+	"regionSelection": {
+		"tab": "Oblast",
+		"monitorHint": "Vyberte monitor a vyznačte oblast záznamu.",
+		"draw": "Vyznačit oblast",
+		"hint": "Tažením vyznačte oblast záznamu.",
+		"keys": "Enter: potvrdit · Esc: zrušit",
+		"confirm": "Použít tuto oblast",
+		"error": "Oblast se nepodařilo vybrat. Zkuste to znovu."
+	},
 	"sourceSelector": {
 		"loading": "Načítání zdrojů...",
 		"screens": "Obrazovky ({{count}})",

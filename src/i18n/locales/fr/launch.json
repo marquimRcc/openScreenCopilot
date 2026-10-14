@@ -57,6 +57,15 @@
 		"editableTip": "Curseur éditable : enregistré séparément, pour changer son style et utiliser le zoom automatique dans l'éditeur",
 		"systemTip": "Curseur système : votre vrai curseur, enregistré dans la vidéo. Sans changement de style ni zoom automatique."
 	},
+	"regionSelection": {
+		"tab": "Zone",
+		"monitorHint": "Choisissez un écran, puis tracez la zone à enregistrer.",
+		"draw": "Tracer la zone",
+		"hint": "Faites glisser pour tracer la zone à enregistrer.",
+		"keys": "Entrée : confirmer · Échap : annuler",
+		"confirm": "Utiliser cette zone",
+		"error": "Impossible de sélectionner la zone. Réessayez."
+	},
 	"sourceSelector": {
 		"loading": "Chargement des sources...",
 		"screens": "Écrans ({{count}})",

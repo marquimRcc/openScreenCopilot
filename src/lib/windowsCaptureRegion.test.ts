@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveWindowsCaptureRegion } from "./windowsCaptureRegion";
+import { rectangleFromDrag, resolveWindowsCaptureRegion } from "./windowsCaptureRegion";
 
 const display = {
 	id: 7,
@@ -9,6 +9,35 @@ const display = {
 };
 
 describe("Windows monitor region contract", () => {
+	it.each([
+		[
+			{ x: 10, y: 20 },
+			{ x: 110, y: 100 },
+			{ x: 10, y: 20, width: 100, height: 80 },
+		],
+		[
+			{ x: 110, y: 100 },
+			{ x: 10, y: 20 },
+			{ x: 10, y: 20, width: 100, height: 80 },
+		],
+		[
+			{ x: 10, y: 100 },
+			{ x: 110, y: 20 },
+			{ x: 10, y: 20, width: 100, height: 80 },
+		],
+		[
+			{ x: 110, y: 20 },
+			{ x: 10, y: 100 },
+			{ x: 10, y: 20, width: 100, height: 80 },
+		],
+		[
+			{ x: -1, y: -2 },
+			{ x: 3000, y: 2000 },
+			{ x: 0, y: 0, width: 1920, height: 1080 },
+		],
+	])("normalizes local drag coordinates without crossing the monitor", (start, end, expected) => {
+		expect(rectangleFromDrag(start, end, { width: 1920, height: 1080 })).toEqual(expected);
+	});
 	it("uses a monitor-local origin with 125% DPI and negative desktop coordinates", () => {
 		expect(
 			resolveWindowsCaptureRegion(display, { x: -1436, y: 0, width: 320, height: 240 }),

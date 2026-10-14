@@ -648,6 +648,10 @@ void readCaptureCommands(CaptureControl& control, const std::function<void(bool)
 // handed a directory that does not exist and failed with ERROR_PATH_NOT_FOUND
 // (0x80070003) before any encoder was involved (getopenscreen/openscreen#483).
 int wmain(int argc, wchar_t* argv[]) {
+    if (argc == 2 && std::wstring(argv[1]) == L"--capabilities") {
+        std::cout << "{\"schemaVersion\":1,\"captureRegion\":true}" << std::endl;
+        return 0;
+    }
     // Before anything reads a coordinate. `findMonitorForCapture` matches the
     // config's display bounds against the rects `EnumDisplayMonitors` reports,
     // and the caller sends those bounds in physical pixels; a DPI-unaware
