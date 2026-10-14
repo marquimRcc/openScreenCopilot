@@ -563,6 +563,31 @@ i18n15/964chaves, docs50, Vite e pacote completos aprovados. Suíte completa:
 Pacote `.cache/result-package/win-unpacked` atualizado, não instalado/relançado.
 Não anunciar recurso disponível na interface; botão e aceite GUI seguem pendentes.
 
+## Inspeção seguinte — encerramento coordenado antes do botão GIF
+
+Inspeção de `electron/main.ts` confirmou que `window-all-closed` solicita
+`app.quit()` e que o único adiamento assíncrono de `before-quit` espera
+`shutdownStt()` e `flushChatPersistence()`. Cópia/GIF aguardam seus writers e
+limpam staging no finally enquanto o processo está vivo, mas não expõem uma
+barreira de encerramento ao main. Portanto owner destruído em QA não comprova
+encerramento seguro do processo inteiro; permanece o risco de temporário órfão.
+O original segue protegido; não há evidência de perda nem teste de quit completo.
+
+Próximo incremento, ainda NÃO implementado: oferecer cancelamento e espera da
+conclusão dos jobs de cópia/GIF, incluindo writer/decoder e limpeza própria;
+integrar essa espera ao before-quit existente, sem um segundo listener que
+reentre em app.quit prematuramente. Bloquear novos jobs durante essa fase e
+definir o comportamento se o fechamento for cancelado por alterações não salvas.
+Não apagar temporários por prefixo nem forçar encerramento por timeout.
+
+Testes necessários: writer/decoder adiados, cancel nativo que lança, publicação
+já iniciada que recusa cancelamento, limpeza terminando antes da liberação do
+quit, coordenação com STT/persistência e fechamento cancelado. Usar fixture
+isolada para quit real; não interromper gravações/edições do app do usuário.
+O retorno de `registerIpcHandlers` é o ponto disponível para fornecer essa
+barreira ao main, sem criar outro encoder ou alterar vendor. Esta rodada fez
+somente inspeção/documentação; runtime e pacote permanecem no incremento 02M.
+
 ## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
