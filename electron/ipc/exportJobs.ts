@@ -40,6 +40,8 @@ export class ExportJobs {
 		};
 		owner.once("destroyed", onDestroyed);
 		try {
+			// Native initialization may close the owner before the listener exists.
+			if (owner.isDestroyed()) onDestroyed();
 			return await job.result;
 		} finally {
 			active = false;

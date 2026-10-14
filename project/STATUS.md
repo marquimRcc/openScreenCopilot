@@ -372,7 +372,33 @@ não alegar que classe isolada está ativa ou que filesystem sem hardlink é sup
 Nenhuma fonte nativa/i18n alterada; não houve novo aceite GUI ou build C++/Rust.
 App em uso não foi fechado/reaberto; nenhuma mídia privada foi usada.
 
-## Regra de atualização contínua
+## Incremento 02H — janela fechada durante inicialização do exportador
+
+Reproduzida por unit test uma lacuna de `ExportJobs`: fechamento do dono dentro
+de `start()` acontecia antes do listener `destroyed`, sem solicitar cancelamento.
+Guarda mínima reconsulta `isDestroyed()` após registrar o listener, dentro do
+try/finally existente, mantendo espera pelo resultado do writer e limpeza de owner.
+Regressão falhou antes da correção (1 falha / 12 aprovados), passou depois.
+Focados: 2 arquivos / 23 aprovados, incluindo destinos seguros; lint26 herdados.
+Typechecks app/testes aprovados; suíte final e pacote em execução;
+ainda não commitado neste checkpoint. Sessões 41290 (suíte/tipos) e 67777
+(Vite/pacote), logs `.cache/export-init-full.log`, `export-init-vite.log` e
+`export-init-package.log`: ler resultados antes de repetir execução após reset.
+Nenhum GIF/compartilhamento novo habilitado. Logs `.cache/export-init-*`.
+Pausa automática aos 95% em 2026-10-14: checkpoint local não commitado preservado.
+Reset real primário 07:10:56 UTC; retomada somente após 07:15:56 UTC
+(04:15:56 Brasília), agendada para cerca de 04h16. Pacote terminou sem erro;
+suíte ainda ativa ao pausar. Após reset, conferir logs/hashes/docs antes de commit;
+não repetir full suite por rotina nem alegar código pronto sem ler o resultado.
+Retomada em 2026-10-14 às 04h16 Brasília, após reset natural (primário 0%,
+semanal 31%, nenhum crédito consumido). Logs finais conferidos sem repetir suíte:
+345 arquivos / 4.828 aprovados / 5 ignorados / 288,01 s. Vite/pacote terminaram
+sem erro. Payload nativo: 23 arquivos SHA256 idênticos, sem build C++/Rust novo.
+Pacote local atualizado não relançado; app em uso não tocado, sem novo aceite GUI.
+Pedido humano de redução de ruído do microfone mantido como backlog no ROADMAP,
+sem implementação nem mudança de padrão nesta rodada.
+
+## Regra de atualização
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.

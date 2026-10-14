@@ -21,6 +21,28 @@ function pending() {
 }
 
 describe("export jobs", () => {
+	it("cancels when the owner closes during native initialization, before listener registration", async () => {
+		const jobs = new ExportJobs();
+		const sender = owner();
+		const job = pending();
+		let closed = false;
+		vi.spyOn(sender, "isDestroyed").mockImplementation(() => closed);
+		const run = jobs.run(
+			sender,
+			"init-close",
+			() => {
+				closed = true;
+				sender.emit("destroyed");
+				return job;
+			},
+			vi.fn(),
+		);
+		expect(job.cancel).toHaveBeenCalledOnce();
+		job.resolve(1);
+		await run;
+		expect(sender.listenerCount("destroyed")).toBe(0);
+		expect(jobs.cancel(sender, "init-close")).toBe(false);
+	});
 	it("binds cancel to the sender and ID, including before native compute starts", async () => {
 		const jobs = new ExportJobs();
 		const sender = owner();
