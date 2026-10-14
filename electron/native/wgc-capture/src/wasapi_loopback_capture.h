@@ -29,13 +29,14 @@ public:
     WasapiLoopbackCapture(const WasapiLoopbackCapture&) = delete;
     WasapiLoopbackCapture& operator=(const WasapiLoopbackCapture&) = delete;
 
-    bool initializeSystemLoopback();
+    bool initializeSystemLoopback(const std::wstring& deviceId = {});
     bool initializeMicrophone(const std::wstring& deviceId, const std::wstring& deviceName);
     bool start(AudioCallback callback);
     void stop();
 
     const AudioInputFormat& inputFormat() const;
     const std::wstring& selectedDeviceName() const;
+    const std::wstring& selectedDeviceId() const;
 
 private:
     bool initialize(WasapiCaptureEndpoint endpoint, const std::wstring& deviceId, const std::wstring& deviceName);
@@ -50,6 +51,7 @@ private:
     WAVEFORMATEX* mixFormat_ = nullptr;
     AudioInputFormat inputFormat_{};
     std::wstring selectedDeviceName_;
+    std::wstring selectedDeviceId_;
     AudioCallback callback_;
     std::thread thread_;
     std::atomic<bool> stopRequested_ = false;

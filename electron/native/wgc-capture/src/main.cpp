@@ -49,6 +49,7 @@ struct CaptureConfig {
     bool hasCaptureRegion = false;
     CaptureRegion captureRegion{};
     bool captureSystemAudio = false;
+    std::string systemAudioDeviceId;
     bool captureMic = false;
     bool captureCursor = false;
     bool webcamEnabled = false;
@@ -588,6 +589,12 @@ bool parseConfig(const std::string& json, CaptureConfig& config) {
     config.webcamEnabled = findBool(json, "webcamEnabled", false);
     config.preferSoftwareEncoder = findBool(json, "preferSoftwareEncoder", false);
     config.hideDesktopIcons = findBool(json, "hideDesktopIcons", false);
+    config.systemAudioDeviceId = findString(json, "systemAudioDeviceId");
+    // An absent field keeps legacy default behavior. An explicit but empty or
+    // non-string selection must not silently become the default output.
+    if (json.find("\"systemAudioDeviceId\"") != std::string::npos && config.systemAudioDeviceId.empty()) {
+        return false;
+    }
     config.microphoneDeviceId = findString(json, "microphoneDeviceId");
     config.microphoneDeviceName = findString(json, "microphoneDeviceName");
     config.microphoneGain = findDouble(json, "microphoneGain", 1.0);
@@ -650,7 +657,7 @@ void readCaptureCommands(CaptureControl& control, const std::function<void(bool)
 // (0x80070003) before any encoder was involved (getopenscreen/openscreen#483).
 int wmain(int argc, wchar_t* argv[]) {
     if (argc == 2 && std::wstring(argv[1]) == L"--capabilities") {
-        std::cout << "{\"schemaVersion\":1,\"captureRegion\":true,\"audioOutputEnumeration\":true}" << std::endl;
+        std::cout << "{\"schemaVersion\":1,\"captureRegion\":true,\"audioOutputEnumeration\":true,\"audioOutputSelection\":true}" << std::endl;
         return 0;
     }
     if (argc == 2 && std::wstring(argv[1]) == L"--list-audio-outputs") {
@@ -668,6 +675,18 @@ int wmain(int argc, wchar_t* argv[]) {
                       << "\",\"isDefault\":" << (devices[i].isDefault ? "true" : "false") << "}";
         }
         std::cout << "]}" << std::endl;
+        return 0;
+    }
+    if (argc == 3 && std::wstring(argv[1]) == L"--check-audio-output") {
+        winrt::init_apartment(winrt::apartment_type::multi_threaded);
+        Microsoft::WRL::ComPtr<IMMDevice> device;
+        WasapiOutputDevice info;
+        if (!resolveWasapiOutputDevice(argv[2], device, info)) {
+            std::cerr << "ERROR: Requested WASAPI output is unavailable; no fallback" << std::endl;
+            return 1;
+        }
+        std::cout << "{\"schemaVersion\":1,\"id\":\"" << jsonEscape(wideToUtf8(info.id))
+                  << "\",\"name\":\"" << jsonEscape(wideToUtf8(info.name)) << "\"}" << std::endl;
         return 0;
     }
     // Before anything reads a coordinate. `findMonitorForCapture` matches the
@@ -884,7 +903,7 @@ int wmain(int argc, wchar_t* argv[]) {
     AudioInputFormat systemAudioFormat{};
     AudioInputFormat microphoneAudioFormat{};
     if (config.captureSystemAudio) {
-        if (!loopbackCapture.initializeSystemLoopback()) {
+        if (!loopbackCapture.initializeSystemLoopback(utf8ToWide(config.systemAudioDeviceId))) {
             std::cerr << "ERROR: Failed to initialize WASAPI loopback capture" << std::endl;
             return 1;
         }
@@ -909,6 +928,12 @@ int wmain(int argc, wchar_t* argv[]) {
                   << ",\"bitsPerSample\":" << audioFormat->bitsPerSample
                   << ",\"system\":" << (config.captureSystemAudio ? "true" : "false")
                   << ",\"microphone\":" << (config.captureMic ? "true" : "false");
+        if (config.captureSystemAudio) {
+            std::cout << ",\"systemAudioDeviceId\":\""
+                      << jsonEscape(wideToUtf8(loopbackCapture.selectedDeviceId()))
+                      << "\",\"systemAudioDeviceName\":\""
+                      << jsonEscape(wideToUtf8(loopbackCapture.selectedDeviceName())) << "\"";
+        }
         if (config.captureMic) {
             std::cout << ",\"microphoneDeviceName\":\""
                       << jsonEscape(wideToUtf8(microphoneCapture.selectedDeviceName())) << "\"";

@@ -751,7 +751,33 @@ empacotado, mas não instalado/relançado. Adaptador ainda não importado no mai
 Nenhuma homologação de seleção, medidor, GUI ou captura nova foi feita; não são
 oferecidos na interface. App do usuário não tocado, nenhuma mídia enviada.
 
-## Regra de atualização contínua (entregas)
+## Incremento 02R — seleção nativa de saída, sem UI
+
+Resolução MMDevice por ID exato, checagem eRender/ativo e falha sem fallback.
+Default é resolvido somente no início; escolha explícita não depende do nome ou
+da enumeração de dispositivos não relacionados. Campo opcional systemAudioDeviceId:
+ausente mantém compatibilidade, presente vazio/null/não string recusa parse antes
+de capturar. Capability audioOutputSelection, comando read-only --check-audio-output,
+audio-format com ID/nome efetivos do sistema. Sem ligação main/UI/persistência nova.
+
+Teste nativo preliminar passou para2 saídas/default, ausência/nome/config inválidos;
+versão final foi refinada para não depender das propriedades de saídas alheias e
+reportar identidade efetiva. Rebuild final completo aprovado, incluindo33 testes
+encoder; script real passou novamente para2 saídas e recusas, sem streams.
+SHA256 WGC bd69b1e17200c9b8d01740f5f8674551c47d752132b8d958f44af0b1248bfbbd.
+Ambos typechecks/lint26 herdados/i18n15/docs50 aprovados. Suíte final uma vez:
+354 arquivos/4.991 aprovados/5 ignorados/352,53s, Node22.22.1, dois workers,
+exit0/sem signal, fim14:51:52UTC, recibo/log `.cache/audio-selection-full.{json,log}`.
+Essa execução antecede a coleta dos novos testes IPC02S (isolados e não importados);
+não aprova a futura integração. Vite e pacote02R completos aprovados;
+entry/chunk/preload e23 payloads nativos conferidos por SHA256, incluindo WGC
+bd69b1e1…48bfbbd. Pacote não instalado/relançado. Logs
+`.cache/audio-selection-{validated-native,lint,vite,package}.log`.
+Script de QA versionado não abre stream nem captura a tela. Não homologados áudio
+audível escolhido, troca/desconexão física, GUI ou evento numa tomada real.
+App do usuário intacto. GIF/estimativa/Compartilhar continuam adiados.
+
+## Regra de atualização contínua (registro)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.

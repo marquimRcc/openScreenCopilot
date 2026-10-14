@@ -200,6 +200,38 @@ Primeiro build falhou por ordem de headers do SDK; corrigida incluindo mmdevicea
 antes das property keys. Testes focados30/2arquivos, ambos typechecks e lint26
 avisos herdados aprovados. Validação final/pacote registrados no STATUS.
 
+### 02R — resolução nativa explícita (em validação, sem UI)
+
+Helper aceita `systemAudioDeviceId` opcional: ausente mantém padrão eConsole;
+presente deve ser string não vazia (`default` também pede padrão). ID explícito
+usa GetDevice, confere eRender/DEVICE_STATE_ACTIVE e identidade exata, sem resolver
+por nome ou cair no padrão. Dispositivo mantido por referência na inicialização;
+não troca silenciosamente de endpoint durante a tomada. Falha de Activate/formato
+continua erro, sem tentativa de outra saída. Mudança/desconexão durante a captura
+e tratamento tipado ainda não homologados.
+
+`--check-audio-output ID` resolve/valida sem abrir stream ou capturar a tela;
+`audioOutputSelection` diferencia esta versão. Evento audio-format passa a relatar
+ID/nome efetivos da saída do sistema, não apenas a escolha desejada. Main ainda
+não envia nova seleção: UI/persistência/IPC/revalidação main-owned pendentes.
+Validação preliminar real:2 saídas explícitas, padrão/default vazio corretos;
+IDs inexistentes, nomes amigáveis e config com seleção vazia/null/número/bool
+recusados. Script `scripts/test-windows-audio-output-selection.mjs` não grava,
+não muda padrão Windows nem solicita microfone. Não prova gravação audível na
+saída escolhida, desconexão física ou identidade reportada durante uma tomada.
+Validação final registrada no STATUS; não anunciar seletor disponível.
+
+Próxima ligação main/UI: persistir a escolha Windows por ID MMDevice, separada
+do microfone e de IDs Chromium. Padrão deve permanecer escolha de padrão entre
+sessões, mas ser resolvido/fixado em ID real por tomada. Reenumerar no main antes
+de iniciar; ID salvo ausente mantém escolha visível como indisponível e recusa
+início, nunca reescreve para default silenciosamente. Helper antigo sem capability
+de seleção recusa escolha explícita. Falha de seleção não pode acionar fallback
+Chromium para outra saída. IPC deve aceitar só a janela/frame locais atuais,
+revalidar dono após awaits, limitar chamadas concorrentes e resolver caminho do
+helper no main; renderer não escolhe executável/argumentos. Medidor deve usar
+mesma saída, enviar só níveis limitados e fechar prévia antes da tomada real.
+
 Padrão de áudio implementado em código em 2026-10-14: store durável, fallback IPC,
 painel de preparação e browser shim passam a iniciar com sistema ligado; uma
 preferência booleana `false` salva continua desligada. Microfone e câmera continuam

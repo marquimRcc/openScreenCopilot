@@ -58,3 +58,44 @@ bool enumerateWasapiOutputDevices(std::vector<WasapiOutputDevice>& devices) {
     devices = std::move(snapshot);
     return true;
 }
+
+bool resolveWasapiOutputDevice(const std::wstring& requestedId,
+    Microsoft::WRL::ComPtr<IMMDevice>& device, WasapiOutputDevice& info) {
+    using Microsoft::WRL::ComPtr;
+    device.Reset();
+    info = {};
+    const bool useDefault = requestedId.empty() || requestedId == L"default";
+    ComPtr<IMMDeviceEnumerator> enumerator;
+    if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                                IID_PPV_ARGS(&enumerator)))) return false;
+    ComPtr<IMMDevice> resolved;
+    const HRESULT resolveHr = useDefault
+        ? enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &resolved)
+        : enumerator->GetDevice(requestedId.c_str(), &resolved);
+    if (FAILED(resolveHr)) return false;
+    DWORD state = 0;
+    ComPtr<IMMEndpoint> endpoint;
+    EDataFlow flow = eAll;
+    if (FAILED(resolved->GetState(&state)) || state != DEVICE_STATE_ACTIVE ||
+        FAILED(resolved.As(&endpoint)) || FAILED(endpoint->GetDataFlow(&flow)) || flow != eRender) {
+        return false;
+    }
+    LPWSTR rawId = nullptr;
+    const HRESULT idHr = resolved->GetId(&rawId);
+    std::wstring id;
+    if (SUCCEEDED(idHr) && rawId) id = rawId;
+    CoTaskMemFree(rawId);
+    if (FAILED(idHr) || id.empty() || (!useDefault && id != requestedId)) return false;
+    ComPtr<IPropertyStore> properties;
+    if (FAILED(resolved->OpenPropertyStore(STGM_READ, &properties))) return false;
+    PROPVARIANT value;
+    PropVariantInit(&value);
+    const HRESULT nameHr = properties->GetValue(PKEY_Device_FriendlyName, &value);
+    std::wstring name;
+    if (SUCCEEDED(nameHr) && value.vt == VT_LPWSTR && value.pwszVal) name = value.pwszVal;
+    PropVariantClear(&value);
+    if (FAILED(nameHr) || name.empty()) return false;
+    info = { id, name, useDefault };
+    device = resolved;
+    return true;
+}
