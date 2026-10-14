@@ -15,6 +15,43 @@ A prévia é do vídeo original, não da composição exportada pelo editor. Web
 cursor editável, zoom e demais camadas separadas não são incorporados pela tela
 simples. Compartilhamento/conversão devem esclarecer original versus composição.
 Não há upload nem conversão automática neste incremento.
+Essa distinção também aparece em uma legenda curta na prévia (15 idiomas),
+sem abrir configuração extra nem obrigar exportação para acessar o original.
+
+## Compartilhar e GIF — desenho do próximo incremento
+
+Análise do código em 2026-10-14: GIF já usa compositor nativo, mesma cena/lista
+de clipes do MP4, progresso por ID e cancelamento por dono da janela. Não criar
+segundo encoder, fallback renderer ou pipeline FFmpeg independente. Reutilizar
+`ExportDialog`, `buildSceneDescription`, `assetCameraSource`,
+`resolveClipSourceEndSec` e o gerenciamento `ExportJobs`, extraindo somente a
+orquestração necessária à tela simples. Não importar o shell inteiro do editor.
+
+| Ação proposta | Fluxo | Proteção necessária antes de habilitar |
+|---|---|---|
+| Compartilhar original | Escolher arquivo original e destino explicitamente; adaptador de plataforma abre a escolha de destino | Não enviar automaticamente; não tratar caminho local como link público; cancelamento não é erro nem envio |
+| Preparar cópia | Opção separada e nomeada como cópia, escolhida pelo usuário | Cópia exclusiva, fonte main-owned, recusar destino igual/alias do original; não anunciar compartilhamento concluído |
+| GIF | Escolher trecho, resolução/FPS, confirmar estimativa e arquivo novo; exportar cena pelo compositor | Sem áudio, pode ser maior que MP4; destino validado no main, original imutável, progresso/cancelamento e limpeza apenas do derivado próprio |
+| Vídeo com câmera/edições | Construir documento efêmero a partir da sessão validada, compor e mostrar o derivado antes de compartilhar | Preservar câmera/offset/cursor e proporção; não aplicar zoom/layout automático surpreendente; não sobrescrever sessão nem documento aberto |
+
+Contratos propostos (ainda não implementados): pedido da tela leva identidade da
+gravação + opções, nunca autorização irrestrita de caminho. Main revalida sessão,
+fonte aprovada, estado ocioso e destino selecionado pela mesma janela; reserva um
+job e arquivo temporário próprios. Cancelar/fechar a janela aguarda finalização do
+job antes de liberar Nova captura. Sucesso só após derivado final existente e
+validado; mostrar tamanho medido, não confundir estimativa com garantia.
+
+Riscos encontrados: o picker genérico existente devolve caminho ao renderer e o
+bridge nativo recebe `outPath`; isso por si só não satisfaz o novo contrato de
+destino main-owned e original protegido. Adicionar guardas/testes antes de ligar
+GIF/Compartilhar na tela simples. Não reutilizar `write-export-to-path` como
+permissão para substituir um MP4. Não houve upload nem conversão nova nesta análise.
+
+Aceites sintéticos obrigatórios: original com hash idêntico antes/depois, arquivo
+com espaços/acentos, destino igual/alias/hardlink, recusa de sobrescrita, sessão
+trocada durante diálogo, janela fechada/cancelamento, falta de addon/disco e
+decode GIF/duração/frames. A validação real de compartilhamento deve usar somente
+arquivo sintético e destino explicitamente autorizado; mídia privada permanece local.
 
 Testes automatizados aprovados; árvore de acessibilidade da janela Electron isolada
 mostrou arquivo sintético, 00:05, 266,1 KB e as três ações. A captura de tela retornou

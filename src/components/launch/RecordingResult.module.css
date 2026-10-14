@@ -15,3 +15,4 @@
 .actions button:disabled { opacity: .45; cursor: default; }
 .actions button:focus-visible, .details input:focus-visible { outline: 2px solid #10b981; outline-offset: 3px; }
 .error { color: #fca5a5; font-size: 14px; margin-bottom: 12px; }
+.previewNote { color: #a4adba; font-size: 12px; margin: 8px 0 16px; }

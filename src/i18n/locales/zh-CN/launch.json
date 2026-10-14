@@ -58,6 +58,7 @@
 		"systemTip": "系统光标：直接录制到视频中，无法修改样式或使用自动缩放"
 	},
 	"recordingResult": {
+		"originalPreview": "原始视频预览。单独录制的摄像头、可编辑光标和编辑效果可在“编辑”中查看。",
 		"saved": "录制已保存",
 		"title": "录制",
 		"loading": "正在加载录制…",

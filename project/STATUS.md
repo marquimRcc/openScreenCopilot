@@ -322,7 +322,27 @@ verificado. Novo pacote relançado como PID 21240, sem
 `OPENSCREEN_DISABLE_CONTENT_PROTECTION`; janela própria retornada pelo computer-use
 e startup/atalho próprio confirmados no log. Não equivale a captura homologada.
 
-## Regra de atualização final
+## Incremento 02F — prévia original e desenho de derivados
+
+Legenda curta na tela de resultado explica que câmera separada, cursor editável
+e edições aparecem no editor, não incorporados ao MP4 original. Traduzida nos
+15 idiomas; não muda captura, preferências, arquivos ou compositor.
+Análise registrada em [SIMPLE-RECORDING-UX.md](SIMPLE-RECORDING-UX.md): GIF já
+usa compositor nativo com cancelamento/progresso; corrigida documentação antiga
+que ainda descrevia fallback renderer. Nenhum GIF/compartilhamento novo habilitado.
+Antes de ligar ações, implementar destino main-owned, recusa de sobrescrever/alias
+do original e jobs canceláveis com arquivo temporário próprio. Não enviar mídia.
+
+Testes focados (resultado + exportador existente): 4 arquivos / 26 aprovados;
+typechecks app/testes, i18n15 (958 chaves) e lint sem erros / 26 avisos herdados.
+Suíte final: 344 arquivos / 4.817 aprovados / 5 ignorados / 301,04 s, runtime
+fixado e quatro workers. Docs:check50 e Vite aprovados. Pacote local atualizado
+em `.cache/result-package/win-unpacked`, sem instalador/publicação; 23 arquivos
+nativos com SHA256 idêntico. Não relançado: instância em uso continua 02E,
+PID21240 de `.cache/indicator-package`, protegida, anterior somente à legenda.
+Nenhum novo aceite GUI alegado para esta legenda; fluxo completo ainda pendente.
+
+## Regra de atualização
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
 executados com motivo. Não marcar metas de desempenho como concluídas por estimativa.

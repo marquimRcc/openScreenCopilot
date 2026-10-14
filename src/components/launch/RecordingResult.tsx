@@ -100,6 +100,7 @@ export function RecordingResult() {
 							</video>
 						</div>
 						{previewFailed && <p role="status">{t("recordingResult.previewFailed")}</p>}
+						<p className={styles.previewNote}>{t("recordingResult.originalPreview")}</p>
 						<div className={styles.details}>
 							<strong>{info.name}</strong>
 							<span>

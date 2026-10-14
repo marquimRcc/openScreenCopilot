@@ -58,6 +58,7 @@
 		"systemTip": "Curseur système : votre vrai curseur, enregistré dans la vidéo. Sans changement de style ni zoom automatique."
 	},
 	"recordingResult": {
+		"originalPreview": "Aperçu de la vidéo originale. La caméra séparée, le curseur modifiable et les modifications apparaissent dans Modifier.",
 		"saved": "Enregistrement sauvegardé",
 		"title": "Enregistrement",
 		"loading": "Chargement…",

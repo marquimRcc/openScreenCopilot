@@ -31,6 +31,7 @@ describe("RecordingResult", () => {
 		expect(await screen.findByText("recordingResult.saved")).toBeInTheDocument();
 		expect(screen.getByDisplayValue(recording.path)).toHaveAttribute("readonly");
 		expect(screen.getByText(recording.name)).toBeInTheDocument();
+		expect(screen.getByText("recordingResult.originalPreview")).toBeInTheDocument();
 		expect(screen.getByLabelText("recordingResult.preview")).toHaveAttribute("controls");
 		expect(screen.getByLabelText("recordingResult.preview")).not.toHaveAttribute("autoplay");
 		expect(window.electronAPI.switchToEditor).not.toHaveBeenCalled();

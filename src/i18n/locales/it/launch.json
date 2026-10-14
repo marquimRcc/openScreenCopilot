@@ -58,6 +58,7 @@
 		"systemTip": "Cursore di sistema: il tuo cursore reale, registrato nel video. Nessun cambio di stile, nessuno zoom automatico."
 	},
 	"recordingResult": {
+		"originalPreview": "Anteprima del video originale. Fotocamera separata, cursore modificabile e modifiche sono visibili in Modifica.",
 		"saved": "Registrazione salvata",
 		"title": "Registrazione",
 		"loading": "Caricamento…",

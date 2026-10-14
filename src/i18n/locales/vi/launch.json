@@ -53,6 +53,7 @@
 		"quality2160p": "4K"
 	},
 	"recordingResult": {
+		"originalPreview": "Xem trước video gốc. Camera riêng, con trỏ có thể chỉnh sửa và các chỉnh sửa xuất hiện trong Chỉnh sửa.",
 		"saved": "Đã lưu bản ghi",
 		"title": "Bản ghi",
 		"loading": "Đang tải bản ghi…",

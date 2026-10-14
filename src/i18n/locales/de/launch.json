@@ -58,6 +58,7 @@
 		"systemTip": "System-Cursor: dein echter Cursor, im Video aufgenommen. Aussehen nicht änderbar, kein Auto-Zoom."
 	},
 	"recordingResult": {
+		"originalPreview": "Vorschau des Originalvideos. Separate Kamera, bearbeitbarer Cursor und Änderungen erscheinen unter Bearbeiten.",
 		"saved": "Aufnahme gespeichert",
 		"title": "Aufnahme",
 		"loading": "Aufnahme wird geladen…",

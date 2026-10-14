@@ -58,6 +58,7 @@
 		"systemTip": "Sistem imleci: gerçek imleciniz, videoya kaydedilir. Stil değişikliği ve otomatik yakınlaştırma yok."
 	},
 	"recordingResult": {
+		"originalPreview": "Orijinal video önizlemesi. Ayrı kamera, düzenlenebilir imleç ve düzenlemeler Düzenle bölümünde görünür.",
 		"saved": "Kayıt kaydedildi",
 		"title": "Kayıt",
 		"loading": "Kayıt yükleniyor…",

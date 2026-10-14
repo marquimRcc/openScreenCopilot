@@ -12,9 +12,14 @@ leave the native process. Performance numbers, the bench, and the rejected
 alternatives that drove the design live in
 [engineering/rendering-performance.md](../engineering/rendering-performance.md).
 
-GIF is out of scope here: it has no native encoder yet, so it keeps its own
-dedicated code path in `src/lib/exporter/gifExporter.ts` — the one format
-the document adapter still renders in the renderer.
+GIF uses the native compositor too: `exportGifNative` calls the compositor
+bridge's `exportGif` / `startGifExport`, with the same clip list, scene and
+`walk_composited_timeline` used for MP4. Only the encoder/container differ.
+There is no renderer GIF fallback. The existing editor dialog provides progress,
+per-job cancellation and output-file reveal; the simple recording-result screen
+does not expose GIF conversion yet. See
+[`ExportDialog.tsx`](../../src/components/ai-edition/ExportDialog.tsx) and
+[`compositorViewService.ts`](../../electron/native-bridge/services/compositorViewService.ts).
 
 ```mermaid
 flowchart LR
