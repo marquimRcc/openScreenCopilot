@@ -50,6 +50,13 @@ aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 - Confirmação pós-gravação com caminho/nome do MP4 e "Abrir local salvo" acessível
   no editor; usar o arquivo efetivo da sessão, não apenas a pasta padrão.
 - Seletor de endpoint de saída, microfone independente e medidor de nível.
+- Melhoria futura solicitada em 2026-10-14: redução/cancelamento de ruído do
+  microfone, com opção simples de ligar/desligar, preservando a voz. Processar
+  somente o microfone antes da mistura, sem filtrar o áudio do sistema.
+  Avaliar solução local open-source e licença para Windows/Linux; medir latência,
+  CPU, sincronização e efeito na transcrição. Validar teclado, ventilador e ruído
+  ambiente com comparação ligado/desligado, sem cortes perceptíveis na fala.
+  Apenas registrado; implementação e escolha do padrão ainda pendentes.
 - Tratamento de fechamento de janela, desconexão e mudança de formato.
 - Fixar contrato do relógio de sessão e das pausas antes de adicionar ASR.
 
