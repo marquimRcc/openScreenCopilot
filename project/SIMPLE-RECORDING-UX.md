@@ -122,6 +122,40 @@ writer, validação e publicação, nunca porque porcentagem chegou a100%.
 Adapter ainda isolado, sem IPC/botão novo. Diálogo real/cancel UI/sessão trocada/
 fechamento de dono/fluxo completo continuam pendentes na integração runtime.
 
+### 02L — controlador e decoder final (isolados do runtime)
+
+`SavedRecordingGifs` junta preflight/cena, snapshot da sessão/fonte, diálogo
+main-owned, destino 02G, ExportJobs, progresso e cancelamento. Recebe caminho
+esperado do original e opções, nunca caminho final/cena/controle nativo do
+renderer. Valida dono/papel por dependência main antes/depois de awaits; uma
+operação ativa, fonte MP4/WebM e identidade/tamanho/mtime antes do writer.
+SHA256 em stream antes/depois impede publicar se a fonte mudou durante o job.
+
+Cancelar/fechar dono aborta preparação/validação e solicita cancelamento nativo.
+Mesmo se o cancel nativo lançar exceção, espera writer encerrar antes de limpar
+staging. Cancel durante init é reaplicado após receber controle; durante publicação
+final pode ser recusado. Caminho/tamanho final só retornam após publicação exclusiva.
+
+`validateSavedGif` confere GIF87a/89a e dimensões no cabeçalho, depois executa
+SOMENTE decode completo com FFmpeg compartilhado existente, forçando demuxer GIF,
+ignorando repetição e sem criação de arquivo/encoder. Confere progresso final,
+frames e duração (tolerância30ms para centésimos); timeout60s/logs limitados,
+AbortSignal e espera `close` do processo antes da limpeza. Falta de decoder,
+erro ou saída incompleta impedem publicação; nenhum fallback sem validação.
+Não precisa de FFprobe no pacote. Estatísticas do encoder não bastam.
+
+Prova isolada Windows com componentes reais: sucesso em arquivo novo, cancel
+nativo e fechamento do dono durante writer; apenas o GIF de sucesso publicado.
+Decoder efetivo foi `ffmpeg-shared.exe` do payload, original intacto. Nenhum
+diálogo real/IPC/interface foi homologado por esse harness programático.
+Fixtures unitárias do controlador/header são texto sintético, NÃO GIF real.
+
+Antes de ligar ao runtime: usar dono mainWindow atual/papel resultado e fonte
+aprovada, garantir fechamento do probe em finally, fornecer decoder resolvido
+pelo main, compartilhar estado ocupado com Salvar cópia/Nova captura/Editar e
+expor progresso/cancel apenas ao dono. Não importar shell do editor. Botão GIF
+permanece ausente até integrar isso e opções/aviso/estimativa/progresso na UI.
+
 Integração mapeada (ainda não implementada): reutilizar
 `electron/mcp/hidden-video.ts:openVideoInHiddenWindow` para obter metadados da
 fonte já autorizada; sempre fechar a janela oculta em `finally` e revalidar

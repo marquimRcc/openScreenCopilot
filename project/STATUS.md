@@ -496,6 +496,41 @@ Exit0 anterior não foi tratado como passe. Terceira execução validou GIF/canc
 Adapter ainda NÃO importado pelo runtime; sem IPC/botão/novo aceite GUI. App
 protegido em uso não tocado; não homologados diálogo/cancel UI/captura→resultado.
 
+## Incremento 02L — controlador de GIF e decode final
+
+`SavedRecordingGifs` isolado do runtime: snapshot imutável de sessão/fonte,
+main-owned owner/picker/probe, revalidação após awaits, SHA256 em stream,
+ExportJobs/destino02G, progresso finito e cancelamento que aguarda writer.
+Cancel que lança não abandona writer; cancel durante init é reaplicado.
+`validateSavedGif`: header/dimensões + demux GIF/decode integral por FFmpeg
+compartilhado, frames/duração, timeout60s e logs limitados; aguarda close mesmo
+após abort/error antes de devolver ao cleanup. Nenhum novo encoder/fallback.
+ExportOwner tornou-se interface estrutural mínima, sem alteração de lógica de jobs.
+
+QA nativa isolada, componentes reais/controller/decoder, somente MP4 sintético:
+sucesso2s/30frames/768×480/1.898.617bytes, cancel nativo e owner destruído durante
+writer retornam canceled e não publicam GIF. Diretório final contém só sucesso;
+estado busy liberado após writer, fonte/hash revalidados. Decoder resolvido foi
+`electron/native/bin/win32-x64/ffmpeg-shared.exe`; não depende de FFprobe empacotado.
+Logs `.cache/gif-controller-final.*`, artefatos `.cache/gif-controller-qa-9rigCp`.
+Primeiro QA O5ZpAz passou antes de explicitar demuxer GIF; final acima repetiu
+com demuxer explícito. Sem fonte Rust/C++ alterada nem aceite GUI alegado.
+Teste negativo real: GIF truncado aos13bytes, com header/dimensões válidos,
+foi recusado por frames/duração. FFmpeg terminou exit0 com zero frames: o teste
+confirma por que header/exit0/estatísticas não bastam. Fixture privada em
+`.cache/gif-negative-*`, harness `.cache/gif-validator-negative.ts`.
+
+Validações finais: 4 arquivos/58 focados, ambos tsc, lint26 herdados, i18n15/
+964chaves e docs50 aprovados. Suíte completa: 350 arquivos/4.930 aprovados/
+5 ignorados/297,82s, Node22.22.1/npm10.9.4, quatro workers. Vite/pacote completos
+aprovados, 23 payloads nativos SHA256 idênticos. Pacote local atualizado em
+`.cache/result-package/win-unpacked`, não instalado/relançado. Sem rebuild nativo
+porque não houve fonte C++/Rust alterada. Dados/fontes/vendor preservados.
+Não há IPC/preload/botão GIF novo nem import
+runtime do controlador/decoder. App aberto não foi tocado; pacote ativo ainda
+anterior. Próximo: wiring main/result owner, busy mútuo com cópia/navegação,
+probe com finally, opções/progresso/cancelamento e GUI real. Não anunciar pronto.
+
 ## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
