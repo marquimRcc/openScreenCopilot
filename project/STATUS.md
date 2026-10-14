@@ -461,6 +461,41 @@ App aberto não tocado. Preflight isolado não importado pelo runtime: sem mudan
 visual/encoder nesta rodada, portanto sem novo teste GUI/GIF real; integração e
 homologação nativa seguem pendentes, não inferidas da suíte unitária.
 
+## Incremento 02K — cena original e GIF nativo sintético
+
+Adapter isolado `savedRecordingGifScene.ts`: documento efêmero, fonte/trecho
+main-owned, `buildSceneDescription` compartilhado, modo original sem camadas
+extras/efeitos/áudio e sem crop. Não importa shell nem muda preferências reais.
+Sincronizado preflight com arredondamento par existente no addon; dimensões
+menores que2/formatos extremos recusados sem upscale. Sem mudança Rust/C++.
+Focados: 3 arquivos/198 aprovados. Expectativa inicial blur=false corrigida para
+contrato numérico0; tsc encontrou layoutByClip potencialmente nulo, guardado.
+Ambos typechecks aprovados após correção. Suíte final: 348 arquivos/4.895
+aprovados/5 ignorados/289,01s, Node22.22.1/npm10.9.4, quatro workers.
+Lint sem erros/26 avisos herdados, i18n15/964chaves e docs50 aprovados.
+Vite e pacote completos aprovados; 23 payloads nativos SHA256 idênticos.
+Pacote `.cache/result-package/win-unpacked` gerado da árvore atual, não instalado
+nem relançado. Adapter não importado por código ativo: não anunciar GIF no pacote.
+
+Prova nativa isolada (não GUI) usa somente mídia sintética privada em `.cache`:
+probe real, adapter, CompositorViewService/startGifExport, ExportJobs e destinos
+02G, validação FFprobe/GIF/decode antes da publicação. Trecho1,25–3,25s produziu
+768×480/30frames/2s/1.898.617bytes; original SHA256d6a51061…2365 inalterado.
+Cancel imediato aceito, resultado rejeitado como cancelado, writer aguardado e
+somente derivado próprio limpo, sem destino cancelado. Frame inicial vs fonte
+redimensionada MAE RGB3,8401/255; 28.439pixels amarelos, 262.373canais diferentes
+entre início/fim (70.738 com diferença>16/255), quatro cantos amarelos corretos.
+Não é teste universal de qualidade.
+Artefatos `.cache/gif-scene-qa-MHH0rT`, logs `gif-scene-qa3.*`; nenhum upload.
+
+Primeiras duas execuções do harness encerraram antes da exportação, sem resultados
+válidos: janela oculta do probe era fechada antes de criar owner. Harness corrigido
+mantém owner desde o início e trata window-all-closed. Diretórios temporários
+privados dessas tentativas preservados, sem varredura automática/remoção por prefixo.
+Exit0 anterior não foi tratado como passe. Terceira execução validou GIF/cancel.
+Adapter ainda NÃO importado pelo runtime; sem IPC/botão/novo aceite GUI. App
+protegido em uso não tocado; não homologados diálogo/cancel UI/captura→resultado.
+
 ## Regra de atualização contínua
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

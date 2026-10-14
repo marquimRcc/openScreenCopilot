@@ -76,7 +76,7 @@ precisam vir do probe do original aprovado pelo main, nunca do renderer.
 Não concede autorização de fonte/destino nem substitui guardas de sessão/owner.
 
 Política inicial SOMENTE da ação simples: trecho até 60 s dentro da fonte,
-maior aresta até 1280 px, sem upscale, proporção com arredondamento inteiro e
+maior aresta até 1280 px, sem upscale, proporção com arredondamento par e
 até 1 bilhão de pixel-frames. Trecho longo pode exigir menos FPS/resolução;
 essa guarda limita trabalho, não garante tempo/consumo máximo nem tamanho GIF.
 Não impõe limites novos ao editor existente ou à gravação de vídeo.
@@ -90,6 +90,37 @@ pendente de amostras reais pelo compositor; GIF pode ser maior que MP4 e não te
 Próximo: conectar probe main-owned, cena/trecho original explícito, ExportJobs,
 diálogo/destino 02G e validação decode/codec, depois UI/progresso/cancelamento.
 Teste unitário desse preflight não homologa GIF real ou o fluxo por input OS.
+
+### 02K — cena original compartilhada e prova nativa isolada
+
+`electron/recording/savedRecordingGifScene.ts` constrói documento efêmero com uma
+fonte e um trecho; reutiliza `buildSceneDescription`, sem importar shell/editor
+nem modificar documento/preferências reais. Modo original explícito: câmera nula,
+cursor editável/zoom/efeitos/moldura/áudio desligados; cursor já embutido no vídeo
+permanece nos pixels. Retângulos normalizados cobrem o quadro inteiro, sem crop;
+output e params usam as mesmas dimensões. Redimensionamento tem a pequena
+aproximação de proporção inerente ao arredondamento par.
+
+Descoberto no addon existente: `resolve_output_size` reduz também GIF a pixels
+pares. Preflight agora faz o mesmo, nunca anuncia 853 se o addon grava 852.
+Fonte menor que 2 px/eixo e formato extremo que viraria zero são recusados,
+sem upscale silencioso. Não houve alteração/rebuild do código Rust/C++.
+
+Prova isolada com fonte sintética, probe Chromium, cena real, `startGifExport`,
+ExportJobs e destino 02G: trecho 1,25–3,25 s, GIF 768×480, 30 frames/2 s,
+1.898.617 bytes, decode integral aprovado, original com mesmo SHA256. Cancelamento
+nativo imediato aceito, writer aguardado, nenhum GIF cancelado publicado.
+Comparação do primeiro frame com fonte redimensionada: erro RGB médio3,84/255;
+quatro cantos amarelos presentes, movimento confirmado. NÃO é homologação visual
+do GIF/interface ou medição de fidelidade para conteúdo arbitrário.
+
+Esse GIF de2s é maior que o MP4 sintético original de5s/266.116bytes. Não usar
+taxa MP4 para estimar GIF. `stats.fps` é throughput de exportação, não FPS de
+reprodução; UI futura deve mostrar FPS solicitado e tamanho final medido.
+Callback de progresso é throttled e pode omitir o último frame: só concluir após
+writer, validação e publicação, nunca porque porcentagem chegou a100%.
+Adapter ainda isolado, sem IPC/botão novo. Diálogo real/cancel UI/sessão trocada/
+fechamento de dono/fluxo completo continuam pendentes na integração runtime.
 
 Integração mapeada (ainda não implementada): reutilizar
 `electron/mcp/hidden-video.ts:openVideoInHiddenWindow` para obter metadados da

@@ -39,19 +39,19 @@ describe("saved original GIF preflight (no encoder or destination authorization)
 	});
 	it.each([
 		[3840, 2160, 1280, 720],
-		[1080, 1920, 405, 720],
+		[1080, 1920, 404, 720],
 		[5120, 1080, 1280, 270],
 		[640, 360, 640, 360],
-		[1, 1, 1, 1],
+		[3, 3, 2, 2],
 	])("fits %ix%i without upscaling (%ix%i)", (width, height, outWidth, outHeight) => {
 		const plan = planSavedRecordingGif(request, { ...source, width, height });
 		expect([plan.width, plan.height]).toEqual([outWidth, outHeight]);
 	});
 	it("supports the existing small preset and integer-pixel aspect rounding", () => {
 		const plan = planSavedRecordingGif({ ...request, maxHeight: 480 }, source);
-		expect([plan.width, plan.height]).toEqual([853, 480]);
+		expect([plan.width, plan.height]).toEqual([852, 480]);
 		expect(Math.abs(plan.width / plan.height - source.width / source.height)).toBeLessThan(
-			1 / plan.height,
+			2 / plan.height,
 		);
 	});
 	it.each([
@@ -78,12 +78,18 @@ describe("saved original GIF preflight (no encoder or destination authorization)
 		{ durationSec: 0 },
 		{ durationSec: Infinity },
 		{ width: 0 },
+		{ width: 1 },
 		{ width: -1 },
 		{ height: 2.5 },
 		{ height: Infinity },
 		{ width: Number.MAX_SAFE_INTEGER + 1 },
 	])("rejects missing/invalid trusted probe metadata %j", (patch) => {
 		expect(() => planSavedRecordingGif(request, { ...source, ...patch })).toThrow("metadata");
+	});
+	it("never lets native even-pixel snapping upscale a narrow frame", () => {
+		expect(() => planSavedRecordingGif(request, { ...source, width: 2, height: 32768 })).toThrow(
+			"too narrow",
+		);
 	});
 	it.each([
 		{ startSec: -1 },

@@ -68,8 +68,8 @@ export function planSavedRecordingGif(
 		source.durationSec <= 0 ||
 		!Number.isSafeInteger(source.width) ||
 		!Number.isSafeInteger(source.height) ||
-		source.width <= 0 ||
-		source.height <= 0
+		source.width < 2 ||
+		source.height < 2
 	) {
 		throw new Error("Original video metadata is unavailable.");
 	}
@@ -82,15 +82,19 @@ export function planSavedRecordingGif(
 	) {
 		throw new Error("Select a GIF excerpt inside the original, at most 60 seconds long.");
 	}
-	// Fit both axes, preserve aspect ratio within integer-pixel rounding, never upscale.
+	// The EXISTING addon snaps both axes down to even pixels for GIF too
+	// (resolve_output_size). Match that here instead of showing a different size.
 	const maxHeight = options.maxHeight as SavedGifRequest["maxHeight"];
 	const scale = Math.min(
 		1,
 		maxHeight / source.height,
 		SAVED_GIF_LIMITS.maxEdge / Math.max(source.width, source.height),
 	);
-	const width = Math.max(1, Math.floor(source.width * scale));
-	const height = Math.max(1, Math.floor(source.height * scale));
+	const width = Math.floor((source.width * scale) / 2) * 2;
+	const height = Math.floor((source.height * scale) / 2) * 2;
+	if (width < 2 || height < 2) {
+		throw new Error("Original video aspect ratio is too narrow for the native GIF size.");
+	}
 	// Use the compositor's shared frame-grid arithmetic, including its epsilon.
 	const totalFrames = clipOutputFrameCount(
 		{ sourceStartSec: options.startSec, sourceEndSec: options.endSec },
