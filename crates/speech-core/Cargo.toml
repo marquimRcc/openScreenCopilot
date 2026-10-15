@@ -12,3 +12,5 @@ resolver = "2"
 
 [dev-dependencies]
 serde_json = "=1.0.150"
+# File-only experiment. No FFT backend, logging, hardware or production dependency.
+rubato = { version = "=0.15.0", default-features = false }

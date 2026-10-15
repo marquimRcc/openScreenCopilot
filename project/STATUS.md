@@ -1487,6 +1487,61 @@ Se dados reais ainda estiverem no limiar, preservar checkpoint e reagendar confo
 novo reset aplicável, sem alegar renovação. GUI continua aguardando resposta sobre
 reservar tela sem apphumano na frente, não reabrir fixtures em cada wake.
 
+## Limite confirmado após checkpoint — 2026-10-15
+
+Consulta final após envio c4d591f3 e atualização do watchdog:5h90%/semanal14%,
+ordinaryUsageAllowedtrue. Limiar humano89% foi ultrapassado durante as operações
+administrativas de checkpoint; nenhum desenvolvimento/teste/build/GUI começou
+depois da consulta88%. Parar desenvolvimento até reset real+5min e consulta renovada.
+Guarda mínima13:27:44UTC/10:27:44Brasília preservada; o horário não garante saldo.
+AutomaçãoACTIVE/minutely configurada para retentar após guarda, sem espera emloop.
+Esta nota supera somente o estado88% anterior. Nenhum crédito/reset consumido.
+Nota local preservada sem novo commit após confirmação do limite.
+
+## Renovação real e retomada — 2026-10-15T14:49:47Z
+
+Consulta mesma conta5h2%/semanal16%,ordinaryUsageAllowedtrue; resetsAt primário
+1792093782/semanal1792662164. Dois créditos de reset continuam disponíveis,
+nenhum consumido/comprado. Antes houve consultas com100%/ordinaryUsageAllowedfalse
+e timestamp de reset antigo passado; horário sozinho não comprovava renovação.
+Nova consulta real supera a pausa histórica, não uma autorização para contornar quota.
+Watchdog1min ACTIVE restaurado via ferramenta e arquivo salvo conferido read-only;
+trabalho contínuo sem esperar próximas wakes, até89%5h/95%semanal ou pedido humano.
+Chat original idle, somente este ativo na conferência. Nota90 acima preservada histórica.
+GUI continua aguardando disponibilidade do PC, não relançada nesta retomada.
+
+## Preparação04 — spike resampling de arquivo, não runtime
+
+Experimento original tests/resample_spike.rs, rubato0.15.0 dev-only sem features
+default. Cargo.lock próprio adicionou4pacotes do cache offline:rubato,num-integer
+0.1.47,num-traits0.2.19,autocfg1.5.1; MIT avisos/proveniência preservados. num-traits
+build.rs faz probe local do compilador. Nada instalado/baixado/vendor alterado;
+cargo tree normal confirma biblioteca segue std-only, semrubato runtime/FFT/log.
+
+Conversão sintética mono44.1/48k→16k, entrada inteira até1.048.576floats; scratch
+512 e saída reutilizada, flush limitado4blocos. EOF floor(total*16000/rate) é política
+experimental, não contrato timestamp live. Entrada/saída completas limitadas ainda
+ficam em memória, não promessa de streaming constante/gravação longa. Partições
+1/511/512/513/mistas dão bytes f32 iguais; tails0/1/2/3/511/512/513/1023/1024/1025.
+
+Primeira execução3pass/1fail: descartar output_delay adiantou impulso44.1k em47frames.
+Inspeção exata da inicialização sinc e reteste: atraso declarado46/42frames acompanha
+primeiro bloco menor, NÃO prefixo equivalente a descartar nesta configuração.
+Sem trim, picos impulso interior/final dentro1frame de floor(pos*16000/rate).
+Tons1k RMS0,70710173/0,70710793;12k RMS0,00000007/0,00000005 (44.1/48k, interior).
+Não generalizar para todasfreq/configs/voz; saída16k não ganha timestamps por arrival.
+
+4spikes+23unitários aprovados debug/release offline/locked Rust1.98.1, clippyalltargets
+-Dwarnings/fmt aprovados; docs53 OK. Cargo avisou fallback cópia no cache incremental
+por hardlink indisponível, não falha de teste nem prova sobre filesystem de gravações.
+Cancel parcial descarta resultado sem devolver original como16k; finite/rate/budget
+inválidos recusados. Freshcall não retém filtro, mas reset contínuo/epoch/gap,journal,
+falha nativa após emissão parcial,VAD/provider/fala pt-BR ainda pendentes.
+
+Sem mudança TS/runtime/app/native produção. Não repetir full5167pass/typechecks/
+Vite/pacote37d4a1c8 por teste Rust isolado; nenhum install/relançamento/GUI novo.
+Gates01–03/04/05 preservados, estimativaGIF/Compartilhar continuam no final.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

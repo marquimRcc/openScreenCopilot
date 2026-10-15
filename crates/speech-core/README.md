@@ -10,7 +10,8 @@ meeting-copilot (Zackriya Solutions); its MIT notice is preserved in
 The library uses std only. serde_json is a pinned test dependency for the exact same
 JSON fixture exercised by electron/copilot/sourceTimeline.test.ts. Cargo.lock is
 local to this isolated workspace; the compositor's workspace/lock are unchanged.
-No build.rs, hardware API, model downloads or environment changes are required.
+No crate-owned build.rs, hardware API, model downloads or environment changes are required.
+The test-only resampling spike below adds num-traits' compiler-feature build probe.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-core/Cargo.toml
@@ -49,3 +50,37 @@ values outside[-1,1] are not clipped. No gain, noise suppression or delay is add
 Output sample count equals input frame count at the SAME rate, not automatically
 16kHz. Caller must retain transport partial frames; no padding or flush is invented.
 No runtime integration, endpoint access or new Cargo dependency/model download.
+
+## File-only resampling experiment (not a library API)
+
+`tests/resample_spike.rs` uses pinned rubato0.15.0 as a **dev-dependency** with
+default features disabled. No FFT, realfft, complex, logging or live capture is
+enabled. Cargo.lock adds rubato/num-integer/num-traits/autocfg from the existing
+offline cache. MIT notices are in [LICENSE-RESAMPLING-SPIKE](LICENSE-RESAMPLING-SPIKE).
+The library's normal dependency tree still contains only this crate/std.
+
+The experiment accepts a complete mono file buffer, only44.1/48kHz, at most
+1,048,576 input floats. It emits exactly floor(total_input*16000/input_rate), an
+explicit prototype EOF policy, not a live timestamp/rounding contract. Fixed512
+input scratch and reusable output scratch; at most four zero flush blocks; padding
+is not captured audio. Input/output whole-file buffers are bounded but still held
+in memory: this is NOT a constant-memory streaming implementation or long-file API.
+
+Crucial measured convention: this exact SincFixedIn configuration declares46/42
+output frames of delay, but the first block is shorter, NOT prefixed with that
+many zero samples. Blindly trimming output_delay advanced the impulse by47 frames
+in the initial failing test. Keeping output intact measured peaks within one output
+frame of floor(source_position*16000/input_rate). No universal phase/latency claim;
+future live metadata must represent availability separately from media position.
+
+Four integration tests cover tails0/1/2/3/511/512/513/1023/1024/1025, partition
+invariance, late impulse, 1kHz passband, 12kHz rejection, invalid inputs and cancel
+after partial conversion (no successful/original output returned). New calls have
+independent filter history. This does not test continuous epoch reset, gap journal,
+injected resampler failure after partial output, provider/voice, realtime latency,
+all devices/rates or Linux. Those remain gates before production integration.
+
+Run `cargo test --offline --locked --manifest-path crates/speech-core/Cargo.toml
+--test resample_spike -- --nocapture` for measured values. Existing23 unit tests
+remain separate from these four experiment tests. No npm suite or app rebuild is
+needed for this test-only change; app runtime/package are unchanged.

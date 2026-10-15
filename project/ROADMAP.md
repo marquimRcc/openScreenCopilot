@@ -139,6 +139,10 @@ sem PCM/persistência/autorização e sem import runtime. Tetos são provisório
 protótipo, não negociação v1. Ver SPEECH-TIMELINE-DRAFT. Primeira adaptação pequena
 do vendor: downmix mono com política de canais explícita/limites/validação e MIT
 preservada; sem resampling/VAD/provider/integração ou dispensa de aceites anteriores.
+Experimento subsequente de resampling44.1/48k→16k existe SOMENTE nos testes Rust,
+com rubato0.15 dev-only, contagem/partições/cauda/impulsos/tons/cancelamento.
+Não é API de normalização nem ASR. Convenção de fase/atraso foi medida antes de
+qualquer integração; voz, falha parcial injetada e épocas live continuam pendentes.
 
 Pode iniciar depois de 01; integração depende de 02/03.
 

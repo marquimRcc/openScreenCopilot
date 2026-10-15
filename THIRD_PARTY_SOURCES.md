@@ -29,3 +29,9 @@ preservados no crate. Alterações: política explícita de canais, guardas de t
 frames completos/valores finitos e acumulação f64. Sem resampler, engine, Tauri,
 hardware ou integração runtime; vendor não foi editado. Essa extração não certifica
 licenças/modelos/dependências de funções futuras. Detalhes no README do crate e STATUS.
+
+Experimento de resampling SOMENTE em testes do crate: rubato0.15.0 sem features
+default, num-integer0.1.47, num-traits0.2.19 e autocfg1.5.1 (build). Versões/checksums
+no Cargo.lock próprio; [avisos MIT](crates/speech-core/LICENSE-RESAMPLING-SPIKE)
+preservam Henrik Enquist, Rust Project Developers e Josh Stone. Nada foi copiado
+do vendor ou ligado ao aplicativo. Não certifica modelos nem redistribuição futura.

@@ -117,3 +117,29 @@ nova e cancelamento. Demonstrar count/atraso/cauda válidos e bounded buffers;
 nenhuma amostra da época anterior pode atravessar reset. Medir antialias/latência
 e correlacionar mapa origem→saída16k antes de VAD/provider. Não há resampler novo,
 dependency/API/MIT redistribuição auditada ou hipótese de falha corrigida por esta nota.
+
+### Spike de arquivo subsequente — 2026-10-15
+
+Agora há experimento SOMENTE em `crates/speech-core/tests/resample_spike.rs`, não
+API de biblioteca/runtime. Rubato0.15.0 dev-only sem defaultfeatures; lock próprio
+adicionou num-integer0.1.47/num-traits0.2.19/autocfg1.5.1 do cache offline, semFFT.
+Licenças MIT inspecionadas e avisos preservados em LICENSE-RESAMPLING-SPIKE; build.rs
+de num-traits faz probe de total_cmp pelo rustc, não download/extração do vendor.
+
+Mono44.1/48k→16k, entrada completa até1.048.576floats, scratch512/reuso output,
+EOF floor(total_in*16000/rate), padding zero limitado a4blocos extras. Essa política
+de EOF é experimental; não é contrato de relógio live nem promessa de memória
+constante (entrada/saída completas ainda são mantidas). Partições variadas dão
+saídas idênticas; impulso final preservado e pico dentro de1frame previsto.
+
+Falha inicial útil: remover output_delay adiantou impulso44.1k em47frames.
+Inspeção da inicialização/índice sinc0.15 e reteste mostram primeiro bloco mais
+curto, não prefixo de46/42zeros nesse caso. Portanto atraso de disponibilidade
+declarado fica separado da posição de mídia; não subtrair esse número de PTS sem
+prova da convenção. Tons1k RMS~0,7071;12k RMS<0,0000001 em interior sem bordas.
+Não mede todas frequências, qualidade de voz, latência realtime ou outras configs.
+
+Cancel antes/depois de blocos parciais retorna erro sem original rotulado16k;
+freshcall não retém filtro anterior. Reset/épocas contínuos, lacunas, falha nativa
+injetada após saída parcial, fila/journal/provider/VAD e fala pt-BR ficam pendentes.
+Gates01–03 e integração04/05 não foram dispensados. App H264/pacote37d4a1c8 intactos.
