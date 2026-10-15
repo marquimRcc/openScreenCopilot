@@ -6,7 +6,7 @@
 use crate::audio_frame_v0::{
     parse_header, validate_frame, FrameError, Header, Source, HEADER_BYTES, MAX_PAYLOAD_BYTES,
 };
-use crate::transport_budget::{BudgetError, BufferLease, Cost, TransportBudget};
+use crate::transport_budget::{BudgetError, BufferLease, TransportBudget};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ExpectedStream {
@@ -220,14 +220,7 @@ impl AudioDecoderV0 {
     fn activate_payload(&mut self, header: Header) -> Result<bool, DecoderError> {
         let length = HEADER_BYTES + header.payload_bytes as usize;
         let lease = if let Some(budget) = &self.budget {
-            match budget.try_reserve(
-                header.session_nonce,
-                header.source,
-                Cost {
-                    bytes: length as u64,
-                    frames: u64::from(header.frame_count),
-                },
-            ) {
+            match budget.try_reserve_frame(&self.header) {
                 Ok(lease) => Some(lease),
                 Err(BudgetError::Capacity) => {
                     self.waiting_for_budget = true;
@@ -296,7 +289,7 @@ impl AudioDecoderV0 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transport_budget::{BudgetLimits, Usage};
+    use crate::transport_budget::{AudioTimeLimits, BudgetLimits, Usage};
     fn fixture() -> Vec<u8> {
         let json: serde_json::Value = serde_json::from_str(include_str!(
             "../../../contracts/copilot/audio-frame.v0.fixture.json"
@@ -752,6 +745,47 @@ mod tests {
             u64::from(original.frame_count)
         );
         drop(frame);
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+    }
+
+    #[test]
+    fn duration_exhaustion_pauses_before_allocation_and_follows_handoff_cleanup() {
+        let bytes = fixture();
+        let pool = TransportBudget::with_audio_time_limits(
+            expected(&bytes).nonce,
+            BudgetLimits {
+                global_bytes: 192,
+                source_bytes: 192,
+                global_frames: 4,
+                source_frames: 4,
+                in_flight: 2,
+            },
+            AudioTimeLimits {
+                global_ns: 41_667,
+                source_ns: 41_667,
+            },
+        )
+        .unwrap();
+        let mut decoder = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        feed_all(&mut decoder, &bytes).unwrap();
+        let held = decoder.take().unwrap();
+        let h = held.header();
+        let mut next = bytes.clone();
+        next[48..56].copy_from_slice(&(h.sequence + 1).to_le_bytes());
+        next[56..64].copy_from_slice(&h.sample_end.to_le_bytes());
+        assert_eq!(decoder.feed(&next), Ok(HEADER_BYTES));
+        assert!(decoder.is_waiting_for_budget());
+        assert_eq!(decoder.owned_buffer_bytes(), HEADER_BYTES);
+        assert_eq!(pool.audio_time_usage_ns().unwrap().0, 41_667);
+        drop(held);
+        assert_eq!(decoder.retry_budget(), Ok(true));
+        let mut bad = next[HEADER_BYTES..].to_vec();
+        bad[..4].copy_from_slice(&f32::NAN.to_le_bytes());
+        assert_eq!(
+            decoder.feed(&bad),
+            Err(DecoderError::Frame(FrameError::NonFinite))
+        );
+        assert_eq!(pool.audio_time_usage_ns().unwrap(), (0, [0; 2]));
         assert_eq!(pool.usage().unwrap(), Usage::default());
     }
 }

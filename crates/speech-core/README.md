@@ -43,7 +43,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Sixty-seven Rust unit tests now pass in debug/release, including the original shared fixtures.
+Seventy-two Rust unit tests now pass in debug/release, including the original shared fixtures.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -220,3 +220,15 @@ as a value snapshot, with immutable byte access; neither can detach its reservat
 The TS decoder has NO shared-pool integration yet. Input chunks,
 header scratch/metadata, normalized copies and engine allocations remain outside
 this accounting; future host must bound them and the number of decoder instances.
+
+Optional `with_audio_time_limits` adds global/source summed audio nanosecond bounds.
+The decoder calls `try_reserve_frame`, which reparses the fixed raw header and
+derives byte/frame/time costs before allocation. Generic untyped reservations are
+refused in a time-limited pool. Duration is ceil(frame_count*1e9/sample_rate), with
+u128 intermediates and checked sums; channels do not multiply audio duration.
+Per-packet rounding is conservative, deliberately NOT partition-invariant timeline
+math, PTS or wall-clock latency. Packetized audio may hit its cap earlier than a
+coalesced frame. Leases retain/release duration across epochs and ownership handoff.
+Four additional pool tests and one decoder test cover mixed rates, exact duration
+caps, no-free tiny packets, invalid/untyped requests and waiting/PCM-error cleanup.
+No host policy is chosen, no transport/model is opened and no TS integration exists.

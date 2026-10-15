@@ -23,9 +23,9 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
   wake pode antecipar, garantir tentativa posterior à guarda, nunca DAILY isolado.
 - Renovação REAL14:49:47UTC15/10 confirmou5h2%/semanal16%, allowedtrue, superando
   notas históricas90–100%/timestamp antigo. Watchdog1min ACTIVE restaurado/conferido.
-  PAUSA89 real17:07:54UTC15/10:5h89%/semanal30%,allowedtrue. Não iniciar código/
-  testes/build/GUI até2026-10-15T18:34:42Z (15:34:42Brasília), reset1792093782+300,
-  E saldo real confirmado. Nenhum reset/crédito consumido. Checkpoint código enviado.
+  RETOMADA REAL19:51:14UTC15/10:5h1%/semanal31%,allowedtrue,primaryreset1792111875.
+  Pausa89 anterior e guarda18:34:42UTC JÁ CUMPRIDAS; saldo só renovou depois,
+  não usar timestamp passado como prova. Watchdog1min restaurado;nenhumresetconsumido.
   Consultar novamente antes de iniciar trabalho, não usar esse snapshot como saldo vivo.
 - Estimativa do GIF e Compartilhar SOMENTE após TODO restante roadmap.
   Base existente preservada, integração incompleta não ativada.
@@ -120,7 +120,8 @@ Recibo/log.cache/audio-decoder-full.{json,log}.41focadosTS do parser/decoder pas
 Conferência auxiliar posterior de check-docs.test.mjs/speech-core-ci.test.mjs foi
 iniciada em88% com `node --test`, runner INCORRETO para testes Vitest, terminou
 exit1 após a consulta89. Não é regressão de produto/suíte completa invalidada.
-Não rerodou após limiar; corrigir somente essa execução focada com Vitest na retomada.
+Corrigida após renovação real:Vitest correto/Node22.22.1/2workers,2arquivos/9pass,
+exit0,3,40s em19:52UTC. Mensagens de links inválidos são probes esperados dos testes.
 check-docs.mjs standalone passou55files antes da pausa; testes Rust67+8 aprovados.
 Ambos tsc,lint0erros/26avisos herdados,i18n15/1000chaves,docs55/diffcheck OK.
 Anterior7ee332dd:366arquivos/5201pass/5skip/382,70s,audio-frame-full.
@@ -171,7 +172,13 @@ Implementado/testado, sem imports runtime:
   Não é crédito da conta/RSS/auth;
   sempoolTS/pipe/notificaçãohost/workerdrain/journal/PCMlive.
 
-Rust67unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
+Orçamento opcional AudioTimeLimits por sessão/fonte acrescentado isoladamente:
+try_reserve_frame revalida header bruto e deriva bytes/frames/duração ceil(ns).
+Recusa genericCost em pool temporizado;sumas/caps/epochs/RAII seguem atômicos.
+Por pacote ceil é conservador e pode admitir menos que pacote coalescido;NÃO PTS/
+clockmap/tempo de parede.12testespool+7integração,semTS/pipe/runtime/ASRlive.
+
+Rust72unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 

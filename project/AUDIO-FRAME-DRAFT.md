@@ -129,9 +129,14 @@ notificação sem corrida, cancelamento/drain e journal/ACK durável. Sem áudio
 
 ## Próxima ligação host — requisitos, NÃO implementação
 
-O pool isolado não atende sozinho ao contrato de fila limitada por bytes E tempo.
-Frames a44.1k/48k/16k não têm a mesma duração. Host deve derivar limites por taxa,
-com aritmética verificada e política explícita, não renomear `frames` para segundos.
+O pool isolado agora admite AudioTimeLimits opcionais, por sessão/fonte emns.
+try_reserve_frame reparsa header bruto e deriva ceil(frameCount*1e9/rate) antesalloc;
+pool temporizado recusa Cost genérico sem metadados de taxa. Somas u64 verificadas,
+produto u128; canais não multiplicam duração. Host ainda escolhe limites/política.
+Frames a44.1k/48k/16k não têm a mesma duração; não renomear `frames` para segundos.
+Ceil por pacote é conservador, NÃO clockmap: partições podem esgotar limite antes
+de pacote único, sem subcontagem. Quatro testespool+umdecoder adicionais passaram.
+Isso não atende sozinho toda fila/host/cópias/engine ou comprova30min de captura.
 Não somar captureMonotonicNs como PTS nem identificar sessão apenas pelo nonce wire.
 
 | Transição futura | Invariante necessária |

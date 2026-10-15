@@ -3,7 +3,7 @@
 //! Main/host owns the scope and limits. Source-role caps aggregate all epochs.
 //! A lease must outlive its buffer. No reset/reopen or waiter queue is provided.
 
-use crate::audio_frame_v0::Source;
+use crate::audio_frame_v0::{parse_header, Source, HEADER_BYTES};
 use std::sync::{Arc, Mutex};
 
 pub const MAX_GLOBAL_BUFFER_BYTES: u64 = 64 * 1024 * 1024;
@@ -22,6 +22,13 @@ pub struct Cost {
     pub bytes: u64,
     pub frames: u64,
 }
+/// Optional summed audio-duration admission. Both source roles aggregate epochs.
+/// Nanoseconds are a conservative per-packet bound, not media/capture timestamps.
+#[derive(Debug, Clone, Copy)]
+pub struct AudioTimeLimits {
+    pub global_ns: u64,
+    pub source_ns: u64,
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BudgetError {
     InvalidLimits,
@@ -33,6 +40,8 @@ pub enum BudgetError {
     Closed,
     Poisoned,
     Invariant,
+    AudioTimeRequired,
+    InvalidAudioHeader,
 }
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Usage {
@@ -46,6 +55,7 @@ struct SourceUsage {
     bytes: u64,
     frames: u64,
     leases: usize,
+    audio_ns: u64,
 }
 #[derive(Debug)]
 struct State {
@@ -56,6 +66,8 @@ struct State {
     sources: [SourceUsage; 2],
     closed: bool,
     broken: bool,
+    time_limits: Option<AudioTimeLimits>,
+    audio_ns: u64,
 }
 fn index(source: Source) -> usize {
     match source {
@@ -74,6 +86,7 @@ pub struct BufferLease {
     state: Arc<Mutex<State>>,
     source: Source,
     cost: Cost,
+    audio_ns: u64,
 }
 
 impl TransportBudget {
@@ -103,8 +116,56 @@ impl TransportBudget {
                 sources: [SourceUsage::default(); 2],
                 closed: false,
                 broken: false,
+                time_limits: None,
+                audio_ns: 0,
             })),
         })
+    }
+    pub fn with_audio_time_limits(
+        nonce: [u8; 16],
+        limits: BudgetLimits,
+        time_limits: AudioTimeLimits,
+    ) -> Result<Self, BudgetError> {
+        if time_limits.global_ns == 0
+            || time_limits.source_ns == 0
+            || time_limits.source_ns > time_limits.global_ns
+        {
+            return Err(BudgetError::InvalidLimits);
+        }
+        let pool = Self::new(nonce, limits)?;
+        pool.state
+            .lock()
+            .map_err(|_| BudgetError::Poisoned)?
+            .time_limits = Some(time_limits);
+        Ok(pool)
+    }
+    pub fn audio_time_usage_ns(&self) -> Result<(u64, [u64; 2]), BudgetError> {
+        let state = self.state.lock().map_err(|_| BudgetError::Poisoned)?;
+        if state.broken {
+            return Err(BudgetError::Invariant);
+        }
+        Ok((
+            state.audio_ns,
+            [state.sources[0].audio_ns, state.sources[1].audio_ns],
+        ))
+    }
+    /// Reparse fixed raw metadata; payload validity remains the decoder's job.
+    /// Rounded UP per packet so tiny packets can never obtain free duration.
+    /// This is intentionally conservative and not partition-invariant clock math.
+    pub fn try_reserve_frame(&self, bytes: &[u8]) -> Result<BufferLease, BudgetError> {
+        let header = parse_header(bytes).map_err(|_| BudgetError::InvalidAudioHeader)?;
+        let numerator = u128::from(header.frame_count) * 1_000_000_000;
+        let audio_ns = numerator.div_ceil(u128::from(header.sample_rate));
+        let audio_ns = u64::try_from(audio_ns).map_err(|_| BudgetError::InvalidCost)?;
+        self.reserve(
+            header.session_nonce,
+            header.source,
+            Cost {
+                bytes: HEADER_BYTES as u64 + u64::from(header.payload_bytes),
+                frames: u64::from(header.frame_count),
+            },
+            Some(audio_ns),
+        )
     }
     pub fn usage(&self) -> Result<Usage, BudgetError> {
         let state = self.state.lock().map_err(|_| BudgetError::Poisoned)?;
@@ -134,6 +195,15 @@ impl TransportBudget {
         source: Source,
         cost: Cost,
     ) -> Result<BufferLease, BudgetError> {
+        self.reserve(nonce, source, cost, None)
+    }
+    fn reserve(
+        &self,
+        nonce: [u8; 16],
+        source: Source,
+        cost: Cost,
+        audio_ns: Option<u64>,
+    ) -> Result<BufferLease, BudgetError> {
         if nonce != self.nonce {
             return Err(BudgetError::WrongScope);
         }
@@ -147,6 +217,10 @@ impl TransportBudget {
         if state.closed {
             return Err(BudgetError::Closed);
         }
+        if state.time_limits.is_some() && audio_ns.is_none() {
+            return Err(BudgetError::AudioTimeRequired);
+        }
+        let audio_ns = audio_ns.unwrap_or(0);
         let limits = state.limits;
         if cost.bytes > limits.global_bytes
             || cost.bytes > limits.source_bytes
@@ -156,6 +230,23 @@ impl TransportBudget {
             return Err(BudgetError::CostTooLarge);
         }
         let old = state.sources[index(source)];
+        if let Some(time) = state.time_limits {
+            if audio_ns > time.global_ns || audio_ns > time.source_ns {
+                return Err(BudgetError::CostTooLarge);
+            }
+        }
+        let (Some(total_ns), Some(source_ns)) = (
+            state.audio_ns.checked_add(audio_ns),
+            old.audio_ns.checked_add(audio_ns),
+        ) else {
+            return Err(BudgetError::Capacity);
+        };
+        if state
+            .time_limits
+            .is_some_and(|time| total_ns > time.global_ns || source_ns > time.source_ns)
+        {
+            return Err(BudgetError::Capacity);
+        }
         let next = (
             state.bytes.checked_add(cost.bytes),
             state.frames.checked_add(cost.frames),
@@ -176,15 +267,18 @@ impl TransportBudget {
         state.bytes = bytes;
         state.frames = frames;
         state.leases += 1;
+        state.audio_ns = total_ns;
         state.sources[index(source)] = SourceUsage {
             bytes: source_bytes,
             frames: source_frames,
             leases: old.leases + 1,
+            audio_ns: source_ns,
         };
         Ok(BufferLease {
             state: Arc::clone(&self.state),
             source,
             cost,
+            audio_ns,
         })
     }
 }
@@ -200,6 +294,13 @@ impl Drop for BufferLease {
             return;
         }
         let old = state.sources[index(self.source)];
+        let (Some(total_ns), Some(source_ns)) = (
+            state.audio_ns.checked_sub(self.audio_ns),
+            old.audio_ns.checked_sub(self.audio_ns),
+        ) else {
+            state.broken = true;
+            return;
+        };
         let next = (
             state.bytes.checked_sub(self.cost.bytes),
             state.frames.checked_sub(self.cost.frames),
@@ -223,10 +324,12 @@ impl Drop for BufferLease {
         state.bytes = bytes;
         state.frames = frames;
         state.leases = leases;
+        state.audio_ns = total_ns;
         state.sources[index(self.source)] = SourceUsage {
             bytes: source_bytes,
             frames: source_frames,
             leases: source_leases,
+            audio_ns: source_ns,
         };
     }
 }
@@ -235,6 +338,160 @@ impl Drop for BufferLease {
 mod tests {
     use super::*;
     const NONCE: [u8; 16] = [1; 16];
+    fn audio_header(rate: u32, frames: u32, source: Source, epoch: u64) -> [u8; HEADER_BYTES] {
+        let mut bytes = [0; HEADER_BYTES];
+        bytes[..4].copy_from_slice(b"OSCP");
+        bytes[5] = 1;
+        bytes[6..8].copy_from_slice(&(HEADER_BYTES as u16).to_le_bytes());
+        bytes[8..12].copy_from_slice(&(frames * 4).to_le_bytes());
+        bytes[12..16].copy_from_slice(&rate.to_le_bytes());
+        bytes[16..18].copy_from_slice(&1_u16.to_le_bytes());
+        bytes[18] = 1;
+        bytes[19] = if source == Source::System { 1 } else { 2 };
+        bytes[24..40].copy_from_slice(&NONCE);
+        bytes[40..48].copy_from_slice(&epoch.to_le_bytes());
+        bytes[64..68].copy_from_slice(&frames.to_le_bytes());
+        bytes
+    }
+    fn timed(global_ns: u64, source_ns: u64) -> TransportBudget {
+        TransportBudget::with_audio_time_limits(
+            NONCE,
+            BudgetLimits {
+                global_bytes: MAX_GLOBAL_BUFFER_BYTES,
+                source_bytes: MAX_GLOBAL_BUFFER_BYTES,
+                global_frames: 1_000_000,
+                source_frames: 1_000_000,
+                in_flight: 32,
+            },
+            AudioTimeLimits {
+                global_ns,
+                source_ns,
+            },
+        )
+        .unwrap()
+    }
+    #[test]
+    fn time_caps_sum_audio_across_rates_sources_and_epochs_without_releasing_live_owners() {
+        let pool = timed(20_000_000, 15_000_000);
+        let system = pool
+            .try_reserve_frame(&audio_header(48_000, 480, Source::System, 0))
+            .unwrap();
+        let mic = pool
+            .try_reserve_frame(&audio_header(16_000, 160, Source::Microphone, 2))
+            .unwrap();
+        assert_eq!(
+            pool.audio_time_usage_ns().unwrap(),
+            (20_000_000, [10_000_000; 2])
+        );
+        let next = audio_header(44_100, 1, Source::System, 1);
+        assert_eq!(
+            pool.try_reserve_frame(&next).unwrap_err(),
+            BudgetError::Capacity
+        );
+        drop(mic);
+        let newer = pool.try_reserve_frame(&next).unwrap();
+        assert_eq!(pool.audio_time_usage_ns().unwrap().0, 10_022_676);
+        assert_eq!(
+            pool.try_reserve_frame(&audio_header(16_000, 96, Source::System, 9))
+                .unwrap_err(),
+            BudgetError::Capacity
+        );
+        pool.close().unwrap();
+        assert_eq!(pool.audio_time_usage_ns().unwrap().0, 10_022_676);
+        drop(system);
+        drop(newer);
+        assert_eq!(pool.audio_time_usage_ns().unwrap(), (0, [0; 2]));
+    }
+    #[test]
+    fn timed_pool_refuses_untyped_cost_invalid_header_and_permanent_time_oversize() {
+        let pool = timed(1, 1);
+        assert_eq!(
+            pool.try_reserve(
+                NONCE,
+                Source::System,
+                Cost {
+                    bytes: 1,
+                    frames: 1
+                }
+            )
+            .unwrap_err(),
+            BudgetError::AudioTimeRequired
+        );
+        assert_eq!(
+            pool.try_reserve_frame(&audio_header(0, 1, Source::System, 0))
+                .unwrap_err(),
+            BudgetError::InvalidAudioHeader
+        );
+        assert_eq!(
+            pool.try_reserve_frame(&audio_header(192_000, 1, Source::System, 0))
+                .unwrap_err(),
+            BudgetError::CostTooLarge
+        );
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+        assert_eq!(pool.audio_time_usage_ns().unwrap(), (0, [0; 2]));
+        for time in [
+            AudioTimeLimits {
+                global_ns: 0,
+                source_ns: 1,
+            },
+            AudioTimeLimits {
+                global_ns: 1,
+                source_ns: 0,
+            },
+            AudioTimeLimits {
+                global_ns: 1,
+                source_ns: 2,
+            },
+        ] {
+            assert_eq!(
+                TransportBudget::with_audio_time_limits(NONCE, limits(), time).unwrap_err(),
+                BudgetError::InvalidLimits
+            );
+        }
+    }
+    #[test]
+    fn per_packet_ceiling_is_conservative_not_a_partition_invariant_timeline() {
+        let pool = timed(158_731, 158_731);
+        let combined = pool
+            .try_reserve_frame(&audio_header(44_100, 7, Source::System, 0))
+            .unwrap();
+        assert_eq!(pool.audio_time_usage_ns().unwrap().0, 158_731);
+        drop(combined);
+        let mut owners = Vec::new();
+        for _ in 0..6 {
+            owners.push(
+                pool.try_reserve_frame(&audio_header(44_100, 1, Source::System, 0))
+                    .unwrap(),
+            );
+        }
+        assert_eq!(
+            pool.try_reserve_frame(&audio_header(44_100, 1, Source::System, 0))
+                .unwrap_err(),
+            BudgetError::Capacity
+        );
+        assert_eq!(pool.audio_time_usage_ns().unwrap().0, 6 * 22_676);
+        drop(owners);
+        assert_eq!(pool.audio_time_usage_ns().unwrap(), (0, [0; 2]));
+    }
+    #[test]
+    fn frame_duration_bounds_hold_at_all_draft_rates_without_float_or_free_packets() {
+        let pool = timed(u64::MAX, u64::MAX);
+        for rate in [1, 8_000, 16_000, 44_100, 48_000, 96_000, 192_000] {
+            for frames in [1, 7, 1_048_576] {
+                // Pool frame cap is intentionally independent of duration.
+                let frames = frames.min(1_000_000);
+                let held = pool
+                    .try_reserve_frame(&audio_header(rate, frames, Source::System, 0))
+                    .unwrap();
+                let nanos = pool.audio_time_usage_ns().unwrap().0;
+                let numerator = u128::from(frames) * 1_000_000_000;
+                assert!(u128::from(nanos) * u128::from(rate) >= numerator);
+                assert!(u128::from(nanos - 1) * u128::from(rate) < numerator);
+                drop(held);
+                assert_eq!(pool.audio_time_usage_ns().unwrap().0, 0);
+            }
+        }
+    }
     fn limits() -> BudgetLimits {
         BudgetLimits {
             global_bytes: 300,
