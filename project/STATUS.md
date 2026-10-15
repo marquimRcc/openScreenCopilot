@@ -255,12 +255,16 @@ BudgetSnapshot lêusage/duração/decoders/closed sobUMAtrava,semcombinarobserva
 rasgadas;2testesclose/owners/concorraw-áudio,poison/brokenrecusam. Snapshot pode
 ficarvelho imediatamente,nãoéreserva/ACKdurável/auth/cleanup/workerdrain.
 
-Rust134unitários+5integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+2integrações adicionais:EOFparcial libera sóframepending,mono/providerativo
+continua cobrado atécompletion/cancel;janela16ksintética mapeia rangeoriginal
+viaregistryâncora5s,nunca arrivalprovider. Semclockreal/resampler/ASR/checkpoint.
+
+Rust134unitários+7integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider
 fake lento:cap184bytes,copyseguinte recusada atéliberação,notificaçãocapacidade,
-cancelawait/close,48kmono recusado como16k.4testesfuncionais+1diagnóstico,semengine/processo/pipe/captura/
+cancelawait/close,48kmono recusado como16k.6testesfuncionais+1diagnóstico,semengine/processo/pipe/captura/
 journal/timestampsreais. Clippy drop_non_drop corrigido,sem alterarproduto.
 
 Spikes SOMENTE testes:mono44.1/48k→16k,partições/tails/limites/cancel/erro real após

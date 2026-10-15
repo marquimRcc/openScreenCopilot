@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are134 unit +5 component-integration +8 resampling-spike tests, passing
+These are134 unit +7 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -442,3 +442,10 @@ transitions; poisoned/broken pools refuse snapshots too. It is a value snapshot
 that can immediately become stale, not a reservation, durable ACK, authorization,
 permission to delete audio or worker-drain evidence. Unmanaged/control/external
 owners and provider-engine jobs are outside this snapshot.
+
+Two more component tests combine existing boundaries: partial next-frame EOF
+releases only that pending frame while a live mono/fake-provider request remains
+charged; cancellation still waits for completion. A synthetic declared16k window
+maps its original sample range through TimelineRegistry to a fixed media anchor,
+never provider arrival time. This is not a capture clock,48k resampler, real ASR,
+persisted final/checkpoint, reconnect or worker shutdown test.

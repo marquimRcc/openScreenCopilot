@@ -1,5 +1,5 @@
 //! Synthetic in-memory component integration, no engine/pipe/capture or journal.
-use openscreen_speech_core::audio_decoder_v0::{AudioDecoderV0, ExpectedStream};
+use openscreen_speech_core::audio_decoder_v0::{AudioDecoderV0, DecoderError, ExpectedStream};
 use openscreen_speech_core::audio_frame_v0::{parse_header, HEADER_BYTES};
 use openscreen_speech_core::downmix::MonoMix;
 use openscreen_speech_core::input_chunk::OwnedInputChunk;
@@ -11,9 +11,12 @@ use openscreen_speech_core::provider::{
 use openscreen_speech_core::provider_admission::{
     transcribe_managed, ManagedTranscriptionError, ProviderAdmission,
 };
+use openscreen_speech_core::speech_windows::{SpeechWindowPlanner, WindowLimits};
+use openscreen_speech_core::timeline_registry::{RegistryLimits, TimelineRegistry};
 use openscreen_speech_core::transport_budget::{
     AudioTimeLimits, BudgetError, BudgetLimits, TransportBudget, Usage,
 };
+use openscreen_speech_core::{SourceRange, SourceSpan};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -129,6 +132,142 @@ impl TranscriptionProvider for Slow {
     fn provider_name(&self) -> &'static str {
         "synthetic-slow-no-engine"
     }
+}
+
+#[test]
+fn partial_eof_releases_only_pending_frame_not_live_provider_or_mono_ownership() {
+    let bytes = frame(16_000);
+    let (pool, mut decoder) = setup(&bytes);
+    feed(&mut decoder, &bytes);
+    let input = decoder.take().unwrap();
+    let header = input.header();
+    let mono = downmix_owned_frame(&input, &pool, MonoMix::AverageAll).unwrap();
+    drop(input);
+    let request = TranscriptionRequest::new(mono.samples(), 16_000, None).unwrap();
+    let provider = Slow::new();
+    let gate = ProviderAdmission::new(1).unwrap();
+    let cancel = Cancellation::default();
+    let mut cx = Context::from_waker(Waker::noop());
+    let mut job = Box::pin(transcribe_managed(
+        &gate,
+        &provider,
+        &request,
+        cancel.clone(),
+    ));
+    assert!(job.as_mut().poll(&mut cx).is_pending());
+    let mut next = bytes.clone();
+    next[48..56].copy_from_slice(&(header.sequence + 1).to_le_bytes());
+    next[56..64].copy_from_slice(&header.sample_end.to_le_bytes());
+    feed(&mut decoder, &next[..HEADER_BYTES + 1]);
+    assert_eq!(pool.snapshot().unwrap().usage.bytes, 184);
+    assert_eq!(decoder.finish(), Err(DecoderError::Truncated));
+    let after_eof = pool.snapshot().unwrap();
+    assert_eq!(after_eof.usage.bytes, 88);
+    assert_eq!(after_eof.managed_decoders, 1);
+    assert!(decoder.is_closed());
+    assert_eq!(gate.status().unwrap().active, 1);
+    assert!(job.as_mut().poll(&mut cx).is_pending());
+    cancel.cancel();
+    pool.close().unwrap();
+    gate.close().unwrap();
+    assert!(job.as_mut().poll(&mut cx).is_pending());
+    provider.done.store(true, Ordering::Release);
+    assert_eq!(
+        job.as_mut().poll(&mut cx),
+        Poll::Ready(Err(ManagedTranscriptionError::Provider(
+            TranscriptionError::Canceled
+        )))
+    );
+    drop(job);
+    drop(mono);
+    assert_eq!(pool.snapshot().unwrap().usage, Usage::default());
+    assert_eq!(pool.snapshot().unwrap().managed_decoders, 1);
+    drop(decoder);
+    assert_eq!(pool.snapshot().unwrap().managed_decoders, 0);
+    assert_eq!(gate.status().unwrap().active, 0);
+    assert!(!gate.status().unwrap().uncertain);
+}
+
+#[test]
+fn synthetic_normalized_window_maps_original_range_without_arrival_time_or_durable_ack() {
+    let bytes = frame(16_000); // declared synthetic16k, NOT resampled48k audio
+    let (pool, mut decoder) = setup(&bytes);
+    feed(&mut decoder, &bytes);
+    let input = decoder.take().unwrap();
+    let mono = downmix_owned_frame(&input, &pool, MonoMix::AverageAll).unwrap();
+    let header = mono.header();
+    let start = header.sample_start.to_string();
+    let end = header.sample_end.to_string();
+    let mut registry = TimelineRegistry::new(
+        "synthetic-session",
+        RegistryLimits {
+            sources: 1,
+            spans: 1,
+        },
+    )
+    .unwrap();
+    registry
+        .insert(
+            "synthetic-session",
+            "system",
+            SourceSpan {
+                epoch: header.epoch,
+                rate: header.sample_rate,
+                start: &start,
+                end: &end,
+                media_start_ns: "5000000000",
+            },
+        )
+        .unwrap();
+    let mut planner = SpeechWindowPlanner::new(WindowLimits {
+        max_frames: 2,
+        overlap_frames: 0,
+    })
+    .unwrap();
+    planner.begin(header.epoch, header.sample_start).unwrap();
+    let windows = planner.advance(header.sample_end).unwrap();
+    let window = windows[0].unwrap();
+    assert!(windows[1].is_none());
+    assert_eq!(window.context_start, header.sample_start);
+    assert_eq!(window.novel_end, header.sample_end);
+    let window_start = window.novel_start.to_string();
+    let window_end = window.novel_end.to_string();
+    assert_eq!(
+        registry
+            .map(
+                "synthetic-session",
+                "system",
+                SourceRange {
+                    epoch: window.epoch,
+                    start: &window_start,
+                    end: &window_end,
+                }
+            )
+            .unwrap(),
+        (5_000_000_000, 5_000_125_000)
+    );
+    assert!(planner.finish(false).unwrap().is_none());
+    let request =
+        TranscriptionRequest::new(mono.samples(), header.sample_rate, Some("pt")).unwrap();
+    let provider = Slow::new();
+    provider.done.store(true, Ordering::Release);
+    let gate = ProviderAdmission::new(1).unwrap();
+    let mut job = Box::pin(transcribe_managed(
+        &gate,
+        &provider,
+        &request,
+        Cancellation::default(),
+    ));
+    let Poll::Ready(Ok(result)) = job.as_mut().poll(&mut Context::from_waker(Waker::noop())) else {
+        panic!("fake provider did not complete");
+    };
+    assert_eq!(result.text, "synthetic only");
+    assert_eq!(gate.status().unwrap().active, 0);
+    assert_eq!(pool.snapshot().unwrap().usage.bytes, 184);
+    drop(job);
+    drop((input, mono));
+    assert_eq!(pool.snapshot().unwrap().usage, Usage::default());
+    // The result and metadata remain volatile; no persisted checkpoint exists.
 }
 
 #[test]
