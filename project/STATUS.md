@@ -303,6 +303,10 @@ Consulta GET-only20:46:58–59UTC de tipos parou antes GetAvailableType: ambos
 GetStreamIDs=MF_E_TRANSFORM_ASYNC_LOCKED(0xC00D6D77), SDK confirmado. Shutdown2S_OK,
 code3/signalnull/guarda10s não disparou. Não é AV1 indisponível nem falha de produto;
 nenhum unlock/SetType/frame/captura. Detalhes em WINDOWS-COMPRESSION-SPIKE.
+Sonda SEPARADA21:06UTC habilitou só2MFTs próprios viaASYNC_UNLOCK,S_OK. IDsE_NOTIMPL
+→0documentado;1saídaparcialAV1porobjeto,semFRAME_SIZE/RATE;entradaTYPE_NOT_SET.
+Shutdown2S_OK/exit0/signalnull/guardaoff;ZEROSetType/frames/streaming/D3D/captura.
+Não prova NV12/FPS/encode nem mudaH264produção;detalhes/refs no spike.
 
 ## Próximo trabalho seguro
 

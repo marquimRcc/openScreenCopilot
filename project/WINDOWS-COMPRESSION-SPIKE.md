@@ -109,4 +109,28 @@ Referência: [GetInputAvailableType](https://learn.microsoft.com/en-us/windows/w
 e [GetOutputAvailableType](https://learn.microsoft.com/en-us/windows/win32/api/mftransform/nf-mftransform-imftransform-getoutputavailabletype).
 H.264 de produção/pacote permanecem inalterados; etapa03 sem aceite.
 
+### Consulta separada após habilitar instâncias próprias — 2026-10-15
+
+Sonda privada `mf-av1-types-unlocked`,21:06:49–50UTC,habilitou somente atributos
+das duas instâncias temporárias: GetAttributes/GetUINT32(MF_TRANSFORM_ASYNC)=1 e
+SetUINT32(MF_TRANSFORM_ASYNC_UNLOCK,TRUE),todosS_OK. Não é a sonda GET-only anterior
+nem mudança persistente em Windows/registro/driver/app. A Microsoft documenta
+essa habilitação para uso assíncrono fora do pipeline automático:
+[MF_TRANSFORM_ASYNC_UNLOCK](https://learn.microsoft.com/en-us/windows/win32/medfound/mf-transform-async-unlock).
+
+GetStreamCount=1/1 e GetStreamIDs=E_NOTIMPL emambos. Só neste HRESULT foi usado ID0
+conforme streamsfixos/consecutivos documentados em
+[GetStreamIDs](https://learn.microsoft.com/en-us/windows/win32/api/mftransform/nf-mftransform-imftransform-getstreamids).
+Entrada:0tipos,MF_E_TRANSFORM_TYPE_NOT_SET(0xC00D6D60); não é ausência de NV12.
+Saída:1tipo parcial AV1/MFMediaType_Video porobjeto, seguido MF_E_NO_MORE_TYPES
+(0xC00D36B9). FRAME_SIZE/FRAME_RATE ausentes:MF_E_ATTRIBUTENOTFOUND(0xC00D36E6),
+portanto zeros do log NÃO são resolução/FPS aceitos. HRESULTs confirmados noSDK.
+
+Shutdown2S_OK,exit0/signalnull,guarda10s não disparou,stderr vazio. Nenhum
+SetInputType/SetOutputType/ProcessInput/ProcessOutput/BeginStreaming/D3Dmanager,
+amostra/captura/arquivo vídeo. Tetos8objetos/4streams/32tipos não atingidos.
+O anúncio parcial confirma somente subtype; não homologa formatos, encode/MP4/
+editor, GPU física, simultaneidade, qualidade, tamanho,30min ou redistribuição.
+Negociação/encode real seguem gates anteriores,semsegundoencoder no produto.
+
 Estado e dependências em [ROADMAP.md](ROADMAP.md) e [STATUS.md](STATUS.md).
