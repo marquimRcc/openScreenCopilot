@@ -905,6 +905,15 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-15 — compiled02Y/HEAD16fd1f8d, Windows11, **Partial** keyboard entry.
+With authorized opaque cover and isolated profile, OS Ctrl+N opened the real editor.
+Window changed; one fresh selection recovered after foreground-process-id error.
+Accessibility confirmed windowType=editor/No project/Media/Edit/Record. Screenshot
+was occluded by own always-on-top cover, so layout/input/capture checks **skipped**;
+no recording or injected clicks. Both empty editor and cover closed normally with
+AltF4, process identities confirmed absent. Private cover fixture changed to normal
+z-order for a future retest; that change is not yet validated. No product code fix.
+
 2026-10-15 — openScreenCopilot compiled02Y/HEAD4ce145dc, Windows11, **Partial/blocked**.
 Human explicitly approved temporary opaque monitor covers; coverage confirmed
 1280×800DIP/fullscreen, synthetic pixels only. Isolated app/HUD startup and controls

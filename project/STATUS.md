@@ -1224,6 +1224,28 @@ README registra comandos explícitos offline/locked, sem alegar cobertura CI.
 suíte TS completa anterior5164pass não precisa repetir sem alteração TS/runtime.
 Aceites04/05 não concluídos por port da aritmética.
 
+## 02Z — rota de teclado abriu editor; cobertura ocluiu imagem
+
+Tentativa distinta por menu nativo existente Ctrl+N, sem repetir cliques do HUD:
+perfil privado `.cache/full-app-qa-079dcf6e-ba37-48ce-a52b-3a11b83bbd22` e cobertura
+`.cache/opaque-source-qa-5faf904f-d107-4171-98de-a9723ed5e9f3`. Computer-use enviou
+Ctrl+N; janela mudou e primeira observação falhou `foreground window did not report
+a process id`. Uma seleção nova recuperou janela real windowType=editor, No project,
+abas Media/Edit/Record e controles. Prova PARCIAL de atalho/abertura, não de mouse.
+
+Screenshot do editor retornou a cobertura sintética à frente, não imagem do editor.
+A cobertura always-on-top pode explicar essa oclusão; não inferir falha do render.
+Sem clicar controles ou iniciar captura. AltF4 normal no editor vazio e cobertura;
+processos próprios16004/6480 confirmados ausentes, semMP4. Logs privados
+`.cache/keyboard-{app,cover}.{stdout,stderr}.log`. Nenhuma cobertura ativa.
+
+Harness privado da cobertura foi ajustado para NÃO ser always-on-top, mantendo
+fullscreen opaco, para permitir ativar editor acima dele sem expor apps ao fundo.
+Essa alteração de fixture AINDA NÃO EXECUTADA/VALIDADA. Próximo reteste deve conferir
+cobertura/ordem de janelas frescas antes screenshots e parar se aparecer fundo privado.
+Não constitui fix no produto, aceite visual/layout/DPI ou dispensa do bloqueio HUD.
+Não repetir a tentativa antiga; usar rota Ctrl+N e recuperação de seleção já observadas.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
