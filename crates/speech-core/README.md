@@ -304,3 +304,19 @@ close, error/result refusal, future drop, panic and poison. Real engine ownershi
 timeouts, resource/memory budgets and integration with legacy STT still need host
 supervision and roadmap gates. Borrowed requests retain caller-owned PCM; this
 module neither copies it nor sets a whole-process memory ceiling.
+
+## In-memory component integration (synthetic only)
+
+`tests/core_pipeline.rs` joins the existing raw decoder, exact shared pool,
+OwnedMonoFrame, checked request and managed fake slow provider. Three tests keep
+input+output at184 charged bytes, refuse the next copy until prior output drops,
+observe/await capacity change, and retain canceled work until provider completion.
+Original48k mono is explicitly refused by the16k request constructor; declaring
+synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
+time and no sample range is converted to a different rate.
+
+These are100 unit +3 component-integration +8 resampling-spike tests, passing
+debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
+futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
+Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
+This does not qualify GUI, natural speech, timestamps or worker shutdown.

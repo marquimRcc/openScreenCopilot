@@ -205,9 +205,13 @@ não apagam abandonado.9testesfakeprovider/concurrency/cap/close/cancel/erro/pan
 poison. Não é workerdrain/timeout/recovery/lockSTTglobal;host devecompartilharumgate
 porengine real e manterfuture atéfim,semcriaroutrogateparacontornarincerto.
 
-Rust100unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
+Rust100unitários+3integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
+core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider
+fake lento:cap184bytes,copyseguinte recusada atéliberação,notificaçãocapacidade,
+cancelawait/close,48kmono recusado como16k.3testes,semengine/processo/pipe/captura/
+journal/timestampsreais. Clippy drop_non_drop corrigido,sem alterarproduto.
 
 Spikes SOMENTE testes:mono44.1/48k→16k,partições/tails/limites/cancel/erro real após
 2blocos/flush/impulsos/tons. EOFfloorcount é política experimental, não streammap.
