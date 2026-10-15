@@ -1246,6 +1246,29 @@ cobertura/ordem de janelas frescas antes screenshots e parar se aparecer fundo p
 Não constitui fix no produto, aceite visual/layout/DPI ou dispensa do bloqueio HUD.
 Não repetir a tentativa antiga; usar rota Ctrl+N e recuperação de seleção já observadas.
 
+## PAUSA95 semanal — 2026-10-15T04:04:09Z
+
+Limites reais:5h30%/semanal95%, ordinaryUsageAllowedtrue. Parar desenvolvimento
+conforme guarda humana; próximo instante permitido após reset semanal+5min é
+2026-10-20T21:10:17Z (20/10 às18:10:17Brasília), reset1792530317+300.
+Nenhum crédito/reset consumido. Código validado enviado atéda5d4049, sem operação,
+captura, app desprotegido ou cobertura QA ativos. Autorização de cobertura continua.
+
+Falha administrativa real: automation_update deixou de responder. Duas tentativas
+de reagendar e uma de pausar watchdog não confirmaram; execs foram interrompidos
+após espera, o resultado externo tardio continua incerto. Leitura SQLite READ-ONLY
+após as duas primeiras ainda mostrou ACTIVE/FREQ=MINUTELY;INTERVAL=1,
+next_run_at2026-10-15T04:05:00Z, não o reset semanal. Não editar TOML/banco manualmente
+nem prometer que reagendamento foi aplicado. Pode existir pedido externo pendente:
+conferir estado salvo antes de tentar novamente. Não repetir esse erro em loop.
+
+Se heartbeat antigo acordar antes20/10T21:10:17Z, NÃO executar código/testes/build/GUI,
+nem sondagens repetidas do agendador. Preservar pausa e reportar somente mudança real.
+Retomada automática ainda NÃO confirmada; precisa recuperar serviço de automações
+ou ajuste humano no app. Esta nota prevalece sobre checkpoints antigos94%/retomada.
+Não consumir resets/trocar modelo/conta/contornar limite semanal. Após a guarda,
+consultar limites reais de ambas janelas antes de restaurar watchdog/trabalho.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
