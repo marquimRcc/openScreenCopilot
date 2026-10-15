@@ -43,7 +43,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Forty Rust unit tests now pass in debug/release, including the original shared fixture.
+Forty-four Rust unit tests now pass in debug/release, including the original shared fixtures.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -158,3 +158,20 @@ Nine tests cover packet invariance, limits, order/replay, continuous speech,
 overlap ownership, gaps/epochs, discard and u64 extremes. A five-minute COUNTER
 simulation retains no segment list/PCM; it is not a five-minute ASR or memory
 benchmark of a real pipeline. Tuning max/overlap for natural speech remains open.
+
+## Experimental binary descriptor v0 (not a transport)
+
+`audio_frame_v0.rs` validates a fixed80-byte header before payload sizing: schema,
+source/format, prototype rate/channel/scalar caps, reserved fields and checkedu64
+end counter. Complete-frame validation reparses raw header, verifies actual byte
+count and all finite f32le scalars without copying PCM. Public Header metadata is
+not authorization; changing it does not bypass the raw-frame validator.
+
+The TS main-only parser exercises the same27 synthetic JSON fixtures, snapshots
+u64 as decimal strings and respects Uint8Array byteOffset. Additional tests cover
+all truncated lengths/exact4MiB cap/finite extremes. This is not a reader, pipe,
+ACL/nonce authentication, replay check, backpressure, clock map or PCM integration.
+The current timeline TS draft's safeNumber epoch differs from this descriptor's
+u64 epoch; future adapters must reconcile or refuse, never cast silently.
+See [descriptor draft](../../project/AUDIO-FRAME-DRAFT.md). No library dependency,
+hardware API, runtime import or binary channel is added to the application.

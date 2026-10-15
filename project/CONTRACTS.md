@@ -7,6 +7,10 @@ Detalhamento ainda v0 do relógio/amostras/pausas e fixtures iniciais em
 [SPEECH-TIMELINE-DRAFT.md](SPEECH-TIMELINE-DRAFT.md). Não são campos já emitidos
 pelo backend Windows ou uma autorização para conectar PCM sem mapa validado.
 
+Descritor binário CANDIDATO agora tem parsers/fixtures isolados nos dois lados:
+[AUDIO-FRAME-DRAFT.md](AUDIO-FRAME-DRAFT.md). Não é transporte ativo/v1 congelado;
+IDs/nonce não concedem permissão; epochu64 ainda precisa reconciliar com mapaTSv0.
+
 ## Transporte e isolamento
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.

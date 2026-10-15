@@ -1,0 +1,244 @@
+{
+	"schemaVersion": 0,
+	"description": "Experimental descriptor only. Synthetic scalar fixtures; no private audio, transport or authentication.",
+	"cases": [
+		{
+			"name": "system-stereo-above-js-safe-integer",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"expected": {
+				"payloadBytes": 16,
+				"sampleRate": 48000,
+				"channels": 2,
+				"source": "system",
+				"discontinuity": false,
+				"sessionNonceHex": "0102030405060708090a0b0c0d0e0f10",
+				"epoch": "7",
+				"sequence": "9007199254740993",
+				"sampleStart": "9007199254740993",
+				"sampleEnd": "9007199254740995",
+				"frameCount": 2,
+				"captureMonotonicNs": "18446744073709551615"
+			},
+			"payloadHex": "000080bf0000803e0000003f0000803f"
+		},
+		{
+			"name": "microphone-new-epoch",
+			"headerHex": "4f534350000150000400000044ac000001000102010000000102030405060708090a0b0c0d0e0f10ffffffffffffffff000000000000000000000000000000000100000000000000ffffffffffffffff",
+			"expected": {
+				"payloadBytes": 4,
+				"sampleRate": 44100,
+				"channels": 1,
+				"source": "microphone",
+				"discontinuity": true,
+				"sessionNonceHex": "0102030405060708090a0b0c0d0e0f10",
+				"epoch": "18446744073709551615",
+				"sequence": "0",
+				"sampleStart": "0",
+				"sampleEnd": "1",
+				"frameCount": 1,
+				"captureMonotonicNs": "18446744073709551615"
+			},
+			"payloadHex": "00000000"
+		},
+		{
+			"name": "short-header",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffff",
+			"headerError": "length"
+		},
+		{
+			"name": "extra-header",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff00",
+			"headerError": "length"
+		},
+		{
+			"name": "magic",
+			"headerHex": "00534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "schema"
+		},
+		{
+			"name": "version",
+			"headerHex": "4f534350010150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "schema"
+		},
+		{
+			"name": "type",
+			"headerHex": "4f534350000250001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "schema"
+		},
+		{
+			"name": "header-size",
+			"headerHex": "4f53435000014f001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "schema"
+		},
+		{
+			"name": "reserved",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000001000000ffffffffffffffff",
+			"headerError": "schema"
+		},
+		{
+			"name": "unknown-flags",
+			"headerHex": "4f534350000150001000000080bb000002000101020000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "schema"
+		},
+		{
+			"name": "format",
+			"headerHex": "4f534350000150001000000080bb000002000201000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "format"
+		},
+		{
+			"name": "source",
+			"headerHex": "4f534350000150001000000080bb000002000103000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "format"
+		},
+		{
+			"name": "zero-rate",
+			"headerHex": "4f53435000015000100000000000000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "limits"
+		},
+		{
+			"name": "high-rate",
+			"headerHex": "4f534350000150001000000001ee020002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "limits"
+		},
+		{
+			"name": "zero-channels",
+			"headerHex": "4f534350000150001000000080bb000000000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "limits"
+		},
+		{
+			"name": "high-channels",
+			"headerHex": "4f534350000150001000000080bb000021000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "limits"
+		},
+		{
+			"name": "zero-frames",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000000000000000000ffffffffffffffff",
+			"headerError": "limits"
+		},
+		{
+			"name": "huge-payload",
+			"headerHex": "4f53435000015000ffffffff80bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "limits"
+		},
+		{
+			"name": "huge-derived-payload",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f10070000000000000001000000000020000100000000002000ffffffff00000000ffffffffffffffff",
+			"headerError": "limits"
+		},
+		{
+			"name": "mismatched-payload",
+			"headerHex": "4f534350000150000c00000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "payload"
+		},
+		{
+			"name": "counter-overflow",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f1007000000000000000100000000002000ffffffffffffffff0200000000000000ffffffffffffffff",
+			"headerError": "arithmetic"
+		},
+		{
+			"name": "zero-nonce",
+			"headerHex": "4f534350000150001000000080bb00000200010100000000000000000000000000000000000000000700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"headerError": "schema"
+		},
+		{
+			"name": "payload-truncated",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"expected": {
+				"payloadBytes": 16,
+				"sampleRate": 48000,
+				"channels": 2,
+				"source": "system",
+				"discontinuity": false,
+				"sessionNonceHex": "0102030405060708090a0b0c0d0e0f10",
+				"epoch": "7",
+				"sequence": "9007199254740993",
+				"sampleStart": "9007199254740993",
+				"sampleEnd": "9007199254740995",
+				"frameCount": 2,
+				"captureMonotonicNs": "18446744073709551615"
+			},
+			"payloadHex": "000080bf0000803e0000003f",
+			"frameError": "payload"
+		},
+		{
+			"name": "payload-extra",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"expected": {
+				"payloadBytes": 16,
+				"sampleRate": 48000,
+				"channels": 2,
+				"source": "system",
+				"discontinuity": false,
+				"sessionNonceHex": "0102030405060708090a0b0c0d0e0f10",
+				"epoch": "7",
+				"sequence": "9007199254740993",
+				"sampleStart": "9007199254740993",
+				"sampleEnd": "9007199254740995",
+				"frameCount": 2,
+				"captureMonotonicNs": "18446744073709551615"
+			},
+			"payloadHex": "000080bf0000803e0000003f0000803f00000000",
+			"frameError": "payload"
+		},
+		{
+			"name": "nan",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"expected": {
+				"payloadBytes": 16,
+				"sampleRate": 48000,
+				"channels": 2,
+				"source": "system",
+				"discontinuity": false,
+				"sessionNonceHex": "0102030405060708090a0b0c0d0e0f10",
+				"epoch": "7",
+				"sequence": "9007199254740993",
+				"sampleStart": "9007199254740993",
+				"sampleEnd": "9007199254740995",
+				"frameCount": 2,
+				"captureMonotonicNs": "18446744073709551615"
+			},
+			"payloadHex": "000080bf0000803e0000c07f0000803f",
+			"frameError": "non-finite"
+		},
+		{
+			"name": "infinity",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"expected": {
+				"payloadBytes": 16,
+				"sampleRate": 48000,
+				"channels": 2,
+				"source": "system",
+				"discontinuity": false,
+				"sessionNonceHex": "0102030405060708090a0b0c0d0e0f10",
+				"epoch": "7",
+				"sequence": "9007199254740993",
+				"sampleStart": "9007199254740993",
+				"sampleEnd": "9007199254740995",
+				"frameCount": 2,
+				"captureMonotonicNs": "18446744073709551615"
+			},
+			"payloadHex": "000080bf0000803e0000807f0000803f",
+			"frameError": "non-finite"
+		},
+		{
+			"name": "negative-infinity",
+			"headerHex": "4f534350000150001000000080bb000002000101000000000102030405060708090a0b0c0d0e0f100700000000000000010000000000200001000000000020000200000000000000ffffffffffffffff",
+			"expected": {
+				"payloadBytes": 16,
+				"sampleRate": 48000,
+				"channels": 2,
+				"source": "system",
+				"discontinuity": false,
+				"sessionNonceHex": "0102030405060708090a0b0c0d0e0f10",
+				"epoch": "7",
+				"sequence": "9007199254740993",
+				"sampleStart": "9007199254740993",
+				"sampleEnd": "9007199254740995",
+				"frameCount": 2,
+				"captureMonotonicNs": "18446744073709551615"
+			},
+			"payloadHex": "000080bf0000803e000080ff0000803f",
+			"frameError": "non-finite"
+		}
+	]
+}

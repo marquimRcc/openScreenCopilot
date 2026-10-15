@@ -1633,6 +1633,33 @@ ou medida de relógio físico. Fonte de captura/app/mapas runtime não alterados
 Rust40unitários+8spikes debug/release offline/locked, clippy/fmt e docs53 passaram.
 FullTS5170pass e pacote anteriores não repetidos sem fonte TS/runtime nova.
 
+## Preparação04 — descritor binário experimental, sem transporte
+
+audio_frame_v0.rs e electron/copilot/audioFrameV0.ts isolados, sem import runtime.
+Cabeçalho fixo80bytes/schema0/tipoPCM1, f32le/system-mic/rate/channels/4MiB caps,
+reservados/flags/counterend verificados antes de dimensionar payload. Fullframe
+reparseia header original, confere tamanho real e finite em todos scalars, sem
+copiar PCM. TSsnapshot freeze/noncehex/DataViewbyteOffset, u64BigInt→strings sem
+Number intermediário; Rustu64/soma verificada. IDs/nonce NÃO concedem permissão.
+
+27fixtures JSON comuns sintéticas,31focadosTS e4testesRust incluindofixtures/cap
+exato/todas truncagens/finiteextremos/metadata. Rust44unitários+8spikes debug/release,
+clippyalltargets-Dwarnings/fmt aprovados offline/locked. Ambos tsc aprovados.
+Sem parser incremental/pipe/IPC/handshake/ACL/replay/backpressure/journal/ASR.
+CaptureNs bruto não é PTS; epochu64 difere de safeNumber no mapaTSv0, ainda precisa
+adaptador ou recusa explícita, nunca cast silencioso. V1 não foi congelado.
+
+Layout/limites em AUDIO-FRAME-DRAFT; não ligar PCM antes aceites01–03/04.
+Vendor/locks/app/nativeprodução preservados. FullTS final pendente neste checkpoint;
+não apresentar5170pass anterior como validação das31novas fixtures TS.
+Fechamento: full única366arquivos/5201pass/5skip, Node22.22.1/2workers,
+exit0/sem signal,fim2026-10-15T15:58:43Z; recibo/log.cache/audio-frame-full.{json,log}.
+Ambos tsc,lint26herdados,i18n15/1000chaves,docs54/diffcheck OK. Clippy inicial
+recusou chunks_exact constante; alterado para as_chunks::<4>,4focadosRust repetidos
+debug/release e clippy/fmt passaram. Não mascarar clippy por exit do fmt posterior.
+Nenhum build/QA nativo concorrente ao full. Parsers não importados pelo runtime,
+portanto pacote37d4a1c8 não rebuildado/instalado/relançado. Sem novo aceiteGUI.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

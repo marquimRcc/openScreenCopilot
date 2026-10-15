@@ -148,6 +148,8 @@ do vendor adaptados para Rust std, com PCM emprestado/guardas/cancel aguardado;
 nenhum engine/provider concreto, Tauri, sidecar ou ASR novo integrado.
 Planejador original limitado de janelas16k também existe isolado, guiado por
 fronteiras fornecidas; não é Silero/VAD, bufferPCM ou deduplicação de texto.
+Descritor binário v0 experimental com parsersRust/TS e fixtures compartilhadas em
+[AUDIO-FRAME-DRAFT.md](AUDIO-FRAME-DRAFT.md), sem transporte/IPC/captura/runtime.
 
 Pode iniciar depois de 01; integração depende de 02/03.
 
