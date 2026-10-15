@@ -42,7 +42,8 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Checkpoint funcional atual:hardening1e991554 do orçamento3737afc1/decoder79f2d8c8;
+Checkpoint funcional atual:notificação limitada Rust sobre duração84a3dd79,
+hardening1e991554 do orçamento3737afc1/decoder79f2d8c8;
 5ede5b01 documenta requisitos host futuros, sem runtime novo.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
@@ -178,7 +179,13 @@ Recusa genericCost em pool temporizado;sumas/caps/epochs/RAII seguem atômicos.
 Por pacote ceil é conservador e pode admitir menos que pacote coalescido;NÃO PTS/
 clockmap/tempo de parede.12testespool+7integração,semTS/pipe/runtime/ASRlive.
 
-Rust72unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
+Notificação opcional BudgetChange/Revision Rust:2slots fixos/1porfonte,observeANTES
+da reserva para impedir lostwake,Future semexecutor/pipe/inputpolling,Ready não
+reserva. Release/close wake foraMutex,Drop sóregistropróprio,overflowfailclosed.
+8testesnotificação+1integração decoder/100corridas;poison/executor travado ainda
+exigem supervisão externa. Semhost/TS/liveASR.
+
+Rust81unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 
@@ -242,7 +249,8 @@ encode; não comprovam NV12/FPS/MP4/editor/licença/eficiência. App segueH264.
 
 1. Trabalho independente04:lifecycle/supervisão/replay e ligação host/TS futura
    do orçamento Rust; reader/ownership isolados já feitos. Limitar input/cópias/
-   decoders e notificação sem corrida ainda pendente, não prometer tetoRSS.
+   decoders ainda pendente;notificaçãoRust isolada feita,host não conectado.
+   Não prometer tetoRSS,drain de worker ou recuperação por FutureDrop.
    Requisitos de transições/gaps/normalização/drain/reconexão estão no final de
    AUDIO-FRAME-DRAFT; tabela não é implementação nem teste de memória30min.
    Não criar pipe/API/PCMlive nem confundir binding/accepted com auth/durabilidade.

@@ -1,7 +1,11 @@
 //! Prototype session-scoped transport-buffer accounting, not billing credits,
 //! a durable ACK, clock map or a bound on whole-process/engine memory.
 //! Main/host owns the scope and limits. Source-role caps aggregate all epochs.
-//! A lease must outlive its buffer. No reset/reopen or waiter queue is provided.
+//! A lease must outlive its buffer. No reset/reopen or unbounded waiter queue.
+
+#[path = "budget_change.rs"]
+mod change;
+pub use change::{BudgetChange, BudgetRevision};
 
 use crate::audio_frame_v0::{parse_header, Source, HEADER_BYTES};
 use std::sync::{Arc, Mutex};
@@ -42,6 +46,7 @@ pub enum BudgetError {
     Invariant,
     AudioTimeRequired,
     InvalidAudioHeader,
+    WaiterBusy,
 }
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Usage {
@@ -68,6 +73,9 @@ struct State {
     broken: bool,
     time_limits: Option<AudioTimeLimits>,
     audio_ns: u64,
+    revision: u64,
+    next_waiter: u64,
+    waiters: [Option<change::WaitSlot>; 2],
 }
 fn index(source: Source) -> usize {
     match source {
@@ -118,6 +126,9 @@ impl TransportBudget {
                 broken: false,
                 time_limits: None,
                 audio_ns: 0,
+                revision: 0,
+                next_waiter: 1,
+                waiters: [None, None],
             })),
         })
     }
@@ -184,7 +195,13 @@ impl TransportBudget {
         if state.broken {
             return Err(BudgetError::Invariant);
         }
+        if state.closed {
+            return Ok(());
+        }
         state.closed = true;
+        let wakes = state.changed();
+        drop(state);
+        change::wake_all(wakes);
         Ok(())
     }
     /// Pure accounting. Caller must derive truthful costs from owned buffers;
@@ -299,6 +316,9 @@ impl Drop for BufferLease {
             old.audio_ns.checked_sub(self.audio_ns),
         ) else {
             state.broken = true;
+            let wakes = state.changed();
+            drop(state);
+            change::wake_all(wakes);
             return;
         };
         let next = (
@@ -319,6 +339,9 @@ impl Drop for BufferLease {
         ) = next
         else {
             state.broken = true;
+            let wakes = state.changed();
+            drop(state);
+            change::wake_all(wakes);
             return;
         };
         state.bytes = bytes;
@@ -331,6 +354,9 @@ impl Drop for BufferLease {
             leases: source_leases,
             audio_ns: source_ns,
         };
+        let wakes = state.changed();
+        drop(state);
+        change::wake_all(wakes);
     }
 }
 

@@ -788,4 +788,48 @@ mod tests {
         assert_eq!(pool.audio_time_usage_ns().unwrap(), (0, [0; 2]));
         assert_eq!(pool.usage().unwrap(), Usage::default());
     }
+
+    #[test]
+    fn optional_change_future_resumes_waiting_decoder_without_polling_input() {
+        use std::future::Future;
+        use std::pin::Pin;
+        use std::task::{Context, Poll, Waker};
+        for close in [false, true] {
+            let bytes = fixture();
+            let pool = budget(&bytes, 96);
+            let mut first = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+            feed_all(&mut first, &bytes).unwrap();
+            let held = first.take().unwrap();
+            let mut waiting = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+            // Observe BEFORE admission: a release before registering is visible.
+            let revision = pool.observe_change().unwrap();
+            assert_eq!(waiting.feed(&bytes), Ok(HEADER_BYTES));
+            assert!(waiting.is_waiting_for_budget());
+            let mut changed = pool
+                .wait_for_change(&revision, expected(&bytes).source)
+                .unwrap();
+            let mut cx = Context::from_waker(Waker::noop());
+            assert_eq!(Pin::new(&mut changed).poll(&mut cx), Poll::Pending);
+            if close {
+                pool.close().unwrap();
+                assert_eq!(
+                    Pin::new(&mut changed).poll(&mut cx),
+                    Poll::Ready(Err(BudgetError::Closed))
+                );
+                waiting.stop();
+                assert_eq!(pool.usage().unwrap().bytes, 96);
+                drop(held);
+            } else {
+                drop(held);
+                assert_eq!(Pin::new(&mut changed).poll(&mut cx), Poll::Ready(Ok(())));
+                assert_eq!(waiting.retry_budget(), Ok(true));
+                waiting.feed(&bytes[HEADER_BYTES..]).unwrap();
+                let delivered = waiting.take().unwrap();
+                waiting.stop();
+                assert_eq!(pool.usage().unwrap().bytes, 96);
+                drop(delivered);
+            }
+            assert_eq!(pool.usage().unwrap(), Usage::default());
+        }
+    }
 }

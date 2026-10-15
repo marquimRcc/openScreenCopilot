@@ -43,7 +43,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Seventy-two Rust unit tests now pass in debug/release, including the original shared fixtures.
+Eighty-one Rust unit tests now pass in debug/release, including the original shared fixtures.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -205,8 +205,8 @@ Sample frames are work counts, not equal-duration units across different rates.
 
 `AudioDecoderV0::with_budget` reserves a complete frame before allocating payload.
 Temporary capacity exhaustion retains only the fixed header, consumes no payload,
-and requires explicit `retry_budget` after a future host notification. No waiter,
-polling loop or input queue is implemented. An impossible cost is terminal rather
+and requires explicit `retry_budget` after a capacity-change notification. An optional
+bounded future is described below; no polling loop or input queue is implemented. An impossible cost is terminal rather
 than an infinite wait. The non-cloneable lease moves with pending/ready/handed-off
 frame ownership and releases only after its bytes are freed. Stop cannot reclaim
 a consumer-owned frame. Pool close blocks new admissions without revoking owners;
@@ -232,3 +232,27 @@ coalesced frame. Leases retain/release duration across epochs and ownership hand
 Four additional pool tests and one decoder test cover mixed rates, exact duration
 caps, no-free tiny packets, invalid/untyped requests and waiting/PCM-error cleanup.
 No host policy is chosen, no transport/model is opened and no TS integration exists.
+
+## Optional capacity-change future (not a host executor)
+
+`budget_change.rs` adds `observe_change` and `wait_for_change`. Observe BEFORE
+attempting admission; after Capacity, await the change and recheck admission.
+The private revision and registration share the accounting mutex, so a release
+before registration/first poll is already visible. One registered waiter per
+source role, two fixed slots total, no dynamic waiter queue or FIFO/fairness.
+Ready means change, NOT a reservation or promise that a retry fits. A same-role
+duplicate returns WaiterBusy. Tokens are bound to the exact pool, not just nonce.
+
+Release/close wake both registered roles outside the mutex; repeated close is
+idempotent. Dropping a future removes only its own registration, not a buffer,
+inference or writer. Overflow fails closed rather than wrapping. Trusted executor
+wakers are cloned/dropped outside the lock; wake panics are contained at the lease
+destructor boundary. Poisoned mutexes still require external supervision/deadlines;
+notification alone cannot guarantee recovery or cancellation of a stuck executor.
+
+Eight notification tests plus one decoder integration test cover release before
+registration/poll, replacing wakers, close/cancel, old/new registration identity,
+reentrant callbacks, counter exhaustion and100 concurrent schedules. No sleep or
+input polling is used in those tests. Host/TS/pipe/worker supervision is NOT wired;
+number of decoder instances, external chunks and completed futures remain host
+responsibilities, not whole-pipeline RAM guarantees. Retry is still explicit.

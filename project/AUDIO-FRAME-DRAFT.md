@@ -114,8 +114,8 @@ poison/invariante falham fechados. Close impede novas reservas mas aguarda owner
 externo: não fabrica crédito nem revoga buffers vivos.
 
 Decoder Rust opcional reserva80+payload ANTES de alocar. Falta temporária mantém
-só header80 e pausa consumo de payload; retry explícito depende de futura notificação
-do host, sem polling/fila de waiters implementados. Custo impossível falha terminal.
+só header80 e pausa consumo de payload; retry explícito pode usar a future opcional
+de mudança abaixo, sem polling/fila ilimitada. Custo impossível falha terminal.
 Lease não clonável acompanha pending→ready→consumidor; bytes são liberados ANTES da
 reserva. Stop descarta apenas ownership próprio, não frame entregue/inferência.
 Oito testes do pool e seis de integração cobrem também EOF aguardando, sessão
@@ -150,9 +150,27 @@ Não somar captureMonotonicNs como PTS nem identificar sessão apenas pelo nonce
 |Erro/timeout|Propagar erro sanitizado; conservar ownership até fechamento real; não zerar contadores/recriar pool para admitir mais dados vivos|
 |Reconectar|Somente depois de política de journal/checkpoint definida; IDs/replay/watermarks validados, sem retomar de accepted em memória|
 
-Nenhuma fila/notificação/sidecar, checkpoint ou reconexão foi criada por esta tabela.
-`retry_budget` NÃO agenda wakeup. Uma implementação futura precisa testes de
-liberação entre tentativa e registro de notificação, cancel enquanto aguardando,
-consumidor lento, cópia bloqueada e disconnect/reconnect com resultado tardio.
+Nenhum sidecar, checkpoint ou reconexão foi criado por esta tabela.
+`retry_budget` NÃO agenda wakeup. Future opcional Rust de mudança está abaixo;
+host/TS ainda precisa supervisão, consumidor lento, cópia bloqueada e
+disconnect/reconnect com resultado tardio.
 Teste de10mil operações do pool é contagem sintética, não comprova memória estável
 de captura+ASR real30min. Não implementar ligação PCM antes de01–03/04 aceitos.
+
+## Notificação limitada de mudança Rust (isolada)
+
+[budget_change.rs](../crates/speech-core/src/budget_change.rs):observe_change ANTES
+da tentativa de reserva, wait_for_change após Capacity, aguardar e tentar novamente.
+Revisionprivada/registro sob mesma trava impede lost-wakeup se liberar antes de
+registrar/pollar. Dois slots fixos,um porfonte;duplicata WaiterBusy,semFIFO/fairness.
+Ready só indica mudança,não concede buffer nem garante capacidade. Token ligado
+ao pool exato mesmo com nonceigual. Counteroverflow falha fechado,semwrap.
+
+Release/close notificam foraMutex,sem bloquearthread àespera;cancelar porDrop remove
+somente registro próprio. Não cancela worker/ownedframe. Close idempotente não
+revoga reservas vivas. Wakers do executor confiável clonados/descartados fora da
+trava;panic de wake contido no Drop da lease. Mutexpoison/worker/executor travado
+ainda exigem supervisão/deadline externa; não prometer drain só porFutureDrop.
+Oito testes de notificação+um integração decoder:before-register/poll,100corridas
+threads,replace/cancel/close/overflow/callback reentrante,sem sleep/pollingentrada.
+Semexecutor/host/TS/pipe/PCMlive,semteste30min e semliberar aceites01–03/04.
