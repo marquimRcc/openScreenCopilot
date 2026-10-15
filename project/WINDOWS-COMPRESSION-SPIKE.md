@@ -89,4 +89,24 @@ GPU física ou capacidade simultânea de2objetos. Próximo gate ainda é negocia
 de mídia e encode/decode sintético pelo caminho escolhido, sem duplicar encoder,
 seguido de MP4/editor/licenças e30min. H.264 continua codec real do aplicativo.
 
+### Consulta de tipos AV1 sem desbloqueio — 2026-10-15
+
+Sonda privada `.cache/mf-av1-types.cpp/.exe`, compilada com MSVC existente,
+executada20:46:58–59UTC com recibo/log privados. Enumeração HARDWARE retornou2/S_OK;
+ativação e GetStreamCount passaram nos dois (1entrada/1saída). GetStreamIDs retornou
+0xC00D6D77 nos dois: MF_E_TRANSFORM_ASYNC_LOCKED, confirmado no mferror.h do SDK
+10.0.26100.0. Portanto GetInputAvailableType/GetOutputAvailableType NÃO foram
+executados; não houve inventário de tipos, nem prova negativa de suporte AV1/NV12.
+Não aplicar fallback de IDs destinado a E_NOTIMPL a outro HRESULT.
+
+ShutdownObject passou nos dois, processo terminou code3/signalnull; guarda10s não
+disparou. Exit3 registra consulta incompleta, não falha do encoder do produto.
+Nenhum atributo de desbloqueio foi escrito, nenhuma amostra/tipo foi submetida,
+sem streaming/D3D/captura/vídeo. Não continuar desbloqueando ou negociando formatos
+como se isso ainda fosse uma consulta GET-only. Tipos anunciados também podem ser
+parciais e depender do tipo oposto; enumeração não substitui negociação e encode.
+Referência: [GetInputAvailableType](https://learn.microsoft.com/en-us/windows/win32/api/mftransform/nf-mftransform-imftransform-getinputavailabletype)
+e [GetOutputAvailableType](https://learn.microsoft.com/en-us/windows/win32/api/mftransform/nf-mftransform-imftransform-getoutputavailabletype).
+H.264 de produção/pacote permanecem inalterados; etapa03 sem aceite.
+
 Estado e dependências em [ROADMAP.md](ROADMAP.md) e [STATUS.md](STATUS.md).

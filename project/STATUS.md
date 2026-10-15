@@ -278,6 +278,10 @@ Baseline/pausa/rápidas passaram decode; PTSreais deram áudio−vídeo39/6/6/6m
 GUI,precisãoASR,30min,mic ou todos dispositivos. Loopback é toda saída,não porprocesso.
 Sondas MFAV1 enumeraram/ativaram2componentes,S_OK, mas ZEROamostras/tipos/streaming/
 encode; não comprovam NV12/FPS/MP4/editor/licença/eficiência. App segueH264.
+Consulta GET-only20:46:58–59UTC de tipos parou antes GetAvailableType: ambos
+GetStreamIDs=MF_E_TRANSFORM_ASYNC_LOCKED(0xC00D6D77), SDK confirmado. Shutdown2S_OK,
+code3/signalnull/guarda10s não disparou. Não é AV1 indisponível nem falha de produto;
+nenhum unlock/SetType/frame/captura. Detalhes em WINDOWS-COMPRESSION-SPIKE.
 
 ## Próximo trabalho seguro
 
