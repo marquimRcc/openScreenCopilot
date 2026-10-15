@@ -42,13 +42,14 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Checkpoint funcional atual:notificação limitada Rust sobre duração84a3dd79,
+Checkpoint funcional atual:adaptador isolado TS de epoch/header→range sobre
+notificação limitada Rust4f19a3f8/duração84a3dd79,
 hardening1e991554 do orçamento3737afc1/decoder79f2d8c8;
 5ede5b01 documenta requisitos host futuros, sem runtime novo.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.
-Nenhuma operação/teste/build/QA pendente ao consolidar este estado.
+Não repetir incrementos concluídos; conferir alterações em andamento no Git.
 
 Não publicar instaladores/releases, instalar, relançar perfil humano, pushmain,
 abrir PR prematuro ou enviar mídia privada. Commit/push só validado branch própria.
@@ -115,9 +116,10 @@ aaa797a9c1adeceed256f8bce9c8c0c511bc92d55e330250a14d49d6f3c6a1d5.
 Checker privado.cache/check-meter-ui-package.cjs respeita pathsWindowsasar;
 extraResources não são arquivos internos do asar.
 
-Última validação TS completa:367arquivos/5211pass/5skip/461,94s,
-Node22.22.1/2workers,exit0/sem signal,fim2026-10-15T16:38:34Z.
-Recibo/log.cache/audio-decoder-full.{json,log}.41focadosTS do parser/decoder passaram.
+Última validação TS completa:368arquivos/5216pass/5skip/422,33s,
+Node22.22.1/2workers,exit0/sem signal,fim2026-10-15T20:13:18Z.
+Recibo/log.cache/audio-timeline-full.{json,log}.71focadosTS adapter/parser/mapa passaram.
+Anterior79f2d8c8:367arquivos/5211pass/5skip/461,94s,audio-decoder-full aprovado.
 Conferência auxiliar posterior de check-docs.test.mjs/speech-core-ci.test.mjs foi
 iniciada em88% com `node --test`, runner INCORRETO para testes Vitest, terminou
 exit1 após a consulta89. Não é regressão de produto/suíte completa invalidada.
@@ -155,7 +157,9 @@ Implementado/testado, sem imports runtime:
   scalarcaps/counteroverflow/finite. U64TS→strings, snapshotfrozen/byteOffset.
   Decoderincremental isolado agora existe abaixo; sempipe/IPC/ACL/replayglobal/
   backpressurepipeline/journal. Nonce nãoauth.
-  Epochu64 difere do safeNumber no mapaTSv0:adaptador ainda deve reconciliar/recusar.
+  Epochu64 difere do safeNumber no mapaTSv0:adaptador isolado agora recusa>MAX_SAFE
+  ANTESNumber,semrounding;samplecountersstrings preservados.5testes/71focadospass.
+  Headerapenas;host ainda confere sessão/source/rate/flags no original,semruntime.
   [AUDIO-FRAME-DRAFT.md](AUDIO-FRAME-DRAFT.md) não congela v1.
 - Decoderincremental Rust/TS isolado:1frame/instância,expectativas nonce/source/
   epoch/rate/channels/sequence/start antes de alocar payload, atécap+160bytes de

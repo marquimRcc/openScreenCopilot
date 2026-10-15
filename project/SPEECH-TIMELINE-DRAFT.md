@@ -153,3 +153,16 @@ backend sem bloquear MP4, provar flush/resampling sob partições, implementar j
 limitado e executar fixture idêntica nos dois lados. Depois PCM de arquivo/pt-BR,
 cancelamento/reconexão e finalmente captura ao vivo. Nenhuma dependência ou aceite
 do roadmap foi dispensado por esse documento.
+
+## Compatibilidade explícita entre rascunhos
+
+[audioTimelineAdapterV0.ts](../electron/copilot/audioTimelineAdapterV0.ts) reparsa
+headerbináriov0 e adapta apenas metadata para rangeTSv0. Epochu64 é comparado com
+MAX_SAFE_INTEGER usandoBigInt antesNumber;acima disso erro tipado,semtruncar/round.
+Contadores de amostras continuam strings u64, inclusive>2^53. Snapshotexterno/range
+congelados não retêmview nonce mutável. Cinco testes locais;semruntime/ASRnovo.
+
+Caller ainda isola sessão/fonte,confere sampleRate e escolhe trecho validado no
+registro próprio. Esse adaptador NÃO valida payload/sequence/replay/ACL,não mapeia
+timestamps automaticamente,não processa flag de descontinuidade (consultarheader
+original) nem converte índices normalizados16k para48/44.1k. Nenhum aceite mudou.

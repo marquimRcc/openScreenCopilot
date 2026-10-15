@@ -9,7 +9,9 @@ pelo backend Windows ou uma autorização para conectar PCM sem mapa validado.
 
 Descritor binário CANDIDATO agora tem parsers/fixtures isolados nos dois lados:
 [AUDIO-FRAME-DRAFT.md](AUDIO-FRAME-DRAFT.md). Não é transporte ativo/v1 congelado;
-IDs/nonce não concedem permissão; epochu64 ainda precisa reconciliar com mapaTSv0.
+IDs/nonce não concedem permissão; adaptador isolado TSv0 agora recusa epochu64
+acima deMAX_SAFE_INTEGER antesNumber,semarredondar. Isso não congela wirev1 nem
+liga parser/adapter à captura; ver limites emAUDIO-FRAME-DRAFT.
 
 ## Transporte e isolamento
 

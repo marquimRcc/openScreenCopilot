@@ -57,8 +57,16 @@ dono main-owned/endpoint. SourceKind precisa ser ligado à fonte efetiva pelo ho
 nunca nome renderer. Sem MAC ou defesa contra processo de mesmo privilégio.
 
 Epoch u64 deste candidato difere de epoch safeNumber da aritmética TS v0 anterior.
-Não converter silenciosamente valores grandes; adaptador/protocolo ainda deve
-reconciliar ou recusar. CaptureMonotonicNs não corrige drift/pausas; ver
+Adaptador isolado audioTimelineAdapterV0 agora recusa epoch>MAX_SAFE_INTEGER
+ANTES de converter paraNumber; mantém sampleStart/end u64 emstrings,semrounding.
+Reparsa header bruto80,retorna snapshotfrozen de nonce/source/rate/range. Header
+apenas,não payload/auth/sequence/replay;host ainda confere identidade/taxa do mapa,
+flags de descontinuidade no headeroriginal e política de reset. Não cria PTS nem
+usa captureMonotonicNs como origem;PCM16k não vira contador48k por esse adaptador.
+Cinco testes cobrem fronteiras/byteOffset/snapshot/mapa fornecido e recusas.
+Não é migração do contrato:epochs maiores continuam válidos no descritor/Rust,
+mas incompatíveis com esse destinoTSv0. Nenhum import runtime.
+CaptureMonotonicNs não corrige drift/pausas; ver
 [SPEECH-TIMELINE-DRAFT.md](SPEECH-TIMELINE-DRAFT.md). Saída16k não é contador da
 captura44.1/48k; accepted não é checkpoint durável.
 
