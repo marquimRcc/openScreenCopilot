@@ -29,6 +29,9 @@ Copyright Zackriya Solutions e [licença MIT completa](crates/speech-core/LICENS
 preservados no crate. Alterações: política explícita de canais, guardas de tamanho/
 frames completos/valores finitos e acumulação f64; provider usa futures std,
 PCM emprestado validado, limites consultivos e cancel cooperativo aguardado.
+Downmix agora compartilha entradaf32/f32le explícita,semreinterpretcast/cópia
+interleaved extra,e alocaçãofalhável. mono_frame.rs acrescenta ownership/reserva
+originais do fork;mantém origem/rate/count e não é resampler/ASR novo.
 Sem resampler de produção, engine, Tauri,
 hardware ou integração runtime; vendor não foi editado. Essa extração não certifica
 licenças/modelos/dependências de funções futuras. Detalhes no README do crate e STATUS.

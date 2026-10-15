@@ -189,3 +189,13 @@ provider retornar antes liberar. Close não édrain;counterjobs não é threadco
 Nove testes comfakeprovider,semengine/STTreal conectado. O host ainda precisa
 supervisionar worker/processo/timeout e compartilharumgate porengine;criaroutra
 instância não autoriza bypass nem prova queworkerantigo encerrou.
+
+Fronteira mono_frame.rs isolada agora exige OwnedFrame com lease do pool EXATO,
+nãobasta nonceigual. Reserva saída mono antesdownmixf32le,semcópia interleaved extra;
+mantém input+output contados simultaneamente. OwnedMonoFrame conserva source/
+epoch/sequence/rate/sampleStart/end/count,altera apenaslayout/payloadBytes.
+Samples são liberados antesda lease;erro/Capacity libera sósaída,inputintacto.
+Cinco testesownership/refusal/alloc/scope,semPCMlive/resampler/modelo/runtime.
+Duplicação temporária de duração é guarda conservadora,nãotempo extra de mídia.
+Host ainda precisa política antideadlock quando copy não cabe junto doinput;
+Capacity retorna imediato,não criar outro pool para contornar o global.

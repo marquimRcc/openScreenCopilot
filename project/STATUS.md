@@ -42,7 +42,8 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Checkpoint funcional atual:admissão isolada de providerRust sobre adaptadorTSd7054621,
+Checkpoint funcional atual:downmixf32le/OwnedMonoFrame isolados sobre admissãoRust406af964,
+adaptadorTSd7054621,
 epoch/header→range sobre
 notificação limitada Rust4f19a3f8/duração84a3dd79,
 hardening1e991554 do orçamento3737afc1/decoder79f2d8c8;
@@ -148,6 +149,13 @@ Implementado/testado, sem imports runtime:
   Registro limitado por sessão/fonte/order/replay/capacidade, não auth/journal.
 - Downmix AverageAll/FirstStereoPair explícitos,1–32canais,frames completos,
   finiteantesalloc/f64sum e1.048.576scalarscap. Semclip/gain/noise/resample.
+  Entrada f32le desalinhada compartilha implementação,não cria cópia interleaved;
+  alocação mono falhável.5testes adicionais/13downmixpass.
+  OwnedMonoFrame exige inputleased ao MESMO pool,outputreservadoantesalloc,
+  inputretido,metadataorigempreservada,rate original/sem16k automático.
+  5testesownership/capacidade/duração/erro/poolforeign(c/nonceigual)pass.
+  Contabiliza input+output simultâneos,inclusive duração conservadora duplicada;
+  Capacity imediato,não esperarpara sempre porcopyimpossível. Semnormalizerruntime.
 - Provider INTERFACE adaptada MIT/futuresstd/PCMemprestado/cancelperjobmonotônico;
   wrapper aguarda provider e descarta cancelado. Dropfuture/crash não comprova drain.
   Sem engine real/segundomodelo/executor; texto/confidence só aceitação limitada.
@@ -197,7 +205,7 @@ não apagam abandonado.9testesfakeprovider/concurrency/cap/close/cancel/erro/pan
 poison. Não é workerdrain/timeout/recovery/lockSTTglobal;host devecompartilharumgate
 porengine real e manterfuture atéfim,semcriaroutrogateparacontornarincerto.
 
-Rust90unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
+Rust100unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 

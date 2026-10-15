@@ -43,7 +43,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Ninety Rust unit tests now pass in debug/release, including the original shared fixtures.
+One hundred Rust unit tests now pass in debug/release, including the original shared fixtures.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -56,6 +56,29 @@ values outside[-1,1] are not clipped. No gain, noise suppression or delay is add
 Output sample count equals input frame count at the SAME rate, not automatically
 16kHz. Caller must retain transport partial frames; no padding or flush is invented.
 No runtime integration, endpoint access or new Cargo dependency/model download.
+
+`downmix_f32le` shares the same private implementation with native f32 input:
+explicit little-endian decoding of unaligned bytes, no unsafe casts and no
+intermediate interleaved f32 copy. Partial scalar/frame and excluded-channel NaN
+still fail before allocation. Mono allocation is now fallible; refusal or wrong
+allocator shape is an explicit error, not partial output. Five additional tests
+cover format/alignment/extremes/partitions/exact cap/refusal. Raw Vec output alone
+has no global lease; caller must account its lifetime if using that low-level API.
+
+`mono_frame::downmix_owned_frame` is the optional budgeted boundary. It requires
+an immutable decoded input already leased to the EXACT same pool (nonce equality
+alone is insufficient). It reserves output before allocation and retains input;
+no premature release to make the copy fit. OwnedMonoFrame frees samples before its
+lease. Metadata preserves source/epoch/sequence/rate/sample range/count, changing
+only channels/payloadBytes. This is mono at the original rate, NOT resampling or
+automatic16k provider input. Five tests verify either ownership release order,
+capacity/duration/closed/foreign pool refusal and failed/invalid allocator cleanup.
+
+Input+output duration/work is conservatively counted twice while both exist, not
+extra media time. Capacity fails immediately: future host policy must avoid holding
+all inputs while indefinitely waiting for output that cannot fit. Charges include
+a header-sized allowance but not allocator/metadata overhead, therefore NOT RSS.
+No capture/normalizer runtime or model was connected by this boundary.
 
 ## File-only resampling experiment (not a library API)
 

@@ -4,6 +4,7 @@
 pub mod audio_decoder_v0;
 pub mod audio_frame_v0;
 pub mod downmix;
+pub mod mono_frame;
 pub mod provider;
 pub mod provider_admission;
 pub mod speech_windows;

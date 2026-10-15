@@ -96,6 +96,11 @@ pub struct BufferLease {
     cost: Cost,
     audio_ns: u64,
 }
+impl BufferLease {
+    pub(crate) fn belongs_to(&self, pool: &TransportBudget) -> bool {
+        Arc::ptr_eq(&self.state, &pool.state)
+    }
+}
 
 impl TransportBudget {
     pub fn new(nonce: [u8; 16], limits: BudgetLimits) -> Result<Self, BudgetError> {

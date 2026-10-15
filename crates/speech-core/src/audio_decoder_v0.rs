@@ -55,6 +55,11 @@ pub struct OwnedFrame {
     _lease: Option<BufferLease>,
 }
 impl OwnedFrame {
+    pub(crate) fn has_budget(&self, pool: &TransportBudget) -> bool {
+        self._lease
+            .as_ref()
+            .is_some_and(|lease| lease.belongs_to(pool))
+    }
     /// Return a value snapshot; callers cannot detach the owned metadata from
     /// the validated bytes or change the accounting cost of this frame.
     pub fn header(&self) -> Header {
