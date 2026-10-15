@@ -6,6 +6,7 @@
 use crate::audio_frame_v0::{
     parse_header, validate_frame, FrameError, Header, Source, HEADER_BYTES, MAX_PAYLOAD_BYTES,
 };
+use crate::transport_budget::{BudgetError, BufferLease, Cost, TransportBudget};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ExpectedStream {
@@ -30,6 +31,9 @@ pub enum DecoderError {
     Truncated,
     SequenceExhausted,
     Allocation,
+    GlobalBudget(BudgetError),
+    WaitingForBudget,
+    NotWaiting,
     Closed,
 }
 
@@ -47,6 +51,8 @@ fn allocate_buffer(length: usize) -> Result<Vec<u8>, DecoderError> {
 pub struct OwnedFrame {
     pub header: Header,
     bytes: Vec<u8>,
+    // Field drop order: free bytes BEFORE returning the reservation.
+    _lease: Option<BufferLease>,
 }
 impl OwnedFrame {
     pub fn bytes(&self) -> &[u8] {
@@ -61,6 +67,7 @@ impl OwnedFrame {
 struct Pending {
     bytes: Vec<u8>,
     filled: usize,
+    _lease: Option<BufferLease>,
 }
 
 #[derive(Debug)]
@@ -75,6 +82,8 @@ pub struct AudioDecoderV0 {
     closed: bool,
     // Private fallible allocator permits refusal tests without exhausting RAM.
     allocate: BufferAllocator,
+    budget: Option<TransportBudget>,
+    waiting_for_budget: bool,
 }
 
 impl AudioDecoderV0 {
@@ -97,7 +106,22 @@ impl AudioDecoderV0 {
             ready: None,
             closed: false,
             allocate: allocate_buffer,
+            budget: None,
+            waiting_for_budget: false,
         })
+    }
+    /// Optional Rust-only experimental admission pool. Does not add a pipe,
+    /// authenticate the scope or bound input queues/decoded copies elsewhere.
+    pub fn with_budget(
+        expected: ExpectedStream,
+        budget: TransportBudget,
+    ) -> Result<Self, DecoderError> {
+        let mut decoder = Self::new(expected)?;
+        decoder.budget = Some(budget);
+        Ok(decoder)
+    }
+    pub fn is_waiting_for_budget(&self) -> bool {
+        self.waiting_for_budget
     }
     pub fn is_ready(&self) -> bool {
         self.ready.is_some()
@@ -121,6 +145,7 @@ impl AudioDecoderV0 {
         self.pending = None;
         self.ready = None;
         self.header_used = 0;
+        self.waiting_for_budget = false;
     }
 
     pub fn feed(&mut self, input: &[u8]) -> Result<usize, DecoderError> {
@@ -129,6 +154,9 @@ impl AudioDecoderV0 {
         }
         if self.ready.is_some() {
             return Err(DecoderError::Busy);
+        }
+        if self.waiting_for_budget {
+            return Err(DecoderError::WaitingForBudget);
         }
         if input.is_empty() {
             return Ok(0);
@@ -148,6 +176,7 @@ impl AudioDecoderV0 {
                 self.ready = Some(OwnedFrame {
                     header,
                     bytes: complete.bytes,
+                    _lease: complete._lease,
                 });
             }
             return Ok(count);
@@ -179,9 +208,33 @@ impl AudioDecoderV0 {
         if header.payload_bytes > self.expected.max_payload_bytes {
             return self.poison(DecoderError::Budget);
         }
-        // Allocate only after schema, cap, binding and order all passed. One
-        // complete-frame buffer plus80-byte header scratch, never a frame queue.
+        self.activate_payload(header)?;
+        Ok(count)
+    }
+
+    fn activate_payload(&mut self, header: Header) -> Result<bool, DecoderError> {
         let length = HEADER_BYTES + header.payload_bytes as usize;
+        let lease = if let Some(budget) = &self.budget {
+            match budget.try_reserve(
+                header.session_nonce,
+                header.source,
+                Cost {
+                    bytes: length as u64,
+                    frames: u64::from(header.frame_count),
+                },
+            ) {
+                Ok(lease) => Some(lease),
+                Err(BudgetError::Capacity) => {
+                    self.waiting_for_budget = true;
+                    return Ok(false);
+                }
+                Err(error) => return self.poison(DecoderError::GlobalBudget(error)),
+            }
+        } else {
+            None
+        };
+        // Reservation BEFORE allocation, retained through pending/ready/handoff.
+        // On error it drops only after any local buffer is freed.
         let mut bytes = match (self.allocate)(length) {
             Ok(bytes) if bytes.len() == length && bytes.capacity() == length => bytes,
             _ => return self.poison(DecoderError::Allocation),
@@ -190,8 +243,26 @@ impl AudioDecoderV0 {
         self.pending = Some(Pending {
             bytes,
             filled: HEADER_BYTES,
+            _lease: lease,
         });
-        Ok(count)
+        self.waiting_for_budget = false;
+        Ok(true)
+    }
+
+    /// Explicit retry after an external capacity notification; no polling,
+    /// waiter queue or implicit reading. false means keep producer paused.
+    pub fn retry_budget(&mut self) -> Result<bool, DecoderError> {
+        if self.closed {
+            return Err(DecoderError::Closed);
+        }
+        if !self.waiting_for_budget {
+            return Err(DecoderError::NotWaiting);
+        }
+        let header = match parse_header(&self.header) {
+            Ok(header) => header,
+            Err(error) => return self.poison(DecoderError::Frame(error)),
+        };
+        self.activate_payload(header)
     }
 
     /// Ownership handoff, not durable ACK. Caller must bound retained frames;
@@ -220,6 +291,7 @@ impl AudioDecoderV0 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::transport_budget::{BudgetLimits, Usage};
     fn fixture() -> Vec<u8> {
         let json: serde_json::Value = serde_json::from_str(include_str!(
             "../../../contracts/copilot/audio-frame.v0.fixture.json"
@@ -487,5 +559,108 @@ mod tests {
         );
         assert_eq!(decoder.owned_buffer_bytes(), HEADER_BYTES);
         decoder.finish().unwrap();
+    }
+
+    fn budget(bytes: &[u8], source_bytes: u64) -> TransportBudget {
+        TransportBudget::new(
+            expected(bytes).nonce,
+            BudgetLimits {
+                global_bytes: 192,
+                source_bytes,
+                global_frames: 4,
+                source_frames: 4,
+                in_flight: 2,
+            },
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn budget_reservation_survives_handoff_and_pauses_before_third_payload() {
+        let bytes = fixture();
+        let h = parse_header(&bytes[..HEADER_BYTES]).unwrap();
+        let pool = budget(&bytes, 192);
+        let mut decoder = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        feed_all(&mut decoder, &bytes).unwrap();
+        let first = decoder.take().unwrap();
+        assert_eq!(pool.usage().unwrap().bytes, 96);
+        let mut next = bytes.clone();
+        next[48..56].copy_from_slice(&(h.sequence + 1).to_le_bytes());
+        next[56..64].copy_from_slice(&h.sample_end.to_le_bytes());
+        feed_all(&mut decoder, &next).unwrap();
+        let second = decoder.take().unwrap();
+        let mut third = bytes.clone();
+        third[48..56].copy_from_slice(&(h.sequence + 2).to_le_bytes());
+        third[56..64].copy_from_slice(&(h.sample_end + 2).to_le_bytes());
+        assert_eq!(decoder.feed(&third).unwrap(), HEADER_BYTES);
+        assert!(decoder.is_waiting_for_budget());
+        assert_eq!(decoder.owned_buffer_bytes(), HEADER_BYTES);
+        assert_eq!(
+            decoder.feed(&third[HEADER_BYTES..]),
+            Err(DecoderError::WaitingForBudget)
+        );
+        assert_eq!(decoder.retry_budget(), Ok(false));
+        drop(first);
+        assert_eq!(decoder.retry_budget(), Ok(true));
+        decoder.feed(&third[HEADER_BYTES..]).unwrap();
+        let third = decoder.take().unwrap();
+        decoder.stop();
+        assert_eq!(pool.usage().unwrap().bytes, 192);
+        drop(second);
+        drop(third);
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+    }
+
+    #[test]
+    fn source_budget_aggregates_epochs_and_stop_while_waiting_prevents_late_allocation() {
+        let bytes = fixture();
+        let pool = budget(&bytes, 96);
+        let mut old = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        feed_all(&mut old, &bytes).unwrap();
+        let held = old.take().unwrap();
+        let mut newer = bytes.clone();
+        newer[40..48].copy_from_slice(&8_u64.to_le_bytes());
+        newer[48..56].copy_from_slice(&0_u64.to_le_bytes());
+        newer[56..64].copy_from_slice(&0_u64.to_le_bytes());
+        let mut new = AudioDecoderV0::with_budget(expected(&newer), pool.clone()).unwrap();
+        new.feed(&newer).unwrap();
+        assert!(new.is_waiting_for_budget());
+        new.stop();
+        drop(held);
+        assert_eq!(new.retry_budget(), Err(DecoderError::Closed));
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+    }
+
+    #[test]
+    fn budget_cleanup_covers_allocation_failure_truncation_and_pool_close() {
+        let bytes = fixture();
+        let pool = budget(&bytes, 192);
+        let mut fail = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        fail.allocate = |_| Err(DecoderError::Allocation);
+        assert_eq!(fail.feed(&bytes), Err(DecoderError::Allocation));
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+        let mut partial = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        partial.feed(&bytes).unwrap();
+        assert_eq!(pool.usage().unwrap().bytes, 96);
+        assert_eq!(partial.finish(), Err(DecoderError::Truncated));
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+        let mut ready = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        feed_all(&mut ready, &bytes).unwrap();
+        pool.close().unwrap();
+        assert_eq!(pool.usage().unwrap().bytes, 96);
+        ready.stop();
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+        let mut closed = AudioDecoderV0::with_budget(expected(&bytes), pool).unwrap();
+        assert_eq!(
+            closed.feed(&bytes),
+            Err(DecoderError::GlobalBudget(BudgetError::Closed))
+        );
+        let small = budget(&bytes, 95);
+        let mut impossible = AudioDecoderV0::with_budget(expected(&bytes), small).unwrap();
+        assert_eq!(
+            impossible.feed(&bytes),
+            Err(DecoderError::GlobalBudget(BudgetError::CostTooLarge))
+        );
+        assert!(impossible.is_closed());
     }
 }

@@ -7,6 +7,7 @@ pub mod downmix;
 pub mod provider;
 pub mod speech_windows;
 pub mod timeline_registry;
+pub mod transport_budget;
 
 #[derive(Clone, Copy, Debug)]
 pub struct SourceSpan<'a> {

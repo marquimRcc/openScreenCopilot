@@ -23,7 +23,7 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
   wake pode antecipar, garantir tentativa posterior à guarda, nunca DAILY isolado.
 - Renovação REAL14:49:47UTC15/10 confirmou5h2%/semanal16%, allowedtrue, superando
   notas históricas90–100%/timestamp antigo. Watchdog1min ACTIVE restaurado/conferido.
-  Última consulta16:06:33UTC:5h52%/semanal24%,allowedtrue; não é pausa atual.
+  Última consulta16:56:34UTC:5h78%/semanal28%,allowedtrue; não é pausa atual.
   Consultar novamente antes de iniciar trabalho, não usar esse snapshot como saldo vivo.
 - Estimativa do GIF e Compartilhar SOMENTE após TODO restante roadmap.
   Base existente preservada, integração incompleta não ativada.
@@ -40,7 +40,7 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Checkpoint funcional atual:decoderincremental v0 Rust/TS, sobre7ee332dd.
+Checkpoint funcional atual:orçamento compartilhado opcional Rust sobre decoder79f2d8c8.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.
@@ -154,7 +154,14 @@ Implementado/testado, sem imports runtime:
   édurableACK nem limita fila externa/frames retidos;semprocesso/pipe/ACL/journal.
   9testesRust/10TS do decoder,41focadosTS comheader passaram;full5211pass aprovado.
 
-Rust53unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
+- Pool transporteRust opcional por sessão/fonte,bytes/frames/leases,hardcaps64MiB/
+  4096leases,contagem atômica eepochs agregadas. Reservaantesalloc elease não
+  clonável até consumidor liberar frame;capacidade temporária espera sóheader,
+  retry explícito sempolling,oversize terminal. Close não revoga owners;stop não
+  recupera frame entregue.7testespool+3integração. Não é crédito da conta/RSS/auth;
+  sempoolTS/pipe/notificaçãohost/workerdrain/journal/PCMlive.
+
+Rust63unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 
@@ -211,8 +218,9 @@ encode; não comprovam NV12/FPS/MP4/editor/licença/eficiência. App segueH264.
 
 ## Próximo trabalho seguro
 
-1. Trabalho independente04:orçamento global/porfonte e ownership dos frames
-   entregues pelo decoder, lifecycle/supervisão/replay; reader isolado já feito.
+1. Trabalho independente04:lifecycle/supervisão/replay e ligação host/TS futura
+   do orçamento Rust; reader/ownership isolados já feitos. Limitar input/cópias/
+   decoders e notificação sem corrida ainda pendente, não prometer tetoRSS.
    Não criar pipe/API/PCMlive nem confundir binding/accepted com auth/durabilidade.
 2. Quando tela disponível, retomar GUI01/02 com fixture/perfil próprios/cobertura
    autorizada, respeitando rejeições; completar confirmação/tomada/resultado/áudio.

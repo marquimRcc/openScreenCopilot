@@ -43,7 +43,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Fifty-three Rust unit tests now pass in debug/release, including the original shared fixtures.
+Sixty-three Rust unit tests now pass in debug/release, including the original shared fixtures.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -191,5 +191,29 @@ allocator/GC, external input queue and frames already taken by caller. Nine Rust
 tests include exact4MiB cap, every split/EOF, two coalesced frames, invalid binding
 before allocation, failure/stop/busy and sequence exhaustion. Ten TS decoder tests
 add primitive expectation snapshot/input alias checks and allocation refusal.
-No process/transport is opened and no PCM is sent to the renderer. Global credits,
-retained frames, journal and actual host/provider supervision remain gates.
+No process/transport is opened and no PCM is sent to the renderer. Journal and
+actual host/provider supervision remain gates.
+
+## Optional Rust transport-buffer accounting
+
+`transport_budget.rs` is a session-scoped shared admission pool, not account usage,
+authentication, a durable ACK or a whole-process RAM limit. Caller supplies positive
+global/source byte and sample-frame bounds plus an in-flight count. Prototype hard
+caps are64MiB/4096leases, not negotiated production settings. The two source-role
+caps aggregate all epochs; replacing an epoch does not release retained old audio.
+Sample frames are work counts, not equal-duration units across different rates.
+
+`AudioDecoderV0::with_budget` reserves a complete frame before allocating payload.
+Temporary capacity exhaustion retains only the fixed header, consumes no payload,
+and requires explicit `retry_budget` after a future host notification. No waiter,
+polling loop or input queue is implemented. An impossible cost is terminal rather
+than an infinite wait. The non-cloneable lease moves with pending/ready/handed-off
+frame ownership and releases only after its bytes are freed. Stop cannot reclaim
+a consumer-owned frame. Pool close blocks new admissions without revoking owners;
+poisoned/broken accounting fails closed. Cancellation of workers is still external.
+
+Seven pool and three decoder integration tests cover exact caps, concurrent
+admission, overflow, scope, epochs, handoff, waiting/stop, allocation failure and
+EOF cleanup. The TS decoder has NO shared-pool integration yet. Input chunks,
+header scratch/metadata, normalized copies and engine allocations remain outside
+this accounting; future host must bound them and the number of decoder instances.

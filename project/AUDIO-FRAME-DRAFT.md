@@ -102,3 +102,24 @@ Testes de partições1..frame+1, todasposiçõesEOF, framescoalescidos, busy/ord
 snapshots/aliases, cap exato4MiB, stop/erro/sequenceexhaustion e recusa de alocação
 injetada semOOM. Nada disso prova processo/pipe/timeout/ACL/créditos globais/journal,
 nem autoriza PCMlive antes dos aceites01–03/04.
+
+## Orçamento opcional Rust de buffers (não créditos da conta)
+
+[transport_budget.rs](../crates/speech-core/src/transport_budget.rs) limita reservas
+compartilhadas por sessão:bytes,frames de trabalho e número de leases; fontes sistema
+e microfone têm limites agregados entre épocas. Hardcaps protótipo64MiB/4096leases,
+configuração host-owned, não negociação v1 nem duração equivalente entre taxas.
+Nonce só isola escopo, não autentica. Operações concorrentes são atômicas; overflow,
+poison/invariante falham fechados. Close impede novas reservas mas aguarda ownership
+externo: não fabrica crédito nem revoga buffers vivos.
+
+Decoder Rust opcional reserva80+payload ANTES de alocar. Falta temporária mantém
+só header80 e pausa consumo de payload; retry explícito depende de futura notificação
+do host, sem polling/fila de waiters implementados. Custo impossível falha terminal.
+Lease não clonável acompanha pending→ready→consumidor; bytes são liberados ANTES da
+reserva. Stop descarta apenas ownership próprio, não frame entregue/inferência.
+Sete testes do pool e três de integração passaram; nenhuma conexão TS/pipe/runtime.
+
+Isso NÃO limita RSS, chunks externos, scratch/metadata, número de decoders, cópias
+normalizadas ou engine. Host ainda precisa limitar/admitir esses recursos, coordenar
+notificação sem corrida, cancelamento/drain e journal/ACK durável. Sem áudio live.
