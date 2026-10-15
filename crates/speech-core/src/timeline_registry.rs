@@ -30,7 +30,7 @@ pub enum Inserted {
     Duplicate,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(PartialEq, Eq)]
 struct Entry {
     source: String,
     epoch: u64,
@@ -61,11 +61,18 @@ fn identity(value: &str) -> Result<(), RegistryError> {
     Ok(())
 }
 
-#[derive(Debug)]
 pub struct TimelineRegistry {
     session: String,
     limits: RegistryLimits,
     entries: Vec<Entry>,
+}
+impl std::fmt::Debug for TimelineRegistry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TimelineRegistry")
+            .field("limits", &self.limits)
+            .field("span_count", &self.entries.len())
+            .finish_non_exhaustive()
+    }
 }
 
 impl TimelineRegistry {
@@ -195,6 +202,53 @@ impl TimelineRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn diagnostics_omit_session_source_and_raw_timeline_values() {
+        let span = SourceSpan {
+            epoch: 54321,
+            rate: 48000,
+            start: "345678",
+            end: "393678",
+            media_start_ns: "987654321",
+        };
+        let range = SourceRange {
+            epoch: span.epoch,
+            start: span.start,
+            end: span.end,
+        };
+        let mut registry = TimelineRegistry::new(
+            "private-session-marker",
+            RegistryLimits {
+                sources: 2,
+                spans: 3,
+            },
+        )
+        .unwrap();
+        registry
+            .insert("private-session-marker", "private-source-marker", span)
+            .unwrap();
+        for debug in [
+            format!("{span:?}"),
+            format!("{range:?}"),
+            format!("{registry:?}"),
+        ] {
+            for secret in [
+                "private-session-marker",
+                "private-source-marker",
+                "54321",
+                "345678",
+                "393678",
+                "987654321",
+            ] {
+                assert!(!debug.contains(secret));
+            }
+        }
+        assert_eq!(
+            map_source_range(&[span], range),
+            Ok((987654321, 1987654321))
+        );
+        assert_eq!(registry.len(), 1);
+    }
     const SPAN: SourceSpan<'static> = SourceSpan {
         epoch: 0,
         rate: 48_000,

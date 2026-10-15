@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are114 unit +4 component-integration +8 resampling-spike tests, passing
+These are115 unit +4 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -363,3 +363,9 @@ this is NOT sanitization, a language-support claim or an engine allocation cap.
 Two tests cover inclusive multibyte limits, completion ordering and late cancel
 precedence. Direct provider calls/error construction bypass this checked boundary;
 future host must use the managed checked path and its own safe diagnostics.
+
+Timeline SourceSpan/SourceRange and TimelineRegistry Debug now omit raw source
+counters, media anchors and session/source strings too. Registry diagnostics
+retain only configured caps and span count. A test verifies those markers never
+appear while explicit mapping still returns the same timestamps. This is not
+global log sanitization: public metadata fields remain intentionally accessible.

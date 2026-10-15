@@ -221,7 +221,10 @@ Fronteira checkedprovider recusa detalhes EngineFailed/UnsupportedLanguage acima
 Errosaceitoscontinuamdados explícitos,nãosanitização/tetoallocengine.2testes
 limitesmultibyte/latecancel/aguardacompletion,semruntime/providerconcreto.
 
-Rust114unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+DebugSourceSpan/Range/TimelineRegistry também omiteIDssessão/fonte/contadores/âncora;
+1testeguarda marcadores privados e mapeamento explícito inalterado.
+
+Rust115unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider

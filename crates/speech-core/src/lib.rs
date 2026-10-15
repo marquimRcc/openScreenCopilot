@@ -12,7 +12,7 @@ pub mod speech_windows;
 pub mod timeline_registry;
 pub mod transport_budget;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct SourceSpan<'a> {
     pub epoch: u64,
     pub rate: u32,
@@ -21,11 +21,24 @@ pub struct SourceSpan<'a> {
     pub media_start_ns: &'a str,
 }
 
-#[derive(Clone, Copy, Debug)]
+impl std::fmt::Debug for SourceSpan<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SourceSpan")
+            .field("rate", &self.rate)
+            .finish_non_exhaustive()
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct SourceRange<'a> {
     pub epoch: u64,
     pub start: &'a str,
     pub end: &'a str,
+}
+impl std::fmt::Debug for SourceRange<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SourceRange").finish_non_exhaustive()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
