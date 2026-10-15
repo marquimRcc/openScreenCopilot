@@ -164,6 +164,83 @@ impl ControlLineDecoder {
 mod tests {
     use super::*;
     #[test]
+    fn every_unicode_scalar_survives_each_fragment_boundary() {
+        // No random seed or external corpus: cover every legal scalar, including
+        // four-byte values and noncharacters. LF is the protocol delimiter.
+        for value in 0..=0x10ffff {
+            let Some(scalar) = char::from_u32(value) else {
+                continue; // surrogate codepoints are not Unicode scalars
+            };
+            if scalar == '\n' {
+                continue;
+            }
+            let mut wire = [0u8; 6];
+            let text_len = scalar.encode_utf8(&mut wire[..4]).len();
+            wire[text_len] = b'x'; // CR remains payload instead of CRLF framing
+            wire[text_len + 1] = b'\n';
+            let wire = &wire[..text_len + 2];
+            let expected = std::str::from_utf8(&wire[..text_len + 1]).unwrap();
+            for split in 1..wire.len() {
+                let mut decoder = ControlLineDecoder::new(5).unwrap();
+                assert_eq!(decoder.feed(&wire[..split]).unwrap(), split);
+                assert_eq!(decoder.feed(&wire[split..]).unwrap(), wire.len() - split);
+                decoder.finish().unwrap();
+                assert_eq!(decoder.take().as_deref(), Some(expected));
+                assert_eq!(decoder.counts(), (wire.len() as u64, 1));
+                assert_eq!(decoder.owned_buffer_bytes(), 0);
+            }
+        }
+    }
+    #[test]
+    fn exhaustive_short_byte_payloads_match_utf8_acceptance_across_partitions() {
+        // LF is the framing delimiter, not a payload byte. Include CR, NUL,
+        // overlong prefixes, continuation bytes and incomplete codepoints.
+        let check = |payload: &[u8]| {
+            let mut wire = payload.to_vec();
+            wire.push(b'\n');
+            let expected = std::str::from_utf8(payload).ok().and_then(|text| {
+                let text = text.strip_suffix('\r').unwrap_or(text);
+                (!text.is_empty()).then_some(text)
+            });
+            for split in 0..=wire.len() {
+                let mut decoder = ControlLineDecoder::new(2).unwrap();
+                let result = decoder.feed(&wire[..split]).and_then(|used| {
+                    assert_eq!(used, split);
+                    if split == wire.len() {
+                        Ok(0) // A ready line intentionally rejects even empty feed.
+                    } else {
+                        decoder.feed(&wire[split..])
+                    }
+                });
+                match expected {
+                    Some(text) => {
+                        assert!(result.is_ok(), "payload={payload:?}, split={split}");
+                        decoder.finish().unwrap();
+                        assert_eq!(decoder.take().as_deref(), Some(text));
+                        assert_eq!(decoder.counts(), (wire.len() as u64, 1));
+                    }
+                    None => {
+                        assert!(result.is_err(), "payload={payload:?}, split={split}");
+                        assert!(decoder.is_closed());
+                        assert_eq!(decoder.owned_buffer_bytes(), 0);
+                        assert!(decoder.take().is_none());
+                    }
+                }
+            }
+        };
+        for first in 0..=255u8 {
+            if first == b'\n' {
+                continue;
+            }
+            check(&[first]);
+            for second in 0..=255u8 {
+                if second != b'\n' {
+                    check(&[first, second]);
+                }
+            }
+        }
+    }
+    #[test]
     fn all_utf8_partitions_preserve_one_message_and_bound_owned_buffers() {
         let text = "{\"type\":\"synthetic\",\"text\":\"Olá 🦀\"}";
         let wire = format!("{text}\n");

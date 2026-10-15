@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are110 unit +4 component-integration +8 resampling-spike tests, passing
+These are112 unit +4 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -337,11 +337,16 @@ Debug shows counts/state, not pending/ready transcript or control text. Whitespa
 and non-JSON text can be framed: actual JSON/schema/version/identity/permission
 validation is still REQUIRED before treating it as a command/event.
 
-Eight tests cover every partition, multi-line chunks, CRLF/exact cap, invalid and
+Ten tests cover every partition, multi-line chunks, CRLF/exact cap, invalid and
 partial Unicode, large chunks, maximal line, one-byte Unicode fragments, counters,
 stop/EOF and debug redaction. No stdin/stdout/pipe/socket/helper is opened. Caller
 must bound received chunks, decoder instances, retained Strings and overall
 time/resources; per-instance buffers alone do not establish pipeline RAM limits.
+The additional deterministic checks cover all65,280 one/two-byte payloads without
+LF against std UTF-8 acceptance at every split, plus every legal Unicode scalar
+at every internal fragment boundary. NUL/noncharacters remain valid UTF-8, not
+automatically valid JSON/commands. An initial test-harness mistake fed an empty
+chunk after ready (correctly Busy); fixed the test, not decoder semantics.
 
 Diagnostic Debug for headers, expected streams, decoded/mono frames, requests,
 results, provider errors and pool now omits raw PCM, transcript/language/error
