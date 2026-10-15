@@ -216,6 +216,77 @@ describe("RecStage controls", () => {
 		expect(getSources).not.toHaveBeenCalled();
 	});
 
+	it("uses the main-owned Windows picker so Record can select a rectangle without starting", async () => {
+		stubRecordingPrefs();
+		const getSources = vi.fn(async () => []);
+		const openSourceSelector = vi.fn(async () => ({ opened: true }));
+		Object.assign(window.electronAPI, {
+			getPlatform: () => "win32",
+			getSources,
+			openSourceSelector,
+		});
+		const { onStartRecording } = renderRecStage();
+		await act(async () => {
+			screen.getByRole("button", { name: "rec.selectSource" }).click();
+		});
+		expect(openSourceSelector).toHaveBeenCalledExactlyOnceWith();
+		expect(getSources).not.toHaveBeenCalled();
+		expect(onStartRecording).not.toHaveBeenCalled();
+		expect(screen.queryByText("rec.sourceModal.screens")).toBeNull();
+
+		act(() => {
+			for (const listener of selectedSourceListeners) {
+				listener({
+					id: "screen:1:0",
+					name: "Display 1 · 960 × 600",
+					display_id: "1",
+					thumbnail: null,
+					appIcon: null,
+				});
+			}
+		});
+		expect(await screen.findByRole("button", { name: "Display 1 · 960 × 600" })).toBeVisible();
+		expect(onStartRecording).not.toHaveBeenCalled();
+	});
+
+	it("does not fall back to a full-screen choice when the Windows picker rejects", async () => {
+		stubRecordingPrefs();
+		const getSources = vi.fn(async () => []);
+		const openSourceSelector = vi.fn(async () => {
+			throw new Error("picker unavailable");
+		});
+		Object.assign(window.electronAPI, {
+			getPlatform: () => "win32",
+			getSources,
+			openSourceSelector,
+		});
+		const { onStartRecording } = renderRecStage();
+		await act(async () => {
+			screen.getByRole("button", { name: "rec.selectSource" }).click();
+		});
+		expect(toast.error).toHaveBeenCalledWith("regionSelection.error");
+		expect(getSources).not.toHaveBeenCalled();
+		expect(onStartRecording).not.toHaveBeenCalled();
+	});
+
+	it("retains the inline source picker outside Windows", async () => {
+		stubRecordingPrefs();
+		const getSources = vi.fn(async () => []);
+		const openSourceSelector = vi.fn(async () => ({ opened: true }));
+		Object.assign(window.electronAPI, {
+			getPlatform: () => "linux",
+			getSources,
+			openSourceSelector,
+		});
+		renderRecStage();
+		await act(async () => {
+			screen.getByRole("button", { name: "rec.selectSource" }).click();
+		});
+		expect(getSources).toHaveBeenCalledTimes(1);
+		expect(openSourceSelector).not.toHaveBeenCalled();
+		expect(screen.getByText("rec.sourceModal.screens")).toBeVisible();
+	});
+
 	// The HUD names the last pick in Apple's picker after a relaunch; this row does not. Beside
 	// a preview that still asks what to record, a name reads as a source that is already chosen.
 	it("keeps the last pick in Apple's picker out of the source row", async () => {

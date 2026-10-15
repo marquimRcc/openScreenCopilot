@@ -1269,6 +1269,84 @@ ou ajuste humano no app. Esta nota prevalece sobre checkpoints antigos94%/retoma
 Não consumir resets/trocar modelo/conta/contornar limite semanal. Após a guarda,
 consultar limites reais de ambas janelas antes de restaurar watchdog/trabalho.
 
+## Retomada por limites reais renovados — 2026-10-15T11:39:22Z
+
+Consulta atual da mesma conta:5h27%/semanal4%, ordinaryUsageAllowedtrue,
+resetsAt primário1792075364 e semanal1792662164. Ambos mudaram desde a pausa;
+os dois créditos de reset continuam disponíveis e o agente NÃO os consumiu.
+Não foi identificada a causa da renovação; não atribuir a compra/reset automático.
+
+A previsão20/10 da nota anterior foi derivada do resetsAt ANTIGO, não prazo humano
+fixo. Pela duração das janelas, a nova âncora inferida é1792057364
+(15/10T08:22:44Z); +5min08:27:44Z já passou. Regra humana continua retomar após
+renovação real+5min, trabalhar até89%5h/95%semanal. Portanto a guarda histórica
+20/10 não deve manter trabalho parado após esta evidência de limites renovados.
+Consultar dados reais entre incrementos; não contornar novos limites ou comprar resets.
+
+HEAD base982f8d8f/árvore limpa antes desta nota. Retomar QA autorizado com coverage
+normal-z-order e rota Ctrl+N, não repetir cliques do HUD já falhos. Autorizações,
+privacidade, validações e dependências do roadmap permanecem. Falha anterior do
+agendador não foi declarada corrigida; uma nova tentativa precisa ser confirmada.
+
+## QA 02Z — editor visível e lacuna no seletor Record — 2026-10-15
+
+Com cobertura sintética fullscreen opaca em z-order normal (1 display1280×800DIP),
+Ctrl+N abriu editor real acima da cobertura. Clique OS em Record passou. Testar
+áudio do sistema mostrou Stop test/Output activity e encerrou por lease30s,
+voltando a Test ended. Pico observado0: não comprova áudio audível/capturado.
+Sistema ON inicial, microfone/câmera OFF. Sistema foi desligado no perfil privado
+antes de abrir fontes, para não gravar áudio de aplicativos privados.
+
+O seletor INLINE de RecStage abriu somente Screens/Windows, sem Região: causa
+confirmada no código, distinto de launch/SourceSelector. Não selecionar tela inteira
+como substituição. Cancel passou, Alt+F4 fechou editor vazio e depois cobertura.
+PIDs próprios28352/29344 confirmados ausentes, diretório recordings sem arquivo.
+Logs privados .cache/normal-{app,cover}.{stdout,stderr}.log. Chromium listagem teve
+timeout WGC de primeira frame; não é prova de defeito no gravador nativo.
+
+Correção PARCIAL: Windows RecStage encaminha escolha ao picker dedicado existente;
+nenhuma mudança em autorização IPC/crop/helper. Eventos main atualizam a fonte no
+editor; abrir/selecionar não chama Start. Erro de abertura mostra texto já traduzido,
+sem fallback para tela inteira. Apple/system picker e inline fora Windows preservados.
+Regressão reproduzida2falhas/34pass antes; após40pass/2arquivos focados.
+Typecheck app aprovado. Testes detectaram mock incompleto (thumbnail/appIcon),
+corrigido e typecheck testes revalidado. Vite aprovado. Full uma vez:364arquivos,
+5167pass/5skip,396,67s, Node22.22.1/2workers/exit0/sem signal, fim12:05:55UTC;
+.cache/rec-region-full.{json,log}. Lint26 avisos herdados; i18n15/1000chaves OK.
+docs53 OK após terminar suíte: primeira checagem concorrente viu probe temporário
+criado pelo teste do próprio docs checker; não era quebra documental permanente.
+Pacote completo .cache/result-package/win-unpacked atualizado e conferido:
+23payloads nativos, entry/main-C-zXdXuj/preload e27rendererassets/index SHA iguais
+ao dist/origem. Sem fonte nativa alterada/rebuild nativo. Primeira chamada de pacote
+usou caminho CLI inexistente e falhou antes de executar; corrigida para
+node_modules/electron-builder/cli.js, exit0. Logs rec-region-{vite,package,lint}.log.
+Pacote não instalado/relançado no perfil humano; QA usou build dist em perfil isolado.
+
+Reteste com código compilado corrigido e outro perfil isolado: Ctrl+N → Record →
+Source abriu janela dedicada windowType=source-selector com Region. Clique Region,
+monitor e Draw area abriram overlay real. Arraste OS(158,120)→(798,520)DIP mostrou
+960×600px (escala150%), borda e Use this area habilitado. Escape fechou overlay,
+seletor permaneceu no UIA e editor continuou sem fonte, sem autostart/MP4.
+Não houve confirmação da área nem tomada real.
+
+Após Escape, screenshot do seletor mostrou editor atrás em vez do seletor; uma
+ativação+reobservação não recuperou. Fatia interrompida sem novos cliques cegos.
+Alt+F4 editor vazio passou, mas seletor remanescente não fechou com Alt+F4 próprio.
+Fixture17108 conferida por caminho/args, nenhuma instância WGC/MP4; encerrada somente
+essa fixture ociosa. Cobertura19012 fechada normalmente. Sem mudança no perfil humano.
+Logs .cache/rec-region-{app,cover}.{stdout,stderr}.log; perfil
+.cache/full-app-qa-896cc233-b324-498f-80a5-f836d11d85fd. Isso não demonstra a causa
+da imagem divergente (oclusão/visibilidade/driver ainda a diagnosticar); não alterar
+z-order do produto por suposição. Nova pendência: retorno visual do picker após Esc.
+Não declarar fluxo captura→resultado, confirmação de área, borda de gravação,
+DPI misto ou áudio homologados; arraste/Escape passou somente nesta configuração.
+
+Automação voltou a responder: atualização via ferramenta confirmou ACTIVE e
+FREQ=MINUTELY;INTERVAL=1, também conferidos no arquivo salvo read-only.
+Guardas antigas de previsão semanal foram superadas pelos limites reais novos,
+sem consumo de reset. Isso confirma configuração salva, não prova ainda uma wake
+futura após renovação. Continuidade e limiares humanos não foram relaxados.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

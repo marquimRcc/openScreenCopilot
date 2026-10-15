@@ -59,6 +59,11 @@ e validada isoladamente02U. Transporte/controller validado isoladamente02V;
 02W integra drenagem no main antes da captura nativa/Chromium e no quit.
 02X conecta API/preload start/stop/event;02Y monta teste explícito no seletor existente.
 Aceite GUI/áudio audível segue pendente. Evidências no STATUS.
+QA real pela rota Ctrl+N → Record identificou que o seletor inline do editor
+não oferecia retângulo. Windows agora encaminha ao seletor dedicado existente,
+mantendo autorização/crop no main e sem autostart; abertura/arraste/Escape passaram
+em monitor único150%. Retorno visual do seletor após Escape bloqueou a confirmação
+e tomada real; captura→resultado e DPI misto seguem pendentes.
 Fundação independente autorizada pelo usuário;
 aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
 [WINDOWS11-REGION-DEVICES.md](WINDOWS11-REGION-DEVICES.md).

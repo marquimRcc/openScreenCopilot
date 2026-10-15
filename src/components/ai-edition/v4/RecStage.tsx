@@ -269,6 +269,20 @@ export function RecStage({
 		};
 	}, []);
 	const openSourceModal = async () => {
+		// Windows rectangles belong to the dedicated main-owned picker. The inline
+		// screen/window modal has no region transaction and cannot authorize one.
+		// Keep the editor alive: its existing source-change subscription receives
+		// the committed choice, while Cancel/Escape leave the current source alone.
+		if (window.electronAPI?.getPlatform?.() === "win32" && window.electronAPI.openSourceSelector) {
+			try {
+				const result = await window.electronAPI.openSourceSelector();
+				if (!result.opened) toast.error(tLaunch("regionSelection.error"));
+			} catch (error) {
+				console.warn("[rec-stage] failed to open the Windows source picker:", error);
+				toast.error(tLaunch("regionSelection.error"));
+			}
+			return;
+		}
 		// With Apple's system picker (macOS 15.2+) the choice is made there, and the pick
 		// comes back through `onSelectedSourceChanged` like any other. Listing sources here
 		// would go through the Screen Recording grant the picker makes unnecessary.
