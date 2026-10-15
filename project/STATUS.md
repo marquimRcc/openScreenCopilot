@@ -259,12 +259,15 @@ ficarvelho imediatamente,nãoéreserva/ACKdurável/auth/cleanup/workerdrain.
 continua cobrado atécompletion/cancel;janela16ksintética mapeia rangeoriginal
 viaregistryâncora5s,nunca arrivalprovider. Semclockreal/resampler/ASR/checkpoint.
 
-Rust134unitários+7integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+1integração com2providersfalsos/mesmogate:segundo recusadoatéprimeirocancelado
+completar. Gatesindependentesbypassariam;NÃO coordenaSTTherdado real.
+
+Rust134unitários+8integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider
 fake lento:cap184bytes,copyseguinte recusada atéliberação,notificaçãocapacidade,
-cancelawait/close,48kmono recusado como16k.6testesfuncionais+1diagnóstico,semengine/processo/pipe/captura/
+cancelawait/close,48kmono recusado como16k.7testesfuncionais+1diagnóstico,semengine/processo/pipe/captura/
 journal/timestampsreais. Clippy drop_non_drop corrigido,sem alterarproduto.
 
 Spikes SOMENTE testes:mono44.1/48k→16k,partições/tails/limites/cancel/erro real após
@@ -332,6 +335,11 @@ Shutdown2S_OK/exit0/signalnull/guardaoff;ZEROSetType/frames/streaming/D3D/captur
 Não prova NV12/FPS/encode nem mudaH264produção;detalhes/refs no spike.
 
 ## Próximo trabalho seguro
+
+Revisãoestática STTherdado emSPEECH-CORE-INVENTORY:singleton/cache/processo/fila
+Promise/cancelentrechunks/timeoutHTTP/exitnãoequivalem gateRustglobal/drain.
+Nenhumhelper/modelo/rede iniciado. Adapterconcreto exige coordenaçãoexclusive,
+admissãobounded e exitobservado;prioridade/preempção humana ainda pendente.
 
 1. Trabalho independente04:lifecycle/supervisão/replay e ligação host/TS futura
    do orçamento Rust; reader/ownership/cópiaMono/factorydecoders isolados já feitos.

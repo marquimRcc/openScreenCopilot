@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are134 unit +7 component-integration +8 resampling-spike tests, passing
+These are134 unit +8 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -449,3 +449,7 @@ charged; cancellation still waits for completion. A synthetic declared16k window
 maps its original sample range through TimelineRegistry to a fixed media anchor,
 never provider arrival time. This is not a capture clock,48k resampler, real ASR,
 persisted final/checkpoint, reconnect or worker shutdown test.
+A shared-gate test uses two distinct fake providers: the second is refused while
+the canceled first call remains active, then admitted only after completion.
+Separate gates would bypass that policy. This demonstrates an isolated condition,
+NOT coordination with the actual legacy SttManager/helper or preemption policy.

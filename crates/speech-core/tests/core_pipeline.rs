@@ -9,7 +9,7 @@ use openscreen_speech_core::provider::{
     TranscriptionRequest,
 };
 use openscreen_speech_core::provider_admission::{
-    transcribe_managed, ManagedTranscriptionError, ProviderAdmission,
+    transcribe_managed, AdmissionError, ManagedTranscriptionError, ProviderAdmission,
 };
 use openscreen_speech_core::speech_windows::{SpeechWindowPlanner, WindowLimits};
 use openscreen_speech_core::timeline_registry::{RegistryLimits, TimelineRegistry};
@@ -132,6 +132,69 @@ impl TranscriptionProvider for Slow {
     fn provider_name(&self) -> &'static str {
         "synthetic-slow-no-engine"
     }
+}
+
+#[test]
+fn shared_gate_refuses_a_second_provider_until_canceled_first_provider_completes() {
+    let bytes = frame(16_000);
+    let (pool, mut decoder) = setup(&bytes);
+    feed(&mut decoder, &bytes);
+    let input = decoder.take().unwrap();
+    let mono = downmix_owned_frame(&input, &pool, MonoMix::AverageAll).unwrap();
+    drop(input);
+    let request = TranscriptionRequest::new(mono.samples(), 16_000, None).unwrap();
+    let first_provider = Slow::new();
+    let second_provider = Slow::new();
+    let gate = ProviderAdmission::new(1).unwrap();
+    let cancel = Cancellation::default();
+    let mut cx = Context::from_waker(Waker::noop());
+    let mut first = Box::pin(transcribe_managed(
+        &gate,
+        &first_provider,
+        &request,
+        cancel.clone(),
+    ));
+    assert!(first.as_mut().poll(&mut cx).is_pending());
+    cancel.cancel();
+    assert!(first.as_mut().poll(&mut cx).is_pending());
+    let mut second = Box::pin(transcribe_managed(
+        &gate,
+        &second_provider,
+        &request,
+        Cancellation::default(),
+    ));
+    assert_eq!(
+        second.as_mut().poll(&mut cx),
+        Poll::Ready(Err(ManagedTranscriptionError::Admission(
+            AdmissionError::Busy
+        )))
+    );
+    drop(second);
+    assert_eq!(second_provider.calls.load(Ordering::SeqCst), 0);
+    assert_eq!(gate.status().unwrap().active, 1);
+    assert_eq!(pool.snapshot().unwrap().usage.bytes, 88);
+    first_provider.done.store(true, Ordering::Release);
+    assert_eq!(
+        first.as_mut().poll(&mut cx),
+        Poll::Ready(Err(ManagedTranscriptionError::Provider(
+            TranscriptionError::Canceled
+        )))
+    );
+    drop(first);
+    second_provider.done.store(true, Ordering::Release);
+    let mut later = Box::pin(transcribe_managed(
+        &gate,
+        &second_provider,
+        &request,
+        Cancellation::default(),
+    ));
+    assert!(matches!(later.as_mut().poll(&mut cx), Poll::Ready(Ok(_))));
+    assert_eq!(gate.status().unwrap().active, 0);
+    assert_eq!(second_provider.calls.load(Ordering::SeqCst), 1);
+    drop(later);
+    drop(mono);
+    assert_eq!(pool.snapshot().unwrap().usage, Usage::default());
+    // Independent gates would bypass this policy; no host wiring exists here.
 }
 
 #[test]

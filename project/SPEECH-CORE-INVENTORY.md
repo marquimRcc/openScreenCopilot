@@ -5,6 +5,39 @@ completa de dependências/modelos, nem aceite da etapa04. Captura/qualidade e
 homologação das etapas01–03 continuam dependências da integração. Nenhum build,
 instalação, download ou alteração de vendor foi feito para este inventário.
 
+## Coordenação com STT herdado — revisão estática 2026-10-15
+
+Esta revisão NÃO iniciou processo/modelo/inferência/rede nem alterou runtime.
+O provider Rust continua interface/fakes; seu gate isolado não coordena o STT
+existente por mera presença no crate.
+
+| Código observado | Limite para integração futura |
+|---|---|
+| [SttManager/getSttManager](../electron/stt/index.ts) mantém singleton lazy, WhisperServerManager próprio e initPromise | Compartilhar ownership do engine/contexto entre pós-gravação e live; não instanciar whisper-rs/contexto/cache independente em paralelo. Política de prioridade/preempção ainda pendente, não cancelar trabalho humano automaticamente. |
+| [WhisperServerManager.transcribe](../electron/stt/whisperServer.ts) encadeia inFlight.then com opts capturados | Serializa execução, mas não tem cap explícito de fila/bytes/tempo na entrada desse método. Não conectar produtores live sem admissão limitada antes de enfileirar ou copiar. |
+| SttManager.cancel incrementa cancelEpoch, aborta extração/downloads; loop verifica entre chunks | Não equivale a cancelamento individual de inferência já iniciada. Adapter futuro deve aguardar completion real/ownership, sem reutilizar cancelEpoch global como token por fonte/sessão. |
+| runMultipartInfer usa WAV temporário, readFile/FormData e timeout280s | Há cópias/arquivo/custo fora do pool Rust. Timeout/rejeição de fetch não comprova que o helper terminou inferência ou liberou GPU; não devolver licença de engine por essa suposição. |
+| stop limpa referência/porta antes exit; espera até5s e no catch envia SIGKILL | Não tratar status.running=false ou retorno após SIGKILL como recibo observado de exit/drain. Supervisão futura deve conservar identidade/ownership até encerramento confirmado; nenhuma correção legacy foi feita aqui. |
+| [modelManager](../electron/stt/modelManager.ts) fixa revisões/hashes Whisper/Silero, verifica cache e usa .partial/rename | Reutilizar catálogo/proveniência verificados, sem copiar arquivo ou iniciar download em captura. areModelsPresent só testa arquivo não vazio, NÃO hash/licença. Caminho igual sozinho não prova modelo/contexto igual. |
+| alignerFor/cachedAligner pode usar cache ou iniciar download em background para idiomas cadastrados | Não importar essa política automaticamente para live: preparação/consentimento/offline e orçamento precisam ser definidos. pt-BR não ganha CTC alinhado por inferir suporte de Whisper. |
+
+O helper herdado usa HTTP loopback127.0.0.1 com porta própria já existente; isso
+não autoriza criar novo listener/porta para o core. O contrato futuro de áudio
+dedicado permanece em [CONTRACTS.md](CONTRACTS.md). Não repassar PCM ao renderer
+nem tratar a resposta legacy em segundos como contador original48/44.1k ou PTS.
+
+Antes de adapter concreto, testar com fake lifecycle compartilhado: pedido legacy
+ativo + live recusado/bounded; cancel/timeout sem liberação antecipada; mudança de
+modelo somente após drain; late result da sessão antiga descartado; falha sem
+respawn duplicado; cache íntegro/corrompido/offline sem download implícito; exit
+observado vs estado incerto. ProviderAdmission/BudgetSnapshot ajudam a contagem
+isolada, mas não são essa supervisão e não transferem seus limites ao legacy.
+Nenhum benchmark comentado no upstream foi requalificado nesta revisão.
+Teste isolado adicional em core_pipeline usa2providersfalsos/mesmo gate1:segundo
+não entra enquanto primeirocancelado não completa, e sóentão podeexecutar.
+Não usa SttManager/helper/cache reais, nem resolve prioridade/preempção/timeout
+native/exit, e não autoriza criar segundo engine ou integrar PCM cedo.
+
 Origem congelada: meeting-copilot3c299c99abf7c38c1e3bac34c4aecdc010c911dd;
 licença [MIT original](../vendor/meeting-copilot/LICENSE.md), copyright Zackriya
 Solutions. Extrações futuras devem manter esses avisos e registrar alterações.
