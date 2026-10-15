@@ -47,6 +47,7 @@ pub enum BudgetError {
     AudioTimeRequired,
     InvalidAudioHeader,
     WaiterBusy,
+    DecoderBusy,
 }
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Usage {
@@ -76,6 +77,7 @@ struct State {
     revision: u64,
     next_waiter: u64,
     waiters: [Option<change::WaitSlot>; 2],
+    decoders: [bool; 2],
 }
 fn index(source: Source) -> usize {
     match source {
@@ -113,6 +115,30 @@ pub struct BufferLease {
     source: Source,
     cost: Cost,
     audio_ns: u64,
+}
+// Optional managed decoder ownership, independent of handed-off buffer leases.
+pub(crate) struct DecoderPermit {
+    state: Arc<Mutex<State>>,
+    source: Source,
+}
+impl Drop for DecoderPermit {
+    fn drop(&mut self) {
+        let Ok(mut state) = self.state.lock() else {
+            return;
+        };
+        if state.broken {
+            return;
+        }
+        let slot = &mut state.decoders[index(self.source)];
+        if !*slot {
+            state.broken = true;
+        } else {
+            *slot = false;
+        }
+        let wakes = state.changed();
+        drop(state);
+        change::wake_all(wakes);
+    }
 }
 impl BufferLease {
     pub(crate) fn belongs_to(&self, pool: &TransportBudget) -> bool {
@@ -152,6 +178,7 @@ impl TransportBudget {
                 revision: 0,
                 next_waiter: 1,
                 waiters: [None, None],
+                decoders: [false; 2],
             })),
         })
     }
@@ -182,6 +209,39 @@ impl TransportBudget {
             state.audio_ns,
             [state.sources[0].audio_ns, state.sources[1].audio_ns],
         ))
+    }
+    /// Managed decoder factory only: a fixed slot per source, aggregated epochs.
+    pub(crate) fn admit_decoder(
+        &self,
+        nonce: [u8; 16],
+        source: Source,
+    ) -> Result<DecoderPermit, BudgetError> {
+        if nonce != self.nonce {
+            return Err(BudgetError::WrongScope);
+        }
+        let mut state = self.state.lock().map_err(|_| BudgetError::Poisoned)?;
+        if state.broken {
+            return Err(BudgetError::Invariant);
+        }
+        if state.closed {
+            return Err(BudgetError::Closed);
+        }
+        let slot = &mut state.decoders[index(source)];
+        if *slot {
+            return Err(BudgetError::DecoderBusy);
+        }
+        *slot = true;
+        Ok(DecoderPermit {
+            state: Arc::clone(&self.state),
+            source,
+        })
+    }
+    pub fn managed_decoder_count(&self) -> Result<usize, BudgetError> {
+        let state = self.state.lock().map_err(|_| BudgetError::Poisoned)?;
+        if state.broken {
+            return Err(BudgetError::Invariant);
+        }
+        Ok(state.decoders.iter().filter(|&&used| used).count())
     }
     /// Reparse fixed raw metadata; payload validity remains the decoder's job.
     /// Rounded UP per packet so tiny packets can never obtain free duration.
@@ -387,6 +447,44 @@ impl Drop for BufferLease {
 mod tests {
     use super::*;
     const NONCE: [u8; 16] = [1; 16];
+
+    #[test]
+    fn managed_permit_corruption_and_revision_overflow_fail_closed() {
+        for corrupt_slot in [false, true] {
+            let pool = pool();
+            let permit = pool.admit_decoder(NONCE, Source::System).unwrap();
+            if corrupt_slot {
+                pool.state.lock().unwrap().decoders[0] = false;
+            } else {
+                pool.state.lock().unwrap().revision = u64::MAX;
+            }
+            drop(permit);
+            assert_eq!(pool.managed_decoder_count(), Err(BudgetError::Invariant));
+            assert!(matches!(
+                pool.admit_decoder(NONCE, Source::System),
+                Err(BudgetError::Invariant)
+            ));
+        }
+    }
+
+    #[test]
+    fn poisoned_pool_never_reopens_a_managed_slot_or_panics_in_permit_drop() {
+        let pool = pool();
+        let permit = pool.admit_decoder(NONCE, Source::System).unwrap();
+        let other = pool.clone();
+        assert!(std::thread::spawn(move || {
+            let _guard = other.state.lock().unwrap();
+            panic!("synthetic poison only");
+        })
+        .join()
+        .is_err());
+        drop(permit);
+        assert_eq!(pool.managed_decoder_count(), Err(BudgetError::Poisoned));
+        assert!(matches!(
+            pool.admit_decoder(NONCE, Source::System),
+            Err(BudgetError::Poisoned)
+        ));
+    }
 
     #[test]
     fn pool_debug_never_relocks_a_held_mutex_or_exposes_nonce() {

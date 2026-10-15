@@ -52,7 +52,7 @@ fn setup(bytes: &[u8]) -> (TransportBudget, AudioDecoderV0) {
         },
     )
     .unwrap();
-    let decoder = AudioDecoderV0::with_budget(
+    let decoder = AudioDecoderV0::with_managed_budget(
         ExpectedStream {
             nonce: h.session_nonce,
             source: h.source,
@@ -66,6 +66,7 @@ fn setup(bytes: &[u8]) -> (TransportBudget, AudioDecoderV0) {
         pool.clone(),
     )
     .unwrap();
+    assert_eq!(pool.managed_decoder_count(), Ok(1));
     (pool, decoder)
 }
 fn feed(decoder: &mut AudioDecoderV0, bytes: &[u8]) {

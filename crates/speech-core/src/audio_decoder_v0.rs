@@ -6,7 +6,7 @@
 use crate::audio_frame_v0::{
     parse_header, validate_frame, FrameError, Header, Source, HEADER_BYTES, MAX_PAYLOAD_BYTES,
 };
-use crate::transport_budget::{BudgetError, BufferLease, TransportBudget};
+use crate::transport_budget::{BudgetError, BufferLease, DecoderPermit, TransportBudget};
 
 #[derive(Clone, Copy)]
 pub struct ExpectedStream {
@@ -110,6 +110,8 @@ pub struct AudioDecoderV0 {
     allocate: BufferAllocator,
     budget: Option<TransportBudget>,
     waiting_for_budget: bool,
+    // Last: release decoder slot after still-owned buffers/pool references drop.
+    _permit: Option<DecoderPermit>,
 }
 impl std::fmt::Debug for AudioDecoderV0 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -145,6 +147,7 @@ impl AudioDecoderV0 {
             allocate: allocate_buffer,
             budget: None,
             waiting_for_budget: false,
+            _permit: None,
         })
     }
     /// Optional Rust-only experimental admission pool. Does not add a pipe,
@@ -154,6 +157,23 @@ impl AudioDecoderV0 {
         budget: TransportBudget,
     ) -> Result<Self, DecoderError> {
         let mut decoder = Self::new(expected)?;
+        decoder.budget = Some(budget);
+        Ok(decoder)
+    }
+    /// Optional bounded instance admission: ONE live decoder per source role on
+    /// this exact shared pool, across epochs. Stop/EOF retain the slot until Drop.
+    /// Low-level new/with_budget remain unmanaged; host must not mix factories
+    /// to bypass this guard. Not authentication, worker drain or an input cap.
+    pub fn with_managed_budget(
+        expected: ExpectedStream,
+        budget: TransportBudget,
+    ) -> Result<Self, DecoderError> {
+        let mut decoder = Self::new(expected)?;
+        decoder._permit = Some(
+            budget
+                .admit_decoder(expected.nonce, expected.source)
+                .map_err(DecoderError::GlobalBudget)?,
+        );
         decoder.budget = Some(budget);
         Ok(decoder)
     }
@@ -322,6 +342,156 @@ impl AudioDecoderV0 {
 mod tests {
     use super::*;
     use crate::transport_budget::{AudioTimeLimits, BudgetLimits, Usage};
+    #[test]
+    fn managed_decoders_share_one_slot_per_source_across_clones_and_epochs() {
+        let bytes = fixture();
+        let pool = budget(&bytes, 192);
+        let stream = expected(&bytes);
+        let first = AudioDecoderV0::with_managed_budget(stream, pool.clone()).unwrap();
+        let next_epoch = ExpectedStream {
+            epoch: stream.epoch + 1,
+            ..stream
+        };
+        assert!(matches!(
+            AudioDecoderV0::with_managed_budget(next_epoch, pool.clone()),
+            Err(DecoderError::GlobalBudget(BudgetError::DecoderBusy))
+        ));
+        let mic = AudioDecoderV0::with_managed_budget(
+            ExpectedStream {
+                source: Source::Microphone,
+                ..stream
+            },
+            pool.clone(),
+        )
+        .unwrap();
+        assert_eq!(pool.managed_decoder_count(), Ok(2));
+        assert_eq!(pool.usage().unwrap().bytes, 0);
+        drop(first);
+        let next = AudioDecoderV0::with_managed_budget(next_epoch, pool.clone()).unwrap();
+        assert_eq!(pool.managed_decoder_count(), Ok(2));
+        drop((next, mic));
+        assert_eq!(pool.managed_decoder_count(), Ok(0));
+    }
+    #[test]
+    fn managed_stop_and_eof_retain_slot_but_drop_never_retracts_handed_frame() {
+        let bytes = fixture();
+        let pool = budget(&bytes, 192);
+        for eof in [false, true] {
+            let mut decoder =
+                AudioDecoderV0::with_managed_budget(expected(&bytes), pool.clone()).unwrap();
+            feed_all(&mut decoder, &bytes).unwrap();
+            let frame = decoder.take().unwrap();
+            if eof {
+                decoder.finish().unwrap();
+            } else {
+                decoder.stop();
+            }
+            assert_eq!(pool.managed_decoder_count(), Ok(1));
+            assert_eq!(pool.usage().unwrap().bytes, 96);
+            assert!(matches!(
+                AudioDecoderV0::with_managed_budget(expected(&bytes), pool.clone()),
+                Err(DecoderError::GlobalBudget(BudgetError::DecoderBusy))
+            ));
+            drop(decoder);
+            assert_eq!(pool.managed_decoder_count(), Ok(0));
+            assert_eq!(pool.usage().unwrap().bytes, 96);
+            assert_eq!(frame.bytes(), bytes);
+            drop(frame);
+            assert_eq!(pool.usage().unwrap().bytes, 0);
+        }
+    }
+    #[test]
+    fn managed_factory_refuses_bad_scope_expectations_and_closed_pool_without_slots() {
+        let bytes = fixture();
+        let pool = budget(&bytes, 192);
+        let stream = expected(&bytes);
+        assert!(matches!(
+            AudioDecoderV0::with_managed_budget(
+                ExpectedStream {
+                    sample_rate: 0,
+                    ..stream
+                },
+                pool.clone()
+            ),
+            Err(DecoderError::InvalidExpectation)
+        ));
+        assert!(matches!(
+            AudioDecoderV0::with_managed_budget(
+                ExpectedStream {
+                    nonce: [9; 16],
+                    ..stream
+                },
+                pool.clone()
+            ),
+            Err(DecoderError::GlobalBudget(BudgetError::WrongScope))
+        ));
+        assert_eq!(pool.managed_decoder_count(), Ok(0));
+        let decoder = AudioDecoderV0::with_managed_budget(stream, pool.clone()).unwrap();
+        pool.close().unwrap();
+        assert_eq!(pool.managed_decoder_count(), Ok(1));
+        drop(decoder);
+        assert_eq!(pool.managed_decoder_count(), Ok(0));
+        assert!(matches!(
+            AudioDecoderV0::with_managed_budget(stream, pool),
+            Err(DecoderError::GlobalBudget(BudgetError::Closed))
+        ));
+    }
+    #[test]
+    fn managed_decoder_admission_is_atomic_under_concurrent_attempts() {
+        use std::sync::{Arc, Barrier};
+        let bytes = fixture();
+        let stream = expected(&bytes);
+        let pool = budget(&bytes, 192);
+        let ready = Arc::new(Barrier::new(17));
+        let release = Arc::new(Barrier::new(17));
+        let threads: Vec<_> = (0..16)
+            .map(|_| {
+                let (pool, ready, release) = (pool.clone(), ready.clone(), release.clone());
+                std::thread::spawn(move || {
+                    let decoder = AudioDecoderV0::with_managed_budget(stream, pool);
+                    ready.wait();
+                    release.wait();
+                    decoder.is_ok()
+                })
+            })
+            .collect();
+        ready.wait();
+        let held_count = pool.managed_decoder_count();
+        release.wait();
+        assert_eq!(held_count, Ok(1));
+        assert_eq!(
+            threads
+                .into_iter()
+                .map(|thread| thread.join().unwrap())
+                .filter(|&accepted| accepted)
+                .count(),
+            1
+        );
+        assert_eq!(pool.managed_decoder_count(), Ok(0));
+    }
+    #[test]
+    fn dropping_managed_decoder_notifies_change_without_releasing_external_buffer() {
+        use std::future::Future;
+        use std::task::{Context, Poll, Waker};
+        let bytes = fixture();
+        let pool = budget(&bytes, 192);
+        let mut decoder =
+            AudioDecoderV0::with_managed_budget(expected(&bytes), pool.clone()).unwrap();
+        feed_all(&mut decoder, &bytes).unwrap();
+        let frame = decoder.take().unwrap();
+        let observed = pool.observe_change().unwrap();
+        let mut change = Box::pin(
+            pool.wait_for_change(&observed, expected(&bytes).source)
+                .unwrap(),
+        );
+        let mut context = Context::from_waker(Waker::noop());
+        assert!(change.as_mut().poll(&mut context).is_pending());
+        drop(decoder);
+        assert_eq!(change.as_mut().poll(&mut context), Poll::Ready(Ok(())));
+        assert_eq!(pool.managed_decoder_count(), Ok(0));
+        assert_eq!(pool.usage().unwrap().bytes, 96);
+        drop(frame);
+    }
     fn fixture() -> Vec<u8> {
         let json: serde_json::Value = serde_json::from_str(include_str!(
             "../../../contracts/copilot/audio-frame.v0.fixture.json"

@@ -42,7 +42,9 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Checkpoint funcional atual:downmixf32le/OwnedMonoFrame isolados sobre admissãoRust406af964,
+Checkpoint funcional atual:factory limitada de decoders sobre Debugtimelinee1a57d0c,
+errosproviderdb273eba/UTF8exhaustivo81f72884/sondaMF50d4bf06,
+downmixf32le/OwnedMonoFrame isolados sobre admissãoRust406af964,
 adaptadorTSd7054621,
 epoch/header→range sobre
 notificação limitada Rust4f19a3f8/duração84a3dd79,
@@ -224,7 +226,13 @@ limitesmultibyte/latecancel/aguardacompletion,semruntime/providerconcreto.
 DebugSourceSpan/Range/TimelineRegistry também omiteIDssessão/fonte/contadores/âncora;
 1testeguarda marcadores privados e mapeamento explícito inalterado.
 
-Rust115unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+FactoryRustwith_managed_budget opcional:2slotsfixos no poolEXATO,1porfonte entre
+épocas/clones. Stop/EOF/erro conserva slot atéDrop;handoff mantém leasebuffer.
+7testeslimits/close/drop/concorrência16/notificação/poison/invariante/overflow;
+integraçãocomponentes usa factory. Lowlevelnew/with_budget continuamnãogeridos,
+host futuro não deve misturar/criarpoolbypass. Semlimitechunks/control/session/RSS/auth.
+
+Rust122unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider
@@ -295,8 +303,9 @@ nenhum unlock/SetType/frame/captura. Detalhes em WINDOWS-COMPRESSION-SPIKE.
 ## Próximo trabalho seguro
 
 1. Trabalho independente04:lifecycle/supervisão/replay e ligação host/TS futura
-   do orçamento Rust; reader/ownership isolados já feitos. Limitar input/cópias/
-   decoders ainda pendente;notificaçãoRust isolada feita,host não conectado.
+   do orçamento Rust; reader/ownership/cópiaMono/factorydecoders isolados já feitos.
+   Limitar input/instânciascontrol/sessões e integraçãohost ainda pendente;
+   notificaçãoRust isolada feita,host não conectado.
    Não prometer tetoRSS,drain de worker ou recuperação por FutureDrop.
    Requisitos de transições/gaps/normalização/drain/reconexão estão no final de
    AUDIO-FRAME-DRAFT; tabela não é implementação nem teste de memória30min.

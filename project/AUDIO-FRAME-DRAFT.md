@@ -131,7 +131,7 @@ alheia, PCM inválido, drop pending/ready e10mil operações contra modelo indep
 OwnedFrame Rust mantém metadados privados e retorna snapshot por valor: consumidor
 não pode alterar o header validado nem custo da reserva. Nenhuma conexão TS/pipe/runtime.
 
-Isso NÃO limita RSS, chunks externos, scratch/metadata, número de decoders, cópias
+Isso NÃO limita RSS, chunks externos, scratch/metadata, decoders low-level, cópias
 normalizadas ou engine. Host ainda precisa limitar/admitir esses recursos, coordenar
 notificação sem corrida, cancelamento/drain e journal/ACK durável. Sem áudio live.
 
@@ -199,3 +199,10 @@ Cinco testesownership/refusal/alloc/scope,semPCMlive/resampler/modelo/runtime.
 Duplicação temporária de duração é guarda conservadora,nãotempo extra de mídia.
 Host ainda precisa política antideadlock quando copy não cabe junto doinput;
 Capacity retorna imediato,não criar outro pool para contornar o global.
+
+Factory opcionalRustwith_managed_budget agora limita1decoder porfonte no poolEXATO
+(2slotsfixos,agregamépocas/clones). Slot existe atéDrop mesmoStop/EOF/erro, liberado
+após buffers próprios;frames handedoff conservam leases. Lowlevelnew/with_budget
+nãoadmitidos continuam disponíveis:host deve escolherconsistentemente factorygerida,
+nãomisturar/criarpoolsbypass. Isso não limita control-line decoders/chunks/sessões/RSS
+nem abre pipe/autentica nonce/implementa workerdrain.7testes+integrações sintéticas.

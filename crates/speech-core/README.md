@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are115 unit +4 component-integration +8 resampling-spike tests, passing
+These are122 unit +4 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -369,3 +369,23 @@ counters, media anchors and session/source strings too. Registry diagnostics
 retain only configured caps and span count. A test verifies those markers never
 appear while explicit mapping still returns the same timestamps. This is not
 global log sanitization: public metadata fields remain intentionally accessible.
+
+## Optional managed decoder instance admission
+
+AudioDecoderV0::with_managed_budget uses two fixed slots inside the EXACT shared
+TransportBudget: one system decoder and one microphone decoder, aggregating
+epochs and cloned pool handles. Invalid expectation/wrong nonce/closed or broken
+pool fails before claiming a slot. Stop, clean EOF and terminal decoder errors
+retain that instance slot until decoder Drop, because the object still exists.
+Drop frees still-owned buffers before releasing the slot and notifying change;
+handed-off frames keep their separate byte/frame/duration leases unchanged.
+
+Seven added tests cover role/epoch limits, invalid/closed scope, stop/EOF/drop,
+handed ownership, sixteen simultaneous attempts, change notification and
+poison/corruption/revision overflow. Synthetic component integration now uses
+this factory too. No queue, input allocation, worker, pipe or runtime is added.
+Low-level new/with_budget remain deliberately unmanaged for focused arithmetic
+tests: a future host MUST consistently use the managed factory on one session
+pool, not mix factories or create replacement pools to evade admission. This
+does not limit sessions, control-line decoders, external chunks, engine memory,
+RSS or authenticate the wire nonce. Close is admission closure, not worker drain.
