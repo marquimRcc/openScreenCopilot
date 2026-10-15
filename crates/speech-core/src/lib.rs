@@ -5,6 +5,7 @@ pub mod audio_decoder_v0;
 pub mod audio_frame_v0;
 pub mod control_lines;
 pub mod downmix;
+pub mod input_chunk;
 pub mod mono_frame;
 pub mod provider;
 pub mod provider_admission;

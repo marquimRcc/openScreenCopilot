@@ -42,7 +42,8 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Checkpoint funcional atual:factory limitada de decoders sobre Debugtimelinee1a57d0c,
+Checkpoint funcional atual:OwnedInputChunk/orçamento misto sobre propriedades
+windowac546706/códigosdiagnóstico60060ecd/factorydecoders160a3107/Debugtimelinee1a57d0c,
 errosproviderdb273eba/UTF8exhaustivo81f72884/sondaMF50d4bf06,
 downmixf32le/OwnedMonoFrame isolados sobre admissãoRust406af964,
 adaptadorTSd7054621,
@@ -241,12 +242,21 @@ discard/4épocas confirmamnovel+descartadoexato,semcontaroverlap/preencherlacuna
 Debugwindow/discard/planner omiteépoca/ranges/contextoanterior;2testesnovos,
 semVAD/textdedup/resampler/clockreal.
 
-Rust126unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+OwnedInputChunk opcional copia sóapósreserva bytes+lease noMESMOpool/fonte,
+maxcaller1..65.536bytes;allocfalhável/capacidadeguardada/dropbytesanteslease.
+Inputnãoparseado contabilizaZEROamostras/duração,semfabricartempo;framevalidado
+reserva separadamente.5testes+1integração raw96+frame96 bloqueiammonoatérawDrop.
+Slice/filaoriginal nãoécontada por mágica;semreader/IPC/auth/tetoRSS/sessões/control.
+
+Modelo misto10miloperações raw+áudio16k/44.1k/48k/caps/drop/close recalculacustos
+retidos emcadaetapa;raw nunca criaamostras/tempo. Não é30minreal/RSS.
+
+Rust132unitários+5integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider
 fake lento:cap184bytes,copyseguinte recusada atéliberação,notificaçãocapacidade,
-cancelawait/close,48kmono recusado como16k.3testes,semengine/processo/pipe/captura/
+cancelawait/close,48kmono recusado como16k.4testesfuncionais+1diagnóstico,semengine/processo/pipe/captura/
 journal/timestampsreais. Clippy drop_non_drop corrigido,sem alterarproduto.
 
 Spikes SOMENTE testes:mono44.1/48k→16k,partições/tails/limites/cancel/erro real após
@@ -317,7 +327,8 @@ Não prova NV12/FPS/encode nem mudaH264produção;detalhes/refs no spike.
 
 1. Trabalho independente04:lifecycle/supervisão/replay e ligação host/TS futura
    do orçamento Rust; reader/ownership/cópiaMono/factorydecoders isolados já feitos.
-   Limitar input/instânciascontrol/sessões e integraçãohost ainda pendente;
+   OwnedInputChunk limita cópiaopcional,mas filaoriginal/instânciascontrol/sessões
+   e integraçãohost ainda pendentes;
    notificaçãoRust isolada feita,host não conectado.
    Não prometer tetoRSS,drain de worker ou recuperação por FutureDrop.
    Requisitos de transições/gaps/normalização/drain/reconexão estão no final de

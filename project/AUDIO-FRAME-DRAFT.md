@@ -206,3 +206,11 @@ após buffers próprios;frames handedoff conservam leases. Lowlevelnew/with_budg
 nãoadmitidos continuam disponíveis:host deve escolherconsistentemente factorygerida,
 nãomisturar/criarpoolsbypass. Isso não limita control-line decoders/chunks/sessões/RSS
 nem abre pipe/autentica nonce/implementa workerdrain.7testes+integrações sintéticas.
+
+OwnedInputChunk opcional agora reserva bytes+1lease noMESMOpool antescópia,
+maxcaller1..65.536bytes. Raw input nãoéframevalidado:ZEROamostras/duração,
+contabilizado porbytes/leases;validação/admissão de áudio continuam separadas.
+5testes+1integração cobremcaps/alloc/alias/close e raw+frame bloqueando copyMono.
+Não abre reader nem limita fila/sliceoriginal por mágica;host ainda precisa
+storageleitura/sufixos/chunks/control/sessões/deadlines/headroompara todascópias.
+Semauth/RSS/PCMlive,semusar reservasraw para inventarcréditos de áudio.

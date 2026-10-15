@@ -2,6 +2,7 @@
 use openscreen_speech_core::audio_decoder_v0::{AudioDecoderV0, ExpectedStream};
 use openscreen_speech_core::audio_frame_v0::{parse_header, HEADER_BYTES};
 use openscreen_speech_core::downmix::MonoMix;
+use openscreen_speech_core::input_chunk::OwnedInputChunk;
 use openscreen_speech_core::mono_frame::{downmix_owned_frame, MonoFrameError};
 use openscreen_speech_core::provider::{
     Cancellation, ProviderFuture, TranscriptResult, TranscriptionError, TranscriptionProvider,
@@ -36,15 +37,22 @@ fn frame(rate: u32) -> Vec<u8> {
     bytes
 }
 fn setup(bytes: &[u8]) -> (TransportBudget, AudioDecoderV0) {
+    setup_limits(bytes, 184, 2)
+}
+fn setup_limits(
+    bytes: &[u8],
+    byte_limit: u64,
+    in_flight: usize,
+) -> (TransportBudget, AudioDecoderV0) {
     let h = parse_header(&bytes[..80]).unwrap();
     let pool = TransportBudget::with_audio_time_limits(
         h.session_nonce,
         BudgetLimits {
-            global_bytes: 184,
-            source_bytes: 184,
+            global_bytes: byte_limit,
+            source_bytes: byte_limit,
             global_frames: 4,
             source_frames: 4,
-            in_flight: 2,
+            in_flight,
         },
         AudioTimeLimits {
             global_ns: 250_000,
@@ -121,6 +129,42 @@ impl TranscriptionProvider for Slow {
     fn provider_name(&self) -> &'static str {
         "synthetic-slow-no-engine"
     }
+}
+
+#[test]
+fn input_copy_and_decoded_audio_share_bytes_but_only_audio_has_sample_duration() {
+    let bytes = frame(16_000);
+    let header = parse_header(&bytes[..HEADER_BYTES]).unwrap();
+    let (pool, mut decoder) = setup_limits(&bytes, 192, 3);
+    let chunk = OwnedInputChunk::copy_from(
+        &pool,
+        header.session_nonce,
+        header.source,
+        &bytes,
+        bytes.len(),
+    )
+    .unwrap();
+    assert_eq!(pool.usage().unwrap().bytes, 96);
+    assert_eq!(pool.usage().unwrap().frames, 0);
+    assert_eq!(pool.audio_time_usage_ns().unwrap().0, 0);
+    feed(&mut decoder, chunk.bytes());
+    let decoded = decoder.take().unwrap();
+    assert_eq!(pool.usage().unwrap().bytes, 192);
+    assert_eq!(pool.usage().unwrap().frames, 2);
+    assert_eq!(pool.audio_time_usage_ns().unwrap().0, 125_000);
+    assert_eq!(
+        downmix_owned_frame(&decoded, &pool, MonoMix::AverageAll).unwrap_err(),
+        MonoFrameError::Budget(BudgetError::Capacity)
+    );
+    drop(chunk);
+    assert_eq!(pool.usage().unwrap().bytes, 96);
+    let mono = downmix_owned_frame(&decoded, &pool, MonoMix::AverageAll).unwrap();
+    assert_eq!(pool.usage().unwrap().bytes, 184);
+    assert_eq!(pool.audio_time_usage_ns().unwrap().0, 250_000);
+    assert_eq!(mono.samples(), &[-0.375, 0.75]);
+    drop((decoded, mono));
+    assert_eq!(pool.usage().unwrap(), Usage::default());
+    assert_eq!(pool.audio_time_usage_ns().unwrap().0, 0);
 }
 
 #[test]

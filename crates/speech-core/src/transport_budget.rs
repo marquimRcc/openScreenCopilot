@@ -26,6 +26,10 @@ pub struct Cost {
     pub bytes: u64,
     pub frames: u64,
 }
+enum ReservationTime {
+    Audio(Option<u64>),
+    UnparsedInput,
+}
 /// Optional summed audio-duration admission. Both source roles aggregate epochs.
 /// Nanoseconds are a conservative per-packet bound, not media/capture timestamps.
 #[derive(Debug, Clone, Copy)]
@@ -258,7 +262,7 @@ impl TransportBudget {
                 bytes: HEADER_BYTES as u64 + u64::from(header.payload_bytes),
                 frames: u64::from(header.frame_count),
             },
-            Some(audio_ns),
+            ReservationTime::Audio(Some(audio_ns)),
         )
     }
     pub fn usage(&self) -> Result<Usage, BudgetError> {
@@ -295,19 +299,39 @@ impl TransportBudget {
         source: Source,
         cost: Cost,
     ) -> Result<BufferLease, BudgetError> {
-        self.reserve(nonce, source, cost, None)
+        self.reserve(nonce, source, cost, ReservationTime::Audio(None))
+    }
+    // Raw bounded input is counted by bytes/lease, never invented sample frames
+    // or duration. Its destination audio frame must separately pass admission.
+    pub(crate) fn reserve_input(
+        &self,
+        nonce: [u8; 16],
+        source: Source,
+        bytes: u64,
+    ) -> Result<BufferLease, BudgetError> {
+        self.reserve(
+            nonce,
+            source,
+            Cost { bytes, frames: 0 },
+            ReservationTime::UnparsedInput,
+        )
     }
     fn reserve(
         &self,
         nonce: [u8; 16],
         source: Source,
         cost: Cost,
-        audio_ns: Option<u64>,
+        time: ReservationTime,
     ) -> Result<BufferLease, BudgetError> {
         if nonce != self.nonce {
             return Err(BudgetError::WrongScope);
         }
-        if cost.bytes == 0 || cost.frames == 0 {
+        let unparsed_input = matches!(time, ReservationTime::UnparsedInput);
+        let audio_ns = match time {
+            ReservationTime::Audio(duration) => duration,
+            ReservationTime::UnparsedInput => Some(0),
+        };
+        if cost.bytes == 0 || (cost.frames == 0) != unparsed_input {
             return Err(BudgetError::InvalidCost);
         }
         let mut state = self.state.lock().map_err(|_| BudgetError::Poisoned)?;
@@ -447,6 +471,119 @@ impl Drop for BufferLease {
 mod tests {
     use super::*;
     const NONCE: [u8; 16] = [1; 16];
+
+    #[test]
+    fn mixed_unparsed_input_and_audio_reservations_match_independent_duration_model() {
+        let pool = TransportBudget::with_audio_time_limits(
+            NONCE,
+            BudgetLimits {
+                global_bytes: 1024,
+                source_bytes: 768,
+                global_frames: 16,
+                source_frames: 12,
+                in_flight: 8,
+            },
+            AudioTimeLimits {
+                global_ns: 200_000,
+                source_ns: 150_000,
+            },
+        )
+        .unwrap();
+        let mut held: Vec<(usize, u64, u64, u64, BufferLease)> = Vec::new();
+        let mut seed = 0x9532u64;
+        let mut closed = false;
+        for step in 0..10_000 {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+            if step == 9000 {
+                pool.close().unwrap();
+                closed = true;
+            }
+            if seed.is_multiple_of(3) && !held.is_empty() {
+                let at = (seed as usize) % held.len();
+                drop(held.swap_remove(at));
+            } else {
+                let source = if seed & 8 == 0 {
+                    Source::System
+                } else {
+                    Source::Microphone
+                };
+                let at = index(source);
+                let raw = seed & 16 == 0;
+                let count = 1 + (seed >> 8) % 4;
+                let rate = [16_000u32, 44_100, 48_000][((seed >> 12) % 3) as usize];
+                let bytes = if raw {
+                    1 + (seed >> 16) % 128
+                } else {
+                    80 + count * 4
+                };
+                let frames = if raw { 0 } else { count };
+                let ns = if raw {
+                    0
+                } else {
+                    (frames * 1_000_000_000).div_ceil(u64::from(rate))
+                };
+                let sum = |source: Option<usize>| {
+                    held.iter()
+                        .filter(|entry| source.is_none_or(|wanted| wanted == entry.0))
+                        .fold((0u64, 0u64, 0u64), |a, e| (a.0 + e.1, a.1 + e.2, a.2 + e.3))
+                };
+                let total = sum(None);
+                let own = sum(Some(at));
+                let expected = if closed {
+                    Some(BudgetError::Closed)
+                } else if bytes > 768 || frames > 12 || ns > 150_000 {
+                    Some(BudgetError::CostTooLarge)
+                } else if held.len() >= 8
+                    || total.0 + bytes > 1024
+                    || own.0 + bytes > 768
+                    || total.1 + frames > 16
+                    || own.1 + frames > 12
+                    || total.2 + ns > 200_000
+                    || own.2 + ns > 150_000
+                {
+                    Some(BudgetError::Capacity)
+                } else {
+                    None
+                };
+                let actual = if raw {
+                    pool.reserve_input(NONCE, source, bytes)
+                } else {
+                    pool.try_reserve_frame(&audio_header(rate, count as u32, source, step))
+                };
+                match (actual, expected) {
+                    (Ok(lease), None) => held.push((at, bytes, frames, ns, lease)),
+                    (Err(actual), Some(expected)) => assert_eq!(actual, expected),
+                    _ => panic!("mixed admission mismatch at step {step}"),
+                }
+            }
+            let total_bytes: u64 = held.iter().map(|entry| entry.1).sum();
+            let total_frames: u64 = held.iter().map(|entry| entry.2).sum();
+            let source_ns: [u64; 2] = std::array::from_fn(|at| {
+                held.iter()
+                    .filter(|entry| entry.0 == at)
+                    .map(|entry| entry.3)
+                    .sum()
+            });
+            assert_eq!(
+                pool.usage().unwrap(),
+                Usage {
+                    bytes: total_bytes,
+                    frames: total_frames,
+                    leases: held.len(),
+                    sources: (0..2)
+                        .filter(|&at| held.iter().any(|entry| entry.0 == at))
+                        .count(),
+                }
+            );
+            assert_eq!(
+                pool.audio_time_usage_ns().unwrap(),
+                (source_ns.iter().sum(), source_ns)
+            );
+        }
+        drop(held);
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+        assert_eq!(pool.audio_time_usage_ns(), Ok((0, [0, 0])));
+    }
 
     #[test]
     fn managed_permit_corruption_and_revision_overflow_fail_closed() {

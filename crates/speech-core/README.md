@@ -308,14 +308,14 @@ module neither copies it nor sets a whole-process memory ceiling.
 ## In-memory component integration (synthetic only)
 
 `tests/core_pipeline.rs` joins the existing raw decoder, exact shared pool,
-OwnedMonoFrame, checked request and managed fake slow provider. Three tests keep
+OwnedMonoFrame, checked request and managed fake slow provider. Functional tests keep
 input+output at184 charged bytes, refuse the next copy until prior output drops,
 observe/await capacity change, and retain canceled work until provider completion.
 Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are126 unit +4 component-integration +8 resampling-spike tests, passing
+These are132 unit +5 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -403,3 +403,34 @@ supplied samples, without counting context overlap or filling unsupplied gaps.
 SpeechWindow/DiscardedRange/planner Debug omit epoch/source ranges and previous
 context; a second test keeps explicit metadata unchanged. These are synthetic
 metadata checks, not VAD, text deduplication, resampling or capture timestamps.
+
+## Optional owned input copy (not a reader)
+
+OwnedInputChunk copies a nonempty input slice only after reserving its bytes and
+one lease in the SAME session/source pool. Caller supplies max_bytes1..65,536
+(prototype hard cap, not wire negotiation). Allocation is fallible and refuses
+unexpected Vec length/capacity rather than silently undercounting it. Bytes are
+freed before the lease; close never revokes a handed owner. Debug contains size,
+not bytes. Five tests cover caps/alias independence, shared roles, scope/close,
+allocation refusal and accounting cleanup.
+
+Unparsed input carries ZERO sample frames/audio duration: metadata is not yet
+validated. A private explicit reservation kind separates it from audio admission;
+generic frame reservations still reject zero frames and missing required time.
+Only a separately validated audio frame contributes duration. The added component
+test holds96 raw+96 decoded bytes at a192-byte cap, refuses an88-byte mono copy,
+then succeeds after raw input Drop; no sample time is attributed to the raw copy.
+
+No pipe/read loop/IPC is opened. The original input slice/queue is caller-owned
+and NOT magically charged by this copy, and this type neither validates binding
+or JSON nor limits sessions/control decoders/OS allocations/RSS. A future host
+must read into bounded storage, retain only bounded suffixes, consistently share
+the pool and reserve headroom for raw+decoded+normalized ownership. Duration
+limits are not meaningful for raw unparsed bytes; those are guarded by bytes/
+leases and future external deadlines. Do not advertise whole-pipeline RAM or
+drain from these isolated owners, or create new pools to bypass capacity.
+A further deterministic10,000-operation model mixes raw input, validated audio
+at16k/44.1k/48k, source caps, byte/frame/time/lease limits, release and close.
+Every step recomputes expected live costs from retained owners and compares both
+usage and duration; raw leases never create audio time. This is bookkeeping,
+not a real30min capture/ASR memory measurement.
