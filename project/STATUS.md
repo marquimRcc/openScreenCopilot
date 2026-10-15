@@ -1189,6 +1189,18 @@ Arraste/Escape/borda física/DPI/fluxo completo seguem pendentes. Trabalho segur
 independente pode avançar; próximo reteste precisa recuperar controle confiável
 ou ajuda humana, não repetir cegamente a mesma ação. Sem mudança de produção.
 
+## Preparação03 — enumeração MF real sem captura
+
+Probe C++ isolado MSVC/SDK existentes passou exit0: H2642hardware/4all,
+HEVC2hardware/4all,AV1 2hardware/2all; S_OK nas seis consultas. Sem ActivateObject,
+encode, captura, registro local, driver/OS changes ou downloads. Não confundir
+ALL com software ou número de MFTs com GPUs. Evidência e fonte Microsoft em
+[WINDOWS-COMPRESSION-SPIKE.md](WINDOWS-COMPRESSION-SPIKE.md), log privado
+`.cache/mf-codec-enum.log`. AV1 é candidato, NÃO suporte comprovado/MP4 pronto.
+App continua H264 e pacote/runtime02Y inalterados; não rebuildar nativo ou repetir
+suíte por esta análise documental. GUI02Z agora tem autorização, mas input técnico
+continua bloqueado; app/coberturas encerrados. Nenhum aceite dispensado.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

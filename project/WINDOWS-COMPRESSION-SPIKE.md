@@ -29,6 +29,34 @@ Nenhum encoder, licença, binário ou configuração foi alterado por esta inspe
 
 ## Comparação proposta, ainda não executada
 
+### Enumeração MF isolada — 2026-10-15
+
+Probe C++ privado `.cache/mf-codec-enum.cpp/.exe`, MSVC19.44/SDK10.0.26100,
+CoInitializeEx MTA + MFStartup(NOSOCKET), MFTEnumEx categoria VIDEO_ENCODER,
+input NULL e output subtype explícito. Dois filtros separados: HARDWARE e ALL,
+sem SORTANDFILTER, sem registro local de MFT, ActivateObject, encode/capture,
+streams, downloads ou mudança de registro/driver. Release/CoTaskMemFree,
+MFShutdown/CoUninitialize; exit0. Log privado `.cache/mf-codec-enum.log`.
+
+| Subtype | HARDWARE | ALL | HRESULT |
+|---|---:|---:|---|
+| H.264 | 2 | 4 | S_OK nas duas consultas |
+| HEVC | 2 | 4 | S_OK nas duas consultas |
+| AV1 | 2 | 2 | S_OK nas duas consultas |
+
+Contagem é de objetos de ativação registrados, NÃO GPUs físicas, sessões simultâneas
+ou codecs homologados. ALL inclui hardware e não é contagem de software. A API
+documenta que enumeração retorna activation objects, e instanciar exige chamada
+separada; filtros/registro podem afetar resultados. Fonte primária:
+[Microsoft MFTEnumEx](https://learn.microsoft.com/en-us/windows/win32/api/mfapi/nf-mfapi-mftenumex).
+Não alterar chaves de hardware MFT para forçar disponibilidade.
+
+Resultado torna AV1 candidato ao spike, não prova ativação/input D3D11/NV12,
+encode/MP4/decode/editor, controle de qualidade, aceleração efetiva ou licença de
+redistribuição. Continua faltando prova com quadros sintéticos pelo caminho futuro
+e teste30min. Encoder atual do app permanece H.264; nenhum binário de produção,
+manifest/pacote ou fallback foi alterado. Etapa03 não foi concluída.
+
 1. Fixar fixtures próprias: texto pequeno/colorido estático, rolagem, cursor/movimento
    e conteúdo dinâmico sintético. Mesmos pixels, resolução, FPS e duração por perfil.
 2. Medir baseline H.264 atual: bytes/tempo, CPU/GPU, frames/PTS, sincronismo de
