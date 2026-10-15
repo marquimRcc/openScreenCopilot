@@ -245,6 +245,35 @@ mod tests {
     }
 
     #[test]
+    fn opaque_ids_are_byte_exact_and_utf8_byte_cap_is_inclusive() {
+        let session = "á".repeat(64);
+        let source = "ç".repeat(64);
+        let mut r = TimelineRegistry::new(
+            &session,
+            RegistryLimits {
+                sources: 2,
+                spans: 2,
+            },
+        )
+        .unwrap();
+        r.insert(&session, &source, SPAN).unwrap();
+        assert_eq!(r.map(&session, &source, RANGE), Ok((0, 1_000_000_000)));
+        assert_eq!(
+            r.map(&session.to_uppercase(), &source, RANGE),
+            Err(RegistryError::WrongSession)
+        );
+        assert_eq!(
+            r.map(&session, &source.to_uppercase(), RANGE),
+            Err(RegistryError::UnknownSource)
+        );
+        assert_eq!(
+            r.map(&session, &(source.clone() + "x"), RANGE),
+            Err(RegistryError::InvalidIdentity)
+        );
+        assert_eq!(r.len(), 1);
+    }
+
+    #[test]
     fn replay_is_idempotent_at_capacity_but_changed_map_is_not() {
         let mut r = registry(1, 1);
         assert_eq!(r.insert("session-A", "system", SPAN), Ok(Inserted::New));

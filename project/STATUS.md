@@ -1456,6 +1456,21 @@ NÃO AV1 gravado/eficiência/GPU física/compatibilidade container/editor/licen�
 WINDOWS-COMPRESSION-SPIKE atualizado; nenhum fonte/binário de produção alterado,
 app/pacote H26437d4a1c8 e aceites01–03 permanecem. Não repetir suíte/build app.
 
+## Preparação04 — fronteiras exatas adicionais — 2026-10-15
+
+Mais2testes Rust: orçamentoEXATO1.048.576scalars aceito em1/2/4/32canais e nas duas
+políticas, saída com count correto/sem padding/valores constantes, um frame acima
+do orçamento recusado. IDsUnicode com128bytesEXATOS aceitos; mudança de case não
+normalizada nem confundida com mesma sessão/fonte;129bytes recusados semmutação.
+23debug/23release/clippyalltargets-Dwarnings/fmt aprovados offline/locked.
+Sem mudança em implementação runtime, dependências, vendor ou pacote; reforço de
+testes do coreisolado, não teste de hardware/voz/ASR/memória de fila ao vivo.
+
+Inspeção adicional de rubato0.15 manifest/cache: licençaMIT HenrikEnquist2020 em
+LICENSE.txt, featuresFFTdefault/realfft+num-complex opcionais, log opcional;
+num-integer/num-traits diretos. Nenhum deles foi adicionado ao crate ou compilado
+nesta rodada; isso não substitui lock/avisos/licença transitiva de futura integração.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

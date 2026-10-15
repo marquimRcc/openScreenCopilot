@@ -163,6 +163,23 @@ mod tests {
     }
 
     #[test]
+    fn exact_scalar_and_frame_budget_is_accepted_without_extra_output() {
+        let audio = vec![0.125; MAX_INPUT_SCALARS];
+        for channels in [1u16, 2, 4, 32] {
+            let frames = MAX_INPUT_SCALARS / usize::from(channels);
+            for policy in [MonoMix::AverageAll, MonoMix::FirstStereoPair] {
+                let output = downmix_interleaved(&audio, channels, policy, frames).unwrap();
+                assert_eq!(output.len(), frames);
+                assert!(output.iter().all(|value| *value == 0.125));
+                assert_eq!(
+                    downmix_interleaved(&audio, channels, policy, frames - 1),
+                    Err(DownmixError::Capacity)
+                );
+            }
+        }
+    }
+
+    #[test]
     fn complete_frame_partitions_are_identical_without_padding_or_delay() {
         let audio: Vec<f32> = (0..300).map(|n| (n as f32 - 150.0) / 150.0).collect();
         for channels in [1u16, 2, 3, 4, 6] {
