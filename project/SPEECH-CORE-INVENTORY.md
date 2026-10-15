@@ -157,3 +157,21 @@ sequenciais/modelos em cache, rede externa bloqueada, shutdown aguardado: ambos
 0edições de palavra/WER0. Não é extração de provider, novo engine, ASRlive ou teste
 de precisão temporal/voz natural/múltiplos falantes/carga longa. Fala permanece
 privada/cache ignorado. Falhas/épocas/gaps de stream e integração continuam gates.
+
+## Interface provider adaptada isoladamente
+
+provider.rs agora adapta trait/tipos de transcription/provider.rs com mesma origem
+e MIT; std boxed Send futures substituem async_trait, sem dependência nova. PCM
+mono16k é emprestado, finite/budget1.048.576 conferidos; hint ASCII<=32bytes é sintaxe,
+não suporte a idioma ou autorização. Confidence finita0..1/textoUTF8<=65.536bytes
+validados na aceitação, não promessa de limitar memória interna do engine.
+Cancel perjob monotônico; wrapper espera provider terminar e descarta resultado
+cancelado. Teste provider adiado mantém Pending após cancel até conclusão explícita.
+Caller que abandona future/crash não tem drain garantido; implementação real do
+provider ainda precisa respeitar lifetime/worker encerrado antes de resolver.
+
+Sem engine/loadedmodel real/executor novo/host/journal/IPC; teste usa fake provider.
+A QA de voz anterior usou gerente HERDADO, NÃO esta interface Rust. Tipos sem
+session/source/epoch/PTS não são protocolo v1 ou finais persistidos; envelopes/mapas
+e sanitização de erros/model metadata continuam do futuro host. Não copiar engines
+globais, worker unbounded ou carregar segunda instância/modelo GPU por este port.

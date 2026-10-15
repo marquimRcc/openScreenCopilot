@@ -1,9 +1,10 @@
 # speech-core foundation (draft)
 
-Only sample-to-media timeline arithmetic, a bounded draft metadata registry and
-isolated interleaved-to-mono downmix are implemented. No audio capture, resampling,
-loudness normalization, VAD, model/provider, inference, sidecar, journal or UI integration.
-The original timeline code uses the repository MIT license. Downmix is adapted from
+Sample-to-media timeline arithmetic, a bounded draft metadata registry,
+interleaved-to-mono downmix and a provider INTERFACE are implemented. No audio capture,
+production resampling, loudness normalization, VAD, concrete model/provider, inference,
+sidecar, journal or UI integration.
+The original timeline code uses the repository MIT license. Downmix/provider boundary are adapted from
 meeting-copilot (Zackriya Solutions); its MIT notice is preserved in
 [LICENSE-MEETING-COPILOT](LICENSE-MEETING-COPILOT). Vendor remains immutable.
 
@@ -37,7 +38,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Twenty-three Rust tests now pass in debug/release, including the original shared fixture.
+Thirty-one Rust unit tests now pass in debug/release, including the original shared fixture.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -95,3 +96,28 @@ Run `cargo test --offline --locked --manifest-path crates/speech-core/Cargo.toml
 --test resample_spike -- --nocapture` for measured values. Existing23 unit tests
 remain separate from these seven experiment tests. No npm suite or app rebuild is
 needed for this test-only change; app runtime/package are unchanged.
+
+## Isolated provider boundary (no engine)
+
+`provider.rs` adapts only the meeting-copilot provider trait/common types, preserving
+the same MIT provenance. std boxed Send futures replace async_trait; no dependency
+or executor is added. PCM is borrowed rather than cloned into an owned Vec. The
+request accepts only declared mono16kHz,1..1,048,576 finite samples and an optional
+bounded ASCII language hint (syntax, NOT support). Finite amplitudes are not clipped.
+The host must prove actual rate, source/session/epoch and normalization separately.
+
+`Cancellation` is monotonic and per job. `transcribe_checked` checks before entry,
+awaits the provider even after cancel, then discards a canceled result; no early
+select/drop branch detaches inference. Concrete providers MUST complete only after
+their owned workers finish. A caller dropping the future or killing the process is
+NOT drain; an actual job owner/sidecar lifecycle is still absent. Tests use a delayed
+fake provider, not Whisper. This boundary is not wired to the voice QA above.
+
+Result acceptance checks UTF-8 text bytes<=65,536 and optional finite confidence
+0..1. Empty text/silence and partial flag are preserved. This is post-inference
+validation, not a bound on a third-party engine's internal allocations. Engine error
+strings/model metadata are internal domain data, not sanitized IPC messages; do not
+forward them blindly. No provider identity grants file/model/PCM permissions.
+Text has no timestamps/source IDs here: it cannot be exported as a durable final
+or mapped to MP4 without the host's validated envelope/maps and journal. Protocolv1,
+concrete providers, shared-engine coordination and live ASR remain pending.

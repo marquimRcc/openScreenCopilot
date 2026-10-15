@@ -142,7 +142,10 @@ preservada; sem resampling/VAD/provider/integração ou dispensa de aceites ante
 Experimento subsequente de resampling44.1/48k→16k existe SOMENTE nos testes Rust,
 com rubato0.15 dev-only, contagem/partições/cauda/impulsos/tons/cancelamento.
 Não é API de normalização nem ASR. Convenção de fase/atraso foi medida antes de
-qualquer integração; voz, falha parcial injetada e épocas live continuam pendentes.
+qualquer integração; uma fala sintética pt-BR e falha parcial injetada passaram,
+mas voz natural/diversa e épocas live continuam pendentes. Interface provider/tipos
+do vendor adaptados para Rust std, com PCM emprestado/guardas/cancel aguardado;
+nenhum engine/provider concreto, Tauri, sidecar ou ASR novo integrado.
 
 Pode iniciar depois de 01; integração depende de 02/03.
 

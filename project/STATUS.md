@@ -1567,6 +1567,27 @@ Isso NÃO é novo provider/ASRlive, qualificação de fala natural/timestamps/30
 reset contínuo de época ou journal. Runtime/pacote37d4a1c8/vendor preservados.
 TS/full/build app não repetidos sem mudança. Aceites anteriores continuam pendentes.
 
+## Preparação04 — interface provider sem engine
+
+provider.rs adapta somente trait/tipos de meeting-copilot transcription/provider.rs,
+com commit/copyright/MIT preservados. Futures std substituem async_trait sem dep
+nova; request empresta PCM mono16k finite/bounded, não copia Vec. Hint ASCII32bytes
+é sintaxe, não suporte. Resultado aceita textoUTF8 até65.536bytes/confidence0..1,
+preserva silêncio/partial; limite pós-provider não limita alocações internas engine.
+Cancel ArcAtomicBool porjob monotônico; wrapper aguarda provider resolver antes
+de descartar resultado. Fakeprovider Pending não resolve só porque cancel chegou.
+
+8testes focados passaram: entrada/taxa/finite/capacidade/hints, clone/thread cancel,
+UTF8/confidence/partial/silêncio, cancel antes admissão/latecancel/drain e erros.
+Sem provider concreto, modelo/engine/executor, IPC/sidecar/PCMlive ou journal.
+Caller que dropa future/crash ainda não tem drain; engines precisam contrato próprio.
+A fala pt-BR anterior passou no gerente HERDADO, não neste novo trait Rust.
+Sem timestamps ou identidade de fonte nesses tipos, não usar como protocolo v1
+ou final durável. Host/maps/ownership/sanitização/engine compartilhado são gates.
+Validação completa Rust31unitários+7spikes passou debug/release offline/locked,
+clippyalltargets-Dwarnings/fmt OK,docs53/diffcheck OK. Vendor/Cargo.lock semdiff.
+Sem fonte TS/app/nativa produção alterada, sem repetir full/build/pacote inalterados.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

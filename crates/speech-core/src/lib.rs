@@ -1,7 +1,8 @@
-//! Isolated draft sample timeline metadata and mono downmix, not an ASR runtime.
+//! Isolated timeline metadata, mono downmix and provider boundary, not an ASR runtime.
 //! The caller must scope spans to one session/source. No Tauri, hardware, or models.
 
 pub mod downmix;
+pub mod provider;
 pub mod timeline_registry;
 
 #[derive(Clone, Copy, Debug)]

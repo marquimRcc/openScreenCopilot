@@ -22,11 +22,14 @@ publicação upstream não são transferidos pela licença MIT.
 
 ## Extração isolada para speech-core — 2026-10-15
 
-[downmix.rs](crates/speech-core/src/downmix.rs) adapta somente
-`audio_processing.rs::audio_to_mono` do commit meeting-copilot fixado acima.
+[downmix.rs](crates/speech-core/src/downmix.rs) adapta
+`audio_processing.rs::audio_to_mono` e [provider.rs](crates/speech-core/src/provider.rs)
+adapta somente a interface/tipos de `audio/transcription/provider.rs` do commit fixado.
 Copyright Zackriya Solutions e [licença MIT completa](crates/speech-core/LICENSE-MEETING-COPILOT)
 preservados no crate. Alterações: política explícita de canais, guardas de tamanho/
-frames completos/valores finitos e acumulação f64. Sem resampler, engine, Tauri,
+frames completos/valores finitos e acumulação f64; provider usa futures std,
+PCM emprestado validado, limites consultivos e cancel cooperativo aguardado.
+Sem resampler de produção, engine, Tauri,
 hardware ou integração runtime; vendor não foi editado. Essa extração não certifica
 licenças/modelos/dependências de funções futuras. Detalhes no README do crate e STATUS.
 
