@@ -94,3 +94,26 @@ limite inerente que não foi ocultado por teste de voz ou fallback de canal.
 7testes novos,21totais Rust debug/release/clippy/fmt aprovados offline. Sem dependência
 nova/Cargo.lock alterado, downloads, runtime, captura, modelo ou extração VAD/provider.
 Etapa04 ainda NÃO concluída; qualificação de fala pt-BR/normalização segue pendente.
+
+## Próximo gate de resampling — inspeção, não implementação
+
+Cache local contém rubato0.15.0 e0.16.2; nenhum foi adicionado ao crate ou compilado
+por esta inspeção. Não aplicar exemplos da versão latest5.x ao snapshot0.15.
+No código0.15 (`src/lib.rs`), `output_delay` mede frames de SAÍDA;
+`process_partial_into_buffer` completa entrada com zeros e aloca buffer temporário.
+Padding para liberar filtro não é áudio capturado. Adaptador deverá distinguir
+amostras válidas, atraso e cauda; simples count×rate não basta para os timestamps.
+
+No snapshot, `pipeline.rs` acumula512frames e conserva resampler por fonte, mas
+`flush_remaining_audio` observado encerra VAD, não demonstra flush do buffer de
+resampling. O helper `resample_audio` devolve entrada original se resample falhar:
+não copiar esse fallback para um provider que exige mono16kHz. Processamento parcial
+seguido de falha também exige política explícita de lacuna/estado, não reenviar chunk
+original após já ter emitido parte convertida. Nada foi alterado no vendor.
+
+Antes de extrair resampler: teste impulso/tons48k→16k e44,1k→16k, partições variadas,
+final com1/511/512/513frames, input vazio/NaN/Inf, erro após saída parcial, pausa/época
+nova e cancelamento. Demonstrar count/atraso/cauda válidos e bounded buffers;
+nenhuma amostra da época anterior pode atravessar reset. Medir antialias/latência
+e correlacionar mapa origem→saída16k antes de VAD/provider. Não há resampler novo,
+dependency/API/MIT redistribuição auditada ou hipótese de falha corrigida por esta nota.

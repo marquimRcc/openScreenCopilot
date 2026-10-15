@@ -72,4 +72,21 @@ Não criar segundo encoder/download paralelo nem usar pós-compressão como prov
 de que a captura ao vivo já grava naquele perfil. UI simples poderá expor perfil
 depois das medições;300MB/30min não é teto. GIF/Compartilhar seguem no final.
 
+### Ativação AV1 isolada — 2026-10-15
+
+Nova sonda privada `.cache/mf-av1-activate.cpp/.exe/.log`, compilada com toolchain
+MSVC existente. MFTEnumEx(HARDWARE, VIDEO_ENCODER, AV1) retornou2objetos/S_OK.
+Cada ActivateObject(IMFTransform) passou com S_OK; GetStreamCount retornou1entrada/
+1saída e GetAttributes/MF_TRANSFORM_ASYNC retornou1/S_OK. Transform liberado e
+ShutdownObject passou nos dois; MFShutdown/CoUninitialize, exit0, processo próprio
+com guarda10s (não disparou). Não foi criado encoder alternativo no app.
+
+Zero amostras submetidas, sem SetInputType/SetOutputType, D3D manager, BeginStreaming,
+ProcessInput/ProcessOutput, captura ou arquivo de vídeo. Portanto só prova que esses
+componentes registrados puderam ser instanciados/consultados nesta máquina, não
+que aceitam NV12/D3D11/resolução/FPS ou produzem AV1 válido/eficiente. Não inferir
+GPU física ou capacidade simultânea de2objetos. Próximo gate ainda é negociação
+de mídia e encode/decode sintético pelo caminho escolhido, sem duplicar encoder,
+seguido de MP4/editor/licenças e30min. H.264 continua codec real do aplicativo.
+
 Estado e dependências em [ROADMAP.md](ROADMAP.md) e [STATUS.md](STATUS.md).

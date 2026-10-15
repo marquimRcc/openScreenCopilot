@@ -1436,6 +1436,26 @@ TS/runtime não alterados; não repetir full5167pass/pacote37d4a1c8 sem mudança
 docs53 OK, gitdiffcheck OK; texto MIT da cópia conferido igual ao original
 (somente normalização CRLF/LF/terminação na comparação), vendor/Cargo.lock semdiff.
 
+## Preparação independente03/04 — inspeções limitadas — 2026-10-15
+
+Após1776e78f enviado/árvore limpa, rubato0.15.0/0.16.2 encontrados no cache local,
+mas NÃO adicionados/compilados no core. Inspeção de0.15 confirmou output_delay em
+frames de saída e process_partial com padding/temporário. Snapshotpipeline acumula
+512frames; flush observado é VAD, não demonstra flush de cauda do resampler.
+resample_audio devolve original em erro: não reutilizar como16kHz. Gate documentado
+em SPEECH-CORE-INVENTORY. Docs.rs0.15 indisponível pela ferramenta; fontes usadas são
+código/README da versão EXATA no cache e snapshot, não API latest5.x da busca.
+Sem resampler novo/áudio/modelo/normalização runtime ou download.
+
+Sonda MF AV1 privada compilada .cache/build-mf-av1-activate.cmd e executada Hidden,
+guarda10s não disparou, exit0. HARDWAREenum2/S_OK; ambos ActivateObject S_OK,
+GetStreamCount1/1/S_OK, MF_TRANSFORM_ASYNC1/S_OK, ShutdownObject2/S_OK.
+Zero amostras/configuração de tipos/D3D/streaming/capture/encode. Logs privados
+.cache/mf-av1-activate{,-build,.stderr}.log. Isso prova instanciação de componentes,
+NÃO AV1 gravado/eficiência/GPU física/compatibilidade container/editor/licença.
+WINDOWS-COMPRESSION-SPIKE atualizado; nenhum fonte/binário de produção alterado,
+app/pacote H26437d4a1c8 e aceites01–03 permanecem. Não repetir suíte/build app.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
