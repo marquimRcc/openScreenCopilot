@@ -73,14 +73,25 @@ in the initial failing test. Keeping output intact measured peaks within one out
 frame of floor(source_position*16000/input_rate). No universal phase/latency claim;
 future live metadata must represent availability separately from media position.
 
-Four integration tests cover tails0/1/2/3/511/512/513/1023/1024/1025, partition
+Seven integration tests cover tails0/1/2/3/511/512/513/1023/1024/1025, partition
 invariance, late impulse, 1kHz passband, 12kHz rejection, invalid inputs and cancel
 after partial conversion (no successful/original output returned). New calls have
-independent filter history. This does not test continuous epoch reset, gap journal,
-injected resampler failure after partial output, provider/voice, realtime latency,
-all devices/rates or Linux. Those remain gates before production integration.
+independent filter history. An intentionally undersized output buffer triggers a
+real rubato error after two successful blocks; no original or partial successful
+result escapes. Cancel is also checked during EOF flush and before final delivery.
+The inclusive whole-file budget is tested, not just budget+1 rejection.
+This does not test continuous epoch reset, gap journal, streaming partial emissions,
+realtime latency, all devices/rates or Linux. Those remain integration gates.
+
+Private offline voice QA reused the repository's existing synthetic pt-BR fixture:
+44.1k and48k inputs through this exact test-local candidate each produced204,608
+samples (12.788s), then the existing CPU Whisper manager transcribed both with
+0word edits/24reference words. One manager, sequential requests, cached models,
+external network forbidden and helper shutdown awaited. No microphone/desktop/
+meeting captured, no new provider or live ASR integration. This single synthetic
+sentence does not qualify diverse speakers, timing accuracy or thirty-minute ASR.
 
 Run `cargo test --offline --locked --manifest-path crates/speech-core/Cargo.toml
 --test resample_spike -- --nocapture` for measured values. Existing23 unit tests
-remain separate from these four experiment tests. No npm suite or app rebuild is
+remain separate from these seven experiment tests. No npm suite or app rebuild is
 needed for this test-only change; app runtime/package are unchanged.

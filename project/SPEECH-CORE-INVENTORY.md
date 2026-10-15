@@ -143,3 +143,17 @@ Cancel antes/depois de blocos parciais retorna erro sem original rotulado16k;
 freshcall não retém filtro anterior. Reset/épocas contínuos, lacunas, falha nativa
 injetada após saída parcial, fila/journal/provider/VAD e fala pt-BR ficam pendentes.
 Gates01–03 e integração04/05 não foram dispensados. App H264/pacote37d4a1c8 intactos.
+
+Reforço subsequente: buffer de saída propositalmente insuficiente na terceira
+chamada provoca erro REAL do rubato após2blocos válidos; resultado é erro, nunca
+original como16k ou sucesso parcial. Cancel durante flush e no check final descarta
+resultado. Teto exato1.048.576floats também passou.7spikes+23unitários agora.
+
+QA privada reutilizou fala sintética pt-BR já existente (SAPI Daniel, referência
+24palavras), sem gerar/escutar som ou capturar hardware. FFmpeg compartilhado
+decodificou somente essa fixture para mono44.1/48k; candidato Rust real produziu
+204.608amostras16k/12,788s de cada. Gerente Whisper CPU HERDADO único, requests
+sequenciais/modelos em cache, rede externa bloqueada, shutdown aguardado: ambos
+0edições de palavra/WER0. Não é extração de provider, novo engine, ASRlive ou teste
+de precisão temporal/voz natural/múltiplos falantes/carga longa. Fala permanece
+privada/cache ignorado. Falhas/épocas/gaps de stream e integração continuam gates.

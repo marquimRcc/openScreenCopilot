@@ -13,7 +13,7 @@ const MAX_INPUT: usize = 1_048_576;
 const OUTPUT_RATE: usize = 16_000;
 
 #[derive(Debug, PartialEq, Eq)]
-enum Error {
+pub(crate) enum Error {
     Rate,
     Input,
     Partition,
@@ -23,20 +23,30 @@ enum Error {
 }
 
 #[derive(Debug)]
-struct Report {
-    samples: Vec<f32>,
-    delay_out: usize,
+pub(crate) struct Report {
+    pub(crate) samples: Vec<f32>,
+    pub(crate) delay_out: usize,
     blocks: usize,
     flush_blocks: usize,
     max_pending: usize,
 }
 
 // Deliberately test-local: no lib exports, capture callbacks, queue, IPC or file IO.
-fn convert_file(
+pub(crate) fn convert_file(
+    input: &[f32],
+    rate: usize,
+    partitions: &[usize],
+    canceled: impl FnMut(usize) -> bool,
+) -> Result<Report, Error> {
+    convert_file_with_fault(input, rate, partitions, canceled, None)
+}
+
+fn convert_file_with_fault(
     input: &[f32],
     rate: usize,
     partitions: &[usize],
     mut canceled: impl FnMut(usize) -> bool,
+    undersized_output_at: Option<usize>,
 ) -> Result<Report, Error> {
     if !matches!(rate, 44_100 | 48_000) {
         return Err(Error::Rate);
@@ -50,7 +60,7 @@ fn convert_file(
     if canceled(0) {
         return Err(Error::Canceled);
     }
-    let expected = input.len() * OUTPUT_RATE / rate;
+    let expected = (input.len() as u64 * OUTPUT_RATE as u64 / rate as u64) as usize;
     let mut resampler = SincFixedIn::<f32>::new(
         OUTPUT_RATE as f64 / rate as f64,
         1.0,
@@ -81,6 +91,11 @@ fn convert_file(
     let mut process = |block: &[f32; BLOCK], report: &mut Report| -> Result<(), Error> {
         if canceled(report.blocks) {
             return Err(Error::Canceled);
+        }
+        // Fault injection only in this experiment: force rubato's REAL
+        // InsufficientOutputBuffer error after some earlier blocks succeeded.
+        if undersized_output_at == Some(report.blocks) {
+            output[0].clear();
         }
         let (read, written) = resampler
             .process_into_buffer(&[block.as_slice()], &mut output, None)
@@ -251,4 +266,60 @@ fn malformed_inputs_and_cancel_never_return_original_as_16k() {
         convert_file(&[], 16_000, &[1], |_| false).unwrap_err(),
         Error::Rate
     );
+}
+
+#[test]
+fn actual_buffer_failure_after_partial_conversion_is_not_success_or_fallback() {
+    for rate in [44_100, 48_000] {
+        let input = tone(rate, 1000.0, 4096);
+        let seen = std::cell::Cell::new(0);
+        let result = convert_file_with_fault(
+            &input,
+            rate,
+            &[511, 513],
+            |blocks| {
+                seen.set(blocks);
+                false
+            },
+            Some(2),
+        );
+        assert_eq!(result.unwrap_err(), Error::Resampler);
+        assert_eq!(
+            seen.get(),
+            2,
+            "two blocks must succeed before the real error"
+        );
+        let retry = convert_file(&input, rate, &[512], |_| false).unwrap();
+        let fresh = convert_file(&input, rate, &[1], |_| false).unwrap();
+        assert_eq!(retry.samples, fresh.samples);
+        assert_eq!(retry.samples.len(), input.len() * OUTPUT_RATE / rate);
+    }
+}
+
+#[test]
+fn cancellation_during_flush_and_after_final_block_drops_complete_file() {
+    for rate in [44_100, 48_000] {
+        let input = tone(rate, 1000.0, 512);
+        let report = convert_file(&input, rate, &[512], |_| false).unwrap();
+        assert_eq!(report.flush_blocks, 1);
+        // After one data block, flush is still necessary. Then also cancel at
+        // final commit check, after all output exists but before success returns.
+        for stop_after in [1, report.blocks] {
+            assert_eq!(
+                convert_file(&input, rate, &[512], |n| n >= stop_after).unwrap_err(),
+                Error::Canceled
+            );
+        }
+    }
+}
+
+#[test]
+fn inclusive_file_budget_keeps_exact_count_and_bounded_scratch() {
+    for rate in [44_100, 48_000] {
+        let report = convert_file(&vec![0.25; MAX_INPUT], rate, &[usize::MAX], |_| false).unwrap();
+        assert_eq!(report.samples.len(), MAX_INPUT * OUTPUT_RATE / rate);
+        assert_eq!(report.max_pending, BLOCK);
+        assert!(report.flush_blocks <= 4);
+        assert!((report.samples[1000] - 0.25).abs() < 0.001);
+    }
 }

@@ -1542,6 +1542,31 @@ Sem mudança TS/runtime/app/native produção. Não repetir full5167pass/typeche
 Vite/pacote37d4a1c8 por teste Rust isolado; nenhum install/relançamento/GUI novo.
 Gates01–03/04/05 preservados, estimativaGIF/Compartilhar continuam no final.
 
+## Preparação04 — falha parcial/flush e voz sintética no caminho existente
+
+Após348a0d4f enviado:3spikes extras, agora7experimentais+23unitários aprovados
+debug/release offline/locked, clippyalltargets-Dwarnings/fmt OK. Buffer reduzido
+propositalmente na terceira chamada causa erro REAL do rubato após2blocos; retorna
+erro sem fallback original/sucesso parcial. Cancel durante flush e após bloco final
+descarta resultado; teto inclusivo1.048.576floats aceito com count/scratch corretos.
+Helpers permanecem test-local, não API pública do crate nem runtime Electron.
+
+QA real isolada da fala sintética SAPI Daniel já existente: decode FFmpeg para
+mono44.1/48k, próprio candidato Rust test-local converteu563.952/613.826amostras
+para204.608amostras16k (12,788s). Gerente STT existente único/WhisperCPU, dois
+requests sequenciais, modelo em cache; rede externa bloqueada (somente loopback).
+Ambas transcrições24palavras referência/0edições/WER0, ~3,2/3,1s inferência. Recibo
+.cache/resample-voice-qa-9a62ff42-db23-4103-8802-fa476b3f5e70/metrics.json PASS,
+processo Electron oculto exit0/shutdown aguardado. Nenhum outro helper STT estava
+ativo na checagem anterior; não interrompeu app usuário/gravação/edição.
+
+Harness privado importou candidato exato dos testes, sem copiar para produção;
+criou só arquivos próprios exclusivos em.cache, nenhuma fonte substituída. Não
+abre GUI, microfone, endpoint ou captura desktop; não há upload/modeldownload.
+Isso NÃO é novo provider/ASRlive, qualificação de fala natural/timestamps/30min,
+reset contínuo de época ou journal. Runtime/pacote37d4a1c8/vendor preservados.
+TS/full/build app não repetidos sem mudança. Aceites anteriores continuam pendentes.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
