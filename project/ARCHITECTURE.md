@@ -56,7 +56,10 @@ Origem principal: `vendor/meeting-copilot/frontend/src-tauri/src/audio/`.
 Primeiro mapear os vínculos com AppHandle, eventos Tauri, estado global, modelos
 e persistência. Extrair por testes de contrato, não copiando o aplicativo inteiro.
 
-Estrutura futura, ainda não criada:
+Estrutura alvo: speech-core existe somente como biblioteca isolada de aritmética
+v0/testes compartilhados; normalização/VAD/providers/sidecar ainda não implementados.
+Os demais diretórios abaixo permanecem propostos (electron/copilot contém apenas
+o módulo de aritmética TypeScript isolado, sem SessionCoordinator/runtime ASR):
 
 ```text
 crates/speech-core/          áudio normalizado, VAD, segmentador, providers, sessão

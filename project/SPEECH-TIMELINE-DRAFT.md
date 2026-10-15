@@ -96,7 +96,19 @@ intervalo contido em exatamente um trecho sem interseção ambígua e não acumu
 arredondamento por chunk. Taxa1–192000 é guarda provisória de aritmética, não
 negociação ou declaração de suporte a hardware. Não valida registro global de
 sessões/mapas, formato de transporte ou autorização; o caller precisa isolar uma
-sessão/fonte. Ainda faltam validador Rust, propriedades, parser binário e interoperabilidade.
+sessão/fonte. A versão Rust isolada em
+[speech-core](../crates/speech-core/src/lib.rs) agora executa as mesmas oito fixtures
+JSON, usando u128 intermediário e saída u64 verificada. Sete testes Rust incluem
+fixtures/overflow/canonicalidade/ambiguidade/partições em sete taxas e contadores
+próximos de u64::MAX, aprovados debug/release. Isso prova equivalência da
+aritmética nessas fixtures, NÃO transporte/IPC/ASR ou validação global de mapas.
+Ainda faltam propriedades amplas, parser binário e interoperabilidade de processos.
+
+O crate tem workspace/lock próprios, sem alterar compositor/workspace/vendor;
+biblioteca usa apenas std. serde_json1.0.150 é dependência de TESTES, resolvida
+offline de cache existente. Nenhuma função meeting-copilot foi copiada nesta base
+aritmética original; futura extração ainda precisa manter licença/proveniência.
+Não há build.rs, Tauri, ONNX, Whisper, dispositivos, inferência ou sidecar executável.
 
 Antes de congelar v1: escolher layout/limites binários, produzir âncoras no capture
 backend sem bloquear MP4, provar flush/resampling sob partições, implementar journal

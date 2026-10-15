@@ -1201,6 +1201,29 @@ App continua H264 e pacote/runtime02Y inalterados; não rebuildar nativo ou repe
 suíte por esta análise documental. GUI02Z agora tem autorização, mas input técnico
 continua bloqueado; app/coberturas encerrados. Nenhum aceite dispensado.
 
+## Preparação04 — aritmética Rust isolada validada
+
+Novo crates/speech-core, workspace/lock próprios sem alterar compositor/vendor.
+Biblioteca std-only, sem build.rs/Tauri/modelos/hardware/provider/sidecar/ASR.
+Implementação original do mapa v0, não código extraído do meeting-copilot.
+u128 intermediário e conversão u64 verificada; strings canônicas, épocas,
+rate1–192000 provisório, intervalos/gaps/ambiguidade como versão TS. Caller deve
+isolar sessão/fonte; ainda não existe validador global/transport/wire.
+
+Rust/cargo1.98.1 estáveis já instalados, sem atualizar toolchain; cargo test offline
+passou7testes debug e7release (um verifica as mesmas8fixturesJSON), clippy all-targets -Dwarnings
+passou. serde_json1.0.150 é somente dev-dependency/cache existente; runtime sóstd.
+Sem download ou build de vendor/modelo/app. Saídas em.cache/speech-core-target.
+Focados TS35pass, ambos typechecks, lint26 herdados,i18n15/998chaves,docs53 e
+check de pacote aprovados:23payloads/entry/main-C-zXdXuj/preload/27rendererassets
+SHA iguais ao dist/origem. App/runtime/pacote02Y não alterados nem relançados;
+não reconstruir compositor/WGC por biblioteca isolada que não é ligada a eles.
+Contadores próximos de u64::MAX e partições variadas em sete taxas testados.
+Workspace Rust novo não é exercitado automaticamente pela CI/npm do compositor;
+README registra comandos explícitos offline/locked, sem alegar cobertura CI.
+suíte TS completa anterior5164pass não precisa repetir sem alteração TS/runtime.
+Aceites04/05 não concluídos por port da aritmética.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
