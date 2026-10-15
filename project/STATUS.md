@@ -1347,6 +1347,30 @@ Guardas antigas de previsão semanal foram superadas pelos limites reais novos,
 sem consumo de reset. Isso confirma configuração salva, não prova ainda uma wake
 futura após renovação. Continuidade e limiares humanos não foram relaxados.
 
+## Preparação04 — registro limitado de mapas — 2026-10-15
+
+Após37d4a1c8 (correção Record enviada), crate Rust independente ganhou
+timeline_registry.rs. Biblioteca std-only, sem dependência nova, Cargo.lock intacto,
+vendor/compositor imutáveis. UMA sessão por instância, fonte exata, queries isoladas;
+append valida intervalo inteiro/overflow, ordem amostras/épocas/mídia e taxa fixa
+por época. Época nova permite reset contador/taxa, nunca reset mídia. Replay exato
+não consome capacidade (mesmo cheio), replay conflitante falha. Inserts inválidos
+não reservam fonte nem removem mapas antigos. Limites positivos configuráveis com
+tetos provisórios64fontes/4096trechos/128bytesID; capacidade falha explicitamente.
+
+14debug+14release, clippyalltargets-Dwarnings e fmt aprovados offline/locked,
+Rust/cargo1.98.1, CARGO_TARGET_DIR=.cache/speech-core-target. 7testes novos cobrem
+sessão/fonte, replay/capacidade, fronteiras/gaps/pausa, overlap/ordem/taxa, reset
+época, metadados inválidos/atomicidade e limites UTF-8/configuração. Originais incluem
+as8fixturesTS compartilhadas. Não repetir fullTS5167pass já aprovado: nenhuma
+alteração TS/runtime neste incremento. Pacote app continua37d4a1c8; crate não é
+dependência do compositor/app nem incluído como novo runtime.
+
+NÃO é registro global do host, parser wire, autorização, dedup de áudio/sequence,
+journal/recuperação ou normalização/ASR/sidecar. Estado se perde ao descartar objeto.
+Limites não prometem duração/gravação longa/memória de inferência. Sem novo download,
+buildvendor, modelo, áudio capturado, Tauri ou FFI. Gates01–03/04 permanecem.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

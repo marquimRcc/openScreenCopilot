@@ -110,6 +110,36 @@ offline de cache existente. Nenhuma função meeting-copilot foi copiada nesta b
 aritmética original; futura extração ainda precisa manter licença/proveniência.
 Não há build.rs, Tauri, ONNX, Whisper, dispositivos, inferência ou sidecar executável.
 
+## Registro limitado isolado (preparação, não runtime)
+
+[timeline_registry.rs](../crates/speech-core/src/timeline_registry.rs) acrescenta
+registro de metadados para UMA sessão, fontes identificadas por igualdade exata
+(sem normalizar/case-folding) e intervalos append-only. Consultas/insert de outra
+sessão falham; fontes sistema/mic com mesmos contadores não se misturam. Isso não
+autentica o caller nem concede acesso a PCM: IDs vindos do renderer não se tornam
+confiáveis por passar no registro.
+
+Insert valida aritmética/overflow do trecho inteiro antes de copiar dados. Rejeita
+overlap de amostras, época regressiva, taxa alterada dentro da mesma época e tempo
+de mídia anterior ao fim da fonte. Época nova permite reset de contador/taxa, mas
+não de mídia. Gaps são permitidos sem inventar áudio; uma query atravessando gap
+continua falhando na aritmética existente. Fontes diferentes podem se sobrepor
+em mídia, o que não é duplicata.
+
+Mesmo source/epoch/start com conteúdo idêntico é replay sem nova capacidade;
+conteúdo diferente falha. Isso NÃO é deduplicação de frames/sequence/resultados ASR.
+Limites configuráveis positivos têm tetos provisórios64fontes/4096trechos e IDs
+128bytesUTF-8. Todos são guardas deste protótipo, não créditos wire negociados,
+suporte a hardware ou promessa de duração. Atingir limite retorna erro, sem evict,
+sem apagar mapas antigos e sem reservar fonte por um insert rejeitado. Sem journal,
+persistência, retry automático, locks globais ou registro de sessões do app.
+
+14testes Rust debug/release (7originais+7registro), clippyalltargets-Dwarnings e fmt
+passaram offline/locked. Não há contraparte de registro TS/fixture wire ou import
+runtime. A suíte TS e o pacote não mudam por esta biblioteca independente; não
+reconstruir compositor como se dependesse dela. Normalização/VAD/provider e âncoras
+do backend continuam pendentes antes de qualquer PCM ao vivo.
+
 Antes de congelar v1: escolher layout/limites binários, produzir âncoras no capture
 backend sem bloquear MP4, provar flush/resampling sob partições, implementar journal
 limitado e executar fixture idêntica nos dois lados. Depois PCM de arquivo/pt-BR,

@@ -1,6 +1,8 @@
 //! Draft v0 sample arithmetic only, not a capture/ASR runtime or wire parser.
 //! The caller must scope spans to one session/source. No Tauri, hardware, or models.
 
+pub mod timeline_registry;
+
 #[derive(Clone, Copy, Debug)]
 pub struct SourceSpan<'a> {
     pub epoch: u64,

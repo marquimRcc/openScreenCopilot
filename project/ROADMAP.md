@@ -134,6 +134,9 @@ extração Rust, protocolo congelado ou relógio já emitido pela captura.
 Preparação adicional: crate speech-core isolado usa std e executa a mesma fixture
 aritmética JSON do TS, com testes/overflow verificado. Não é extração de VAD/provider
 do vendor nem sidecar/ASR implementado; integração e aceites continuam pendentes.
+Registro Rust limitado de mapas por sessão/fonte agora valida ordem/replay/épocas,
+sem PCM/persistência/autorização e sem import runtime. Tetos são provisórios do
+protótipo, não negociação v1. Ver SPEECH-TIMELINE-DRAFT; normalização/provider pendem.
 
 Pode iniciar depois de 01; integração depende de 02/03.
 

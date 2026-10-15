@@ -1,6 +1,7 @@
 # speech-core foundation (draft)
 
-Only sample-to-media timeline arithmetic is implemented. No audio capture,
+Only sample-to-media timeline arithmetic and a bounded draft metadata registry
+are implemented. No audio capture,
 normalization, VAD, model/provider, inference, sidecar, journal or UI integration.
 This original code does not copy DSP/provider code from the frozen vendor snapshot.
 MIT license from the repository applies; future extractions must retain provenance.
@@ -22,6 +23,16 @@ No new toolchain was installed. Root npm/Vitest and compositor CI do not automat
 exercise this separate workspace; explicit Rust tests are required until CI is wired.
 
 Caller must isolate a single session/source and supply trusted span metadata. The
-function is not a wire parser, global map validator, owner check or PCM permission.
+raw mapping function is not a wire parser, global map validator, owner check or PCM permission.
 Bounds/rate policy are draftv0, not a supported-hardware declaration. Protocolv1
 remains unfrozen. See [timeline draft](../../project/SPEECH-TIMELINE-DRAFT.md).
+
+`timeline_registry::TimelineRegistry` is optional, pure metadata scoped to one
+session and exact source IDs. It validates append order, non-overlap, media order,
+fixed rate within an epoch and exact idempotent replay. Invalid inserts do not
+consume capacity. The caller chooses smaller positive limits within prototype
+hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is an
+explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
+limit, recording-duration guarantee, authorization service, journal or recovery.
+No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
+Fourteen Rust tests now pass in debug/release, including the original shared fixture.
