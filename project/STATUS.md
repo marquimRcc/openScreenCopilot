@@ -23,7 +23,9 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
   wake pode antecipar, garantir tentativa posterior à guarda, nunca DAILY isolado.
 - Renovação REAL14:49:47UTC15/10 confirmou5h2%/semanal16%, allowedtrue, superando
   notas históricas90–100%/timestamp antigo. Watchdog1min ACTIVE restaurado/conferido.
-  Última consulta17:06:09UTC:5h86%/semanal29%,allowedtrue; não é pausa89.
+  PAUSA89 real17:07:54UTC15/10:5h89%/semanal30%,allowedtrue. Não iniciar código/
+  testes/build/GUI até2026-10-15T18:34:42Z (15:34:42Brasília), reset1792093782+300,
+  E saldo real confirmado. Nenhum reset/crédito consumido. Checkpoint código enviado.
   Consultar novamente antes de iniciar trabalho, não usar esse snapshot como saldo vivo.
 - Estimativa do GIF e Compartilhar SOMENTE após TODO restante roadmap.
   Base existente preservada, integração incompleta não ativada.
@@ -115,6 +117,11 @@ extraResources não são arquivos internos do asar.
 Última validação TS completa:367arquivos/5211pass/5skip/461,94s,
 Node22.22.1/2workers,exit0/sem signal,fim2026-10-15T16:38:34Z.
 Recibo/log.cache/audio-decoder-full.{json,log}.41focadosTS do parser/decoder passaram.
+Conferência auxiliar posterior de check-docs.test.mjs/speech-core-ci.test.mjs foi
+iniciada em88% com `node --test`, runner INCORRETO para testes Vitest, terminou
+exit1 após a consulta89. Não é regressão de produto/suíte completa invalidada.
+Não rerodou após limiar; corrigir somente essa execução focada com Vitest na retomada.
+check-docs.mjs standalone passou55files antes da pausa; testes Rust67+8 aprovados.
 Ambos tsc,lint0erros/26avisos herdados,i18n15/1000chaves,docs55/diffcheck OK.
 Anterior7ee332dd:366arquivos/5201pass/5skip/382,70s,audio-frame-full.
 Anterior33094a84:365arquivos/5170pass/5skip/383,64s,recibo speech-core-ci-full.
