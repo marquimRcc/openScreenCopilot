@@ -1471,6 +1471,22 @@ LICENSE.txt, featuresFFTdefault/realfft+num-complex opcionais, log opcional;
 num-integer/num-traits diretos. Nenhum deles foi adicionado ao crate ou compilado
 nesta rodada; isso não substitui lock/avisos/licença transitiva de futura integração.
 
+## Checkpoint preventivo próximo ao limite — 2026-10-15T13:23:45Z
+
+HEADe490ec89 enviado, árvore limpa, apósd6ba3626 e1776e78f. Nenhuma operação
+pendente/fixture/cobertura ativa. Consulta real5h88%/semanal14%,allowedtrue;
+NÃO alegar89% atingido. Preservar margem para checkpoint e não começar nova
+operação longa. Limiar humano permanece89%/95%, sem compra/consumo de resets.
+
+resetsAt primário retornado1792075364 (13:22:44UTC),+5min=13:27:44UTC
+(10:27:44Brasília). Guardar esse mínimo na retomada e CONSULTAR limites reais
+depois; horário passado do resetsAt isolado não prova saldo já renovado. Watchdog
+minutely deve garantir tentativa posterior àguarda se scheduler antecipar; sem
+DAILYisolado, sem loops deespera/polling, sem pausar incrementos depois da retomada.
+Se dados reais ainda estiverem no limiar, preservar checkpoint e reagendar conforme
+novo reset aplicável, sem alegar renovação. GUI continua aguardando resposta sobre
+reservar tela sem apphumano na frente, não reabrir fixtures em cada wake.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
