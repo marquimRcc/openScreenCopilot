@@ -236,7 +236,12 @@ diagnostic_code() de erroprovider/managed retorna categoria localestática,
 semstr/caminho/contadores/idioma;2testestodasvariantes/delegação. Não éwirev1,
 UItraduzida/telemetria/consentimento nem sanitizaDisplay/camposexplícitos.
 
-Rust124unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+Propriedadeswindowplanner max1..64/todossobreposições/fragmentos/gaps/finish/
+discard/4épocas confirmamnovel+descartadoexato,semcontaroverlap/preencherlacuna.
+Debugwindow/discard/planner omiteépoca/ranges/contextoanterior;2testesnovos,
+semVAD/textdedup/resampler/clockreal.
+
+Rust126unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider

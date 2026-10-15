@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are124 unit +4 component-integration +8 resampling-spike tests, passing
+These are126 unit +4 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -395,3 +395,11 @@ category. No detail, counter, path or language is interpolated; checked error
 details and explicit Display remain separate data-bearing APIs. Two tests cover
 all categories and provider delegation. These strings are not localized UI,
 negotiated/frozen wire codes, telemetry or consent to transmit diagnostics.
+
+Window-planner properties additionally exercise every max_frames1..64 and each
+allowed overlap, varied/empty fragments, finish/discard, explicit gaps and four
+epochs. Issued novel ownership plus explicit discard partitions exactly the
+supplied samples, without counting context overlap or filling unsupplied gaps.
+SpeechWindow/DiscardedRange/planner Debug omit epoch/source ranges and previous
+context; a second test keeps explicit metadata unchanged. These are synthetic
+metadata checks, not VAD, text deduplication, resampling or capture timestamps.

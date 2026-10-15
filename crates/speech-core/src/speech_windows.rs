@@ -18,7 +18,7 @@ pub enum EndReason {
     Discontinuity,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct SpeechWindow {
     pub epoch: u64,
     /// Provider context, including explicit overlap (half-open mono16k frames).
@@ -30,12 +30,24 @@ pub struct SpeechWindow {
     pub novel_end: u64,
     pub reason: EndReason,
 }
+impl std::fmt::Debug for SpeechWindow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SpeechWindow")
+            .field("reason", &self.reason)
+            .finish_non_exhaustive()
+    }
+}
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct DiscardedRange {
     pub epoch: u64,
     pub start: u64,
     pub end: u64,
+}
+impl std::fmt::Debug for DiscardedRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DiscardedRange").finish_non_exhaustive()
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -47,7 +59,7 @@ pub enum WindowError {
     AdvanceTooLarge,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 struct Active {
     epoch: u64,
     context_start: u64,
@@ -55,11 +67,19 @@ struct Active {
     committed_end: u64,
 }
 
-#[derive(Debug)]
 pub struct SpeechWindowPlanner {
     limits: WindowLimits,
     active: Option<Active>,
     last_end: Option<(u64, u64)>,
+}
+impl std::fmt::Debug for SpeechWindowPlanner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SpeechWindowPlanner")
+            .field("limits", &self.limits)
+            .field("active", &self.active.is_some())
+            .field("has_previous_end", &self.last_end.is_some())
+            .finish_non_exhaustive()
+    }
 }
 
 impl SpeechWindowPlanner {
@@ -174,6 +194,100 @@ impl SpeechWindowPlanner {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn window_diagnostics_do_not_echo_epoch_ranges_or_previous_context() {
+        let mut planner = SpeechWindowPlanner::new(WindowLimits {
+            max_frames: 10,
+            overlap_frames: 2,
+        })
+        .unwrap();
+        planner.begin(54321, 345678).unwrap();
+        let active_debug = format!("{planner:?}");
+        planner.advance(345681).unwrap();
+        let window = planner.finish(true).unwrap().unwrap();
+        let last_debug = format!("{planner:?}");
+        planner.begin(54322, 345690).unwrap();
+        planner.advance(345693).unwrap();
+        let discarded = planner.discard().unwrap().unwrap();
+        for debug in [
+            active_debug,
+            last_debug,
+            format!("{window:?}"),
+            format!("{discarded:?}"),
+            format!("{planner:?}"),
+        ] {
+            for secret in ["54321", "54322", "345678", "345681", "345690", "345693"] {
+                assert!(!debug.contains(secret));
+            }
+        }
+        assert_eq!(
+            (window.epoch, window.novel_start, window.novel_end),
+            (54321, 345678, 345681)
+        );
+        assert_eq!(
+            (discarded.epoch, discarded.start, discarded.end),
+            (54322, 345690, 345693)
+        );
+    }
+    #[test]
+    fn varied_limits_fragments_finish_and_discard_partition_only_novel_ownership() {
+        for max_frames in 1..=64u64 {
+            for overlap_frames in 0..=max_frames / 4 {
+                let mut planner = SpeechWindowPlanner::new(WindowLimits {
+                    max_frames,
+                    overlap_frames,
+                })
+                .unwrap();
+                let mut seed = 0x73a5u64;
+                let mut cursor = 1000u64;
+                for epoch in 0..4 {
+                    for segment in 0..5 {
+                        let start = cursor;
+                        planner.begin(epoch, start).unwrap();
+                        let mut owned_end = start;
+                        for _ in 0..23 {
+                            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+                            cursor += seed % (max_frames + 1); // includes empty replay
+                            for window in planner.advance(cursor).unwrap().into_iter().flatten() {
+                                assert_eq!(window.epoch, epoch);
+                                assert_eq!(window.novel_start, owned_end);
+                                assert!(window.novel_end > window.novel_start);
+                                assert!(window.context_start >= start);
+                                assert!(window.context_start <= window.novel_start);
+                                assert_eq!(window.context_end, window.novel_end);
+                                assert!(window.context_end - window.context_start <= max_frames);
+                                assert_eq!(window.reason, EndReason::Limit);
+                                owned_end = window.novel_end;
+                            }
+                        }
+                        if segment % 2 == 0 {
+                            if let Some(window) = planner.finish(true).unwrap() {
+                                assert_eq!(window.epoch, epoch);
+                                assert_eq!(window.novel_start, owned_end);
+                                assert!(window.novel_end > owned_end);
+                                assert!(window.context_start >= start);
+                                assert!(window.context_start <= window.novel_start);
+                                assert!(window.context_end - window.context_start <= max_frames);
+                                assert_eq!(window.context_end, window.novel_end);
+                                assert_eq!(window.reason, EndReason::Discontinuity);
+                                owned_end = window.novel_end;
+                            }
+                        } else if let Some(discarded) = planner.discard().unwrap() {
+                            assert_eq!(discarded.epoch, epoch);
+                            assert_eq!(discarded.start, owned_end);
+                            assert!(discarded.end > owned_end);
+                            owned_end = discarded.end;
+                        }
+                        // Issued novel ranges + explicit discard cover exactly
+                        // supplied frames; overlap never adds novel ownership.
+                        assert_eq!(owned_end, cursor);
+                        cursor += 7; // explicit unsupplied gap, never synthesized
+                    }
+                    cursor = 1000; // a newer epoch can restart source counters
+                }
+            }
+        }
+    }
 
     fn planner() -> SpeechWindowPlanner {
         SpeechWindowPlanner::new(WindowLimits {
