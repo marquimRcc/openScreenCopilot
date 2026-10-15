@@ -223,6 +223,8 @@ encode; não comprovam NV12/FPS/MP4/editor/licença/eficiência. App segueH264.
 1. Trabalho independente04:lifecycle/supervisão/replay e ligação host/TS futura
    do orçamento Rust; reader/ownership isolados já feitos. Limitar input/cópias/
    decoders e notificação sem corrida ainda pendente, não prometer tetoRSS.
+   Requisitos de transições/gaps/normalização/drain/reconexão estão no final de
+   AUDIO-FRAME-DRAFT; tabela não é implementação nem teste de memória30min.
    Não criar pipe/API/PCMlive nem confundir binding/accepted com auth/durabilidade.
 2. Quando tela disponível, retomar GUI01/02 com fixture/perfil próprios/cobertura
    autorizada, respeitando rejeições; completar confirmação/tomada/resultado/áudio.

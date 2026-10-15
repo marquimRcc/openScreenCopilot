@@ -126,3 +126,28 @@ não pode alterar o header validado nem custo da reserva. Nenhuma conexão TS/pi
 Isso NÃO limita RSS, chunks externos, scratch/metadata, número de decoders, cópias
 normalizadas ou engine. Host ainda precisa limitar/admitir esses recursos, coordenar
 notificação sem corrida, cancelamento/drain e journal/ACK durável. Sem áudio live.
+
+## Próxima ligação host — requisitos, NÃO implementação
+
+O pool isolado não atende sozinho ao contrato de fila limitada por bytes E tempo.
+Frames a44.1k/48k/16k não têm a mesma duração. Host deve derivar limites por taxa,
+com aritmética verificada e política explícita, não renomear `frames` para segundos.
+Não somar captureMonotonicNs como PTS nem identificar sessão apenas pelo nonce wire.
+
+| Transição futura | Invariante necessária |
+|---|---|
+|Abrir sessão|Host autentica endpoint/owner e negocia formato; limita decoders e chunks antes de ler; pool único da sessão, não um por request|
+|Header aguardando|Reader para consumo; retém sufixo externo limitado; registra notificação e revalida capacidade sem janela de lost-wakeup|
+|Frame entregue|Ownership da reserva acompanha consumidor; accepted significa só admissão, jamais journal/checkpoint durável|
+|Normalizar/copiar|Reservar capacidade de saída/scratch ANTES de copiar; não liberar entrada antecipadamente nem segurar todas entradas enquanto espera saída impossível|
+|Gap/nova época|Não inventar zeros; registrar lacuna e resetar contexto/relógio conforme contrato; leases antigas continuam contadas|
+|Cancel/drain|Fechar admissão, parar reader, solicitar cancelamento e aguardar worker/consumidores e seus buffers; não dropar future como prova de shutdown|
+|Erro/timeout|Propagar erro sanitizado; conservar ownership até fechamento real; não zerar contadores/recriar pool para admitir mais dados vivos|
+|Reconectar|Somente depois de política de journal/checkpoint definida; IDs/replay/watermarks validados, sem retomar de accepted em memória|
+
+Nenhuma fila/notificação/sidecar, checkpoint ou reconexão foi criada por esta tabela.
+`retry_budget` NÃO agenda wakeup. Uma implementação futura precisa testes de
+liberação entre tentativa e registro de notificação, cancel enquanto aguardando,
+consumidor lento, cópia bloqueada e disconnect/reconnect com resultado tardio.
+Teste de10mil operações do pool é contagem sintética, não comprova memória estável
+de captura+ASR real30min. Não implementar ligação PCM antes de01–03/04 aceitos.
