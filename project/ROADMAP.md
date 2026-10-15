@@ -100,6 +100,10 @@ aceite completo e ações Compartilhar/GIF continuam pendentes.
 
 Dependência: 02.
 
+Inspeção/preparação em [WINDOWS-COMPRESSION-SPIKE.md](WINDOWS-COMPRESSION-SPIKE.md):
+H.264 High e VBR best-effort atuais; AV1/controle por qualidade ainda não implementados.
+Não confundir inventário ou captura sintética curta com comparação de compressão.
+
 - Provar AV1 hardware no caminho WGC -> encoder -> MP4.
 - Comparar integração MF/libavcodec e auditar licença do build escolhido.
 - Comparar controle por qualidade/bitrate, 30/60 fps e resolução nativa;

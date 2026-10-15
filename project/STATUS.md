@@ -1153,6 +1153,15 @@ ou relançar no perfil do usuário. Logs `.cache/source-timeline-final-*.log`.
 Sem fonte nativa/vendor alterada, modelo/download/extração Rust ou ASR novo.
 GUI02Z permanece bloqueada por autorização, sem contorno nem aceite inventado.
 
+## Preparação03 — compressão Windows
+
+[WINDOWS-COMPRESSION-SPIKE.md](WINDOWS-COMPRESSION-SPIKE.md) registra o caminho
+observado: H.264 High, orçamento18/28/45Mbps por pixels, VBR/meanbitrate best-effort,
+runtime efetivo distinto da preferência. Não há AV1 nesse caminho implementado.
+Plano de comparação estático/rolagem/dinâmico/30min ainda não executado; não promete
+tamanho ou qualidade por bitrate/nome da GPU. Docs somente, sem alterar encoder,
+pacote ou repetir suíte já aprovada. GUI01/02 e autorização continuam pendentes.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não
