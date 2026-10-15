@@ -43,7 +43,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-One hundred eight Rust unit tests now pass in debug/release, including the original shared fixtures.
+One hundred ten Rust unit tests now pass in debug/release, including the original shared fixtures.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are108 unit +3 component-integration +8 resampling-spike tests, passing
+These are110 unit +4 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -342,3 +342,11 @@ partial Unicode, large chunks, maximal line, one-byte Unicode fragments, counter
 stop/EOF and debug redaction. No stdin/stdout/pipe/socket/helper is opened. Caller
 must bound received chunks, decoder instances, retained Strings and overall
 time/resources; per-instance buffers alone do not establish pipeline RAM limits.
+
+Diagnostic Debug for headers, expected streams, decoded/mono frames, requests,
+results, provider errors and pool now omits raw PCM, transcript/language/error
+strings, nonce and source clock counters. Pool Debug uses try_lock and cannot
+deadlock by re-locking a held accounting mutex. Three added tests verify those
+boundaries and unchanged explicit access. This is NOT global logging/privacy or
+access control: public fields/getters and provider-error Display remain explicit
+data-bearing APIs, and future host must sanitize those before logging/transmitting.

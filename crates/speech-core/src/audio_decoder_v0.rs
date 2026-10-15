@@ -8,7 +8,7 @@ use crate::audio_frame_v0::{
 };
 use crate::transport_budget::{BudgetError, BufferLease, TransportBudget};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct ExpectedStream {
     pub nonce: [u8; 16],
     pub source: Source,
@@ -18,6 +18,16 @@ pub struct ExpectedStream {
     pub first_sequence: u64,
     pub first_sample_start: u64,
     pub max_payload_bytes: u32,
+}
+impl std::fmt::Debug for ExpectedStream {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ExpectedStream")
+            .field("source", &self.source)
+            .field("sample_rate", &self.sample_rate)
+            .field("channels", &self.channels)
+            .field("max_payload_bytes", &self.max_payload_bytes)
+            .finish_non_exhaustive()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,12 +57,20 @@ fn allocate_buffer(length: usize) -> Result<Vec<u8>, DecoderError> {
     Ok(bytes)
 }
 
-#[derive(Debug)]
 pub struct OwnedFrame {
     header: Header,
     bytes: Vec<u8>,
     // Field drop order: free bytes BEFORE returning the reservation.
     _lease: Option<BufferLease>,
+}
+impl std::fmt::Debug for OwnedFrame {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OwnedFrame")
+            .field("header", &self.header)
+            .field("buffer_bytes", &self.bytes.len())
+            .field("budgeted", &self._lease.is_some())
+            .finish_non_exhaustive()
+    }
 }
 impl OwnedFrame {
     pub(crate) fn has_budget(&self, pool: &TransportBudget) -> bool {
@@ -73,14 +91,12 @@ impl OwnedFrame {
     }
 }
 
-#[derive(Debug)]
 struct Pending {
     bytes: Vec<u8>,
     filled: usize,
     _lease: Option<BufferLease>,
 }
 
-#[derive(Debug)]
 pub struct AudioDecoderV0 {
     expected: ExpectedStream,
     next_sequence: Option<u64>,
@@ -94,6 +110,17 @@ pub struct AudioDecoderV0 {
     allocate: BufferAllocator,
     budget: Option<TransportBudget>,
     waiting_for_budget: bool,
+}
+impl std::fmt::Debug for AudioDecoderV0 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AudioDecoderV0")
+            .field("expected", &self.expected)
+            .field("owned_buffer_bytes", &self.owned_buffer_bytes())
+            .field("ready", &self.is_ready())
+            .field("waiting_for_budget", &self.waiting_for_budget)
+            .field("closed", &self.closed)
+            .finish_non_exhaustive()
+    }
 }
 
 impl AudioDecoderV0 {

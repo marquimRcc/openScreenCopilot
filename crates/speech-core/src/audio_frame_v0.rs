@@ -35,7 +35,7 @@ pub enum Source {
     Microphone,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Header {
     pub payload_bytes: u32,
     pub sample_rate: u32,
@@ -50,6 +50,18 @@ pub struct Header {
     pub frame_count: u32,
     /// Raw capture-domain metadata. Never treated as media PTS/ASR arrival time.
     pub capture_monotonic_ns: u64,
+}
+impl std::fmt::Debug for Header {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Header")
+            .field("source", &self.source)
+            .field("sample_rate", &self.sample_rate)
+            .field("channels", &self.channels)
+            .field("frame_count", &self.frame_count)
+            .field("payload_bytes", &self.payload_bytes)
+            .field("discontinuity", &self.discontinuity)
+            .finish_non_exhaustive()
+    }
 }
 
 pub fn parse_header(bytes: &[u8]) -> Result<Header, FrameError> {

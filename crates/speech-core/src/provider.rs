@@ -15,7 +15,7 @@ use std::sync::Arc;
 pub const MAX_REQUEST_SAMPLES: usize = 1_048_576;
 pub const MAX_RESULT_TEXT_BYTES: usize = 65_536;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum TranscriptionError {
     ModelNotLoaded,
     AudioTooShort { samples: usize, minimum: usize },
@@ -25,6 +25,24 @@ pub enum TranscriptionError {
     InvalidLanguageHint,
     InvalidResult,
     Canceled,
+}
+impl std::fmt::Debug for TranscriptionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::EngineFailed(_) => f.write_str("EngineFailed(<redacted>)"),
+            Self::UnsupportedLanguage(_) => f.write_str("UnsupportedLanguage(<redacted>)"),
+            Self::AudioTooShort { samples, minimum } => f
+                .debug_struct("AudioTooShort")
+                .field("samples", samples)
+                .field("minimum", minimum)
+                .finish(),
+            Self::ModelNotLoaded => f.write_str("ModelNotLoaded"),
+            Self::InvalidAudio => f.write_str("InvalidAudio"),
+            Self::InvalidLanguageHint => f.write_str("InvalidLanguageHint"),
+            Self::InvalidResult => f.write_str("InvalidResult"),
+            Self::Canceled => f.write_str("Canceled"),
+        }
+    }
 }
 
 impl std::fmt::Display for TranscriptionError {
@@ -49,10 +67,17 @@ impl std::error::Error for TranscriptionError {}
 
 /// Borrowed mono file/segment, not evidence that an untrusted buffer really has
 /// this rate. Host/normalizer must supply truthful metadata and source identity.
-#[derive(Debug)]
 pub struct TranscriptionRequest<'a> {
     samples: &'a [f32],
     language: Option<&'a str>,
+}
+impl std::fmt::Debug for TranscriptionRequest<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TranscriptionRequest")
+            .field("sample_count", &self.samples.len())
+            .field("has_language_hint", &self.language.is_some())
+            .finish_non_exhaustive()
+    }
 }
 
 impl<'a> TranscriptionRequest<'a> {
@@ -87,11 +112,20 @@ impl<'a> TranscriptionRequest<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct TranscriptResult {
     pub text: String,
     pub confidence: Option<f32>,
     pub is_partial: bool,
+}
+impl std::fmt::Debug for TranscriptResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TranscriptResult")
+            .field("text_bytes", &self.text.len())
+            .field("has_confidence", &self.confidence.is_some())
+            .field("is_partial", &self.is_partial)
+            .finish_non_exhaustive()
+    }
 }
 
 impl TranscriptResult {
@@ -163,6 +197,33 @@ mod tests {
     use super::*;
     use std::sync::atomic::AtomicUsize;
     use std::task::{Context, Poll, Waker};
+
+    #[test]
+    fn diagnostic_debug_redacts_pcm_language_transcript_and_provider_error_payloads() {
+        let request =
+            TranscriptionRequest::new(&[0.12345, -0.12345], 16_000, Some("pt_private_hint"))
+                .unwrap();
+        let debug = format!("{request:?}");
+        assert!(!debug.contains("0.12345"));
+        assert!(!debug.contains("pt_private_hint"));
+        assert_eq!(request.samples(), &[0.12345, -0.12345]);
+        assert_eq!(request.language(), Some("pt_private_hint"));
+        let result = TranscriptResult {
+            text: "private-synthetic-transcript".into(),
+            confidence: Some(0.5),
+            is_partial: false,
+        };
+        assert!(!format!("{result:?}").contains("private-synthetic-transcript"));
+        assert_eq!(result.text, "private-synthetic-transcript");
+        for error in [
+            TranscriptionError::EngineFailed("private-engine-detail".into()),
+            TranscriptionError::UnsupportedLanguage("private-language-detail".into()),
+        ] {
+            assert!(!format!("{error:?}").contains("private-"));
+            // Display intentionally preserves the old explicit diagnostic API.
+            assert!(error.to_string().contains("private-"));
+        }
+    }
 
     struct FakeProvider {
         calls: AtomicUsize,

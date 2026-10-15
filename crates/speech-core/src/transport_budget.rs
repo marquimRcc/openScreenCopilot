@@ -84,10 +84,28 @@ fn index(source: Source) -> usize {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TransportBudget {
     nonce: [u8; 16],
     state: Arc<Mutex<State>>,
+}
+impl std::fmt::Debug for TransportBudget {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut out = f.debug_struct("TransportBudget");
+        match self.state.try_lock() {
+            Ok(state) => {
+                out.field("bytes", &state.bytes)
+                    .field("frames", &state.frames)
+                    .field("leases", &state.leases)
+                    .field("closed", &state.closed)
+                    .field("broken", &state.broken);
+            }
+            Err(_) => {
+                out.field("state", &"unavailable");
+            }
+        }
+        out.finish_non_exhaustive()
+    }
 }
 #[derive(Debug)]
 pub struct BufferLease {
@@ -369,6 +387,16 @@ impl Drop for BufferLease {
 mod tests {
     use super::*;
     const NONCE: [u8; 16] = [1; 16];
+
+    #[test]
+    fn pool_debug_never_relocks_a_held_mutex_or_exposes_nonce() {
+        let pool = pool();
+        assert!(!format!("{pool:?}").contains("nonce"));
+        let guard = pool.state.lock().unwrap();
+        assert!(format!("{pool:?}").contains("unavailable"));
+        drop(guard);
+        assert!(!format!("{pool:?}").contains("unavailable"));
+    }
     fn audio_header(rate: u32, frames: u32, source: Source, epoch: u64) -> [u8; HEADER_BYTES] {
         let mut bytes = [0; HEADER_BYTES];
         bytes[..4].copy_from_slice(b"OSCP");

@@ -210,7 +210,12 @@ LF/CRLF(CRcontano limite),semfila/concatenaçãounbounded;erros/EOFparcialtermin
 Stringreusa buffer,Debugsemtexto.8testesfragmentosUnicode/cap/stop/overflow;
 NÃO JSON/schema/handshake/IPC/pipeaberto,host ainda limita chunks/instâncias/retidos.
 
-Rust108unitários+3integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+DebugRust de header/expected/decoder/frames/mono/request/result/error/pool agora
+omite PCM/texto/languagehint/errostr/nonce/contadoresdeorigem;poolusa try_lock.
+3testes adicionais,acessoexplícitopreservado. Não é loggingglobal:Display de erro
+provider ecampos/getters ainda contêmdados,hostprecisasanitizar;semimportruntime.
+
+Rust110unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider

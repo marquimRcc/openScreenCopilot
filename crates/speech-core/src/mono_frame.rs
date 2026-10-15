@@ -11,12 +11,19 @@ pub enum MonoFrameError {
     Budget(BudgetError),
     Downmix(DownmixError),
 }
-#[derive(Debug)]
 pub struct OwnedMonoFrame {
     header: Header,
     samples: Vec<f32>,
     // Rust field drop order frees the sample buffer BEFORE returning capacity.
     _lease: BufferLease,
+}
+impl std::fmt::Debug for OwnedMonoFrame {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OwnedMonoFrame")
+            .field("header", &self.header)
+            .field("sample_count", &self.samples.len())
+            .finish_non_exhaustive()
+    }
 }
 impl OwnedMonoFrame {
     pub fn header(&self) -> Header {

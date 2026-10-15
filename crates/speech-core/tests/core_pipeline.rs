@@ -234,3 +234,39 @@ fn cancellation_and_close_keep_live_request_charged_until_provider_completion() 
     assert!(!gate.status().unwrap().uncertain);
     assert_eq!(decoder.owned_buffer_bytes(), HEADER_BYTES);
 }
+
+#[test]
+fn diagnostic_debug_does_not_dump_pcm_nonce_or_source_clock_metadata() {
+    let bytes = frame(16_000);
+    let (pool, mut decoder) = setup(&bytes);
+    feed(&mut decoder, &bytes);
+    let decoder_debug = format!("{decoder:?}");
+    let input = decoder.take().unwrap();
+    let mono = downmix_owned_frame(&input, &pool, MonoMix::AverageAll).unwrap();
+    for debug in [
+        decoder_debug,
+        format!("{input:?}"),
+        format!("{mono:?}"),
+        format!("{:?}", input.header()),
+        format!("{pool:?}"),
+    ] {
+        for forbidden in [
+            "nonce",
+            "sample_start",
+            "sample_end",
+            "capture_monotonic_ns",
+            "sequence",
+            "bytes: [",
+            "samples: [",
+        ] {
+            assert!(
+                !debug.contains(forbidden),
+                "unexpected private field in diagnostic metadata"
+            );
+        }
+    }
+    assert_eq!(input.bytes(), bytes);
+    assert_eq!(mono.samples(), &[-0.375, 0.75]);
+    // Explicit access is unchanged. Debug redaction is not access control.
+    assert_eq!(mono.header().session_nonce, input.header().session_nonce);
+}
