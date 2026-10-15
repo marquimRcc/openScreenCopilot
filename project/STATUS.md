@@ -1604,6 +1604,23 @@ u64extremos. Simulação5min de contadores não é captura/ASR/benchmark de mem�
 Host/PCMbackpressure/maps/textdedup/tuning natural/sidecar/journal seguem pendentes.
 Sem nova dep/vendor/TS/app/native produção, runtime/pacote37d4a1c8 preservados.
 
+## CI do core isolado — 2026-10-15
+
+ci.yml ganhou job speech-core separado, contents:read/timeout15min, Rust1.98.1,
+manifest/lock próprios e target temp. Fetch do lock e então debug/release/clippy/fmt
+offline, sem compositor/SDK/modelos/artefatos/distribuição ou mudança nos triggers.
+3novos testes falharam antes do job; depois22focados/2arquivos passaram incluindo
+guardas de workflows do fork. YAML parse válido13jobs. Biome formatou só teste novo.
+
+Ambos typechecks,lint0erros/26avisos herdados,i18n15/1000chaves,docs53/diffcheck OK.
+Full final única365arquivos/5170pass/5skip/383,64s, Node22.22.1/2workers,
+exit0/sem signal, fim2026-10-15T15:32:59Z; recibo/log.cache/speech-core-ci-full.{json,log}.
+Nenhum build/QA nativo concorrente. Rust40unitários+7spikes anteriormente aprovados
+não foram repetidos só por YAML. Ainda NÃO há execução CI remota observada para
+este job, nem homologação Linux/RegataOS. Sem app/runtime/nativeprodução alterado,
+pacote37d4a1c8 preservado, não rebuildado/instalado/relançado por mudança de CI.
+GUI e integrações seguem seus gates, estimativaGIF/Compartilhar continuam adiados.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

@@ -22,8 +22,13 @@ cargo fmt --manifest-path crates/speech-core/Cargo.toml -- --check
 
 Set CARGO_TARGET_DIR to a private ignored build directory when testing locally.
 Initial validation used installed Rust/cargo1.98.1 on Windows, not a RegataOS test.
-No new toolchain was installed. Root npm/Vitest and compositor CI do not automatically
-exercise this separate workspace; explicit Rust tests are required until CI is wired.
+No new toolchain was installed. Root npm/Vitest and compositor tests do not exercise
+this separate workspace. The CI now has an independent speech-core job: pinned
+Rust1.98.1, exact lock fetch followed by offline debug/release/clippy/fmt on this
+manifest, temp target directory, read-only repository permission and no native
+backend/model/artifact steps. It is configured, not yet remotely observed passing;
+local Windows results do not homologate Linux/RegataOS. Run the commands explicitly
+when developing locally.
 
 Caller must isolate a single session/source and supply trusted span metadata. The
 raw mapping function is not a wire parser, global map validator, owner check or PCM permission.
