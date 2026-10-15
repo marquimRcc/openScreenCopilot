@@ -175,3 +175,19 @@ A QA de voz anterior usou gerente HERDADO, NÃO esta interface Rust. Tipos sem
 session/source/epoch/PTS não são protocolo v1 ou finais persistidos; envelopes/mapas
 e sanitização de erros/model metadata continuam do futuro host. Não copiar engines
 globais, worker unbounded ou carregar segunda instância/modelo GPU por este port.
+
+## Planejador isolado de janelas, sem modelo VAD
+
+speech_windows.rs original limita fala contínua a janela positiva<=budget provider,
+overlap explícito<=25%. Recebe fronteiras mono16k confiáveis de UMA fonte/época;
+não detecta voz ou armazena PCM, e não porta resampler linear/Silero/ONNX do vendor.
+Advance bounded retorna array fixo2eventos; contexto sobreposto separado de faixa
+novel. Finish só cauda nova real, não duplica overlap nem inventa silêncio/padding.
+Gap/finish/begin não carregam contexto anterior; epoch novo pode resetar contador.
+Discard relata só cauda ainda não emitida, não cancela jobs já retornados nem
+persiste gap. Host ainda precisa ownership/PCM/backpressure/providerdrain/maps/
+dedup texto/journal. Contador16k não é contador WASAPI original48/44.1k.
+
+9testes incluem fala contínua/partições, limites/replay/atomicidade, gaps/épocas,
+discard/overlap-only e extremosu64. Simulação5min só de contadores, não benchmark
+real de ASR/memória/captura longa. Não há tuning de fala natural/modelo VAD homologado.

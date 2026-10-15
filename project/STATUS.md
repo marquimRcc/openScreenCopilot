@@ -1588,6 +1588,22 @@ Validação completa Rust31unitários+7spikes passou debug/release offline/locke
 clippyalltargets-Dwarnings/fmt OK,docs53/diffcheck OK. Vendor/Cargo.lock semdiff.
 Sem fonte TS/app/nativa produção alterada, sem repetir full/build/pacote inalterados.
 
+## Preparação04 — janelas de fala limitadas, só metadados
+
+Após5448f744 enviado: speech_windows.rs original, planner de UMA fonte normalizada
+mono16k/epoch, sem Silero/VAD/modelo/PCM. Fala contínua emite antes de silêncio
+ao atingir maxframes configurado<=budget provider; overlap<=25%, novel separado.
+Advance no máximo maxframes novos/2eventos fixos, replay vazio/erros atômicos.
+Finish/discontinuity sem padding/overlap-only duplicado; contexto não cruza gap ou
+epoch novo. Discard devolve só cauda ainda não emitida; não cancela provider já
+iniciado nem persiste gap. Contadores16k NÃO são mapas de captura48/44.1k.
+
+9focados aprovados; conjunto Rust40unitários+7spikes debug/release, clippy/fmt OK.
+Cobrem partições/continuous/limites/atomicidade/replay/overlap/gaps/épocas/discard/
+u64extremos. Simulação5min de contadores não é captura/ASR/benchmark de memória.
+Host/PCMbackpressure/maps/textdedup/tuning natural/sidecar/journal seguem pendentes.
+Sem nova dep/vendor/TS/app/native produção, runtime/pacote37d4a1c8 preservados.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

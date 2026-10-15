@@ -3,6 +3,7 @@
 
 pub mod downmix;
 pub mod provider;
+pub mod speech_windows;
 pub mod timeline_registry;
 
 #[derive(Clone, Copy, Debug)]

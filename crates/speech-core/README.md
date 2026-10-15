@@ -1,7 +1,7 @@
 # speech-core foundation (draft)
 
 Sample-to-media timeline arithmetic, a bounded draft metadata registry,
-interleaved-to-mono downmix and a provider INTERFACE are implemented. No audio capture,
+interleaved-to-mono downmix, a provider INTERFACE and a metadata window planner are implemented. No audio capture,
 production resampling, loudness normalization, VAD, concrete model/provider, inference,
 sidecar, journal or UI integration.
 The original timeline code uses the repository MIT license. Downmix/provider boundary are adapted from
@@ -38,7 +38,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Thirty-one Rust unit tests now pass in debug/release, including the original shared fixture.
+Forty Rust unit tests now pass in debug/release, including the original shared fixture.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -121,3 +121,26 @@ forward them blindly. No provider identity grants file/model/PCM permissions.
 Text has no timestamps/source IDs here: it cannot be exported as a durable final
 or mapped to MP4 without the host's validated envelope/maps and journal. Protocolv1,
 concrete providers, shared-engine coordination and live ASR remain pending.
+
+## Metadata-only speech window planner
+
+`speech_windows.rs` is original code, not a Silero extraction. Caller supplies
+speech boundaries in a single normalized mono16k source/epoch. It cuts uninterrupted
+speech at a positive caller bound<=provider request cap, with explicit overlap<=25%.
+It emits context and novel ownership ranges; these are NOT duplicate-free words or
+accurate ASR timestamps. No model, voice detection, pre/post padding or PCM is owned.
+
+Each advance admits at most one max-window worth of new frames and returns a fixed
+two-slot event array. Invalid calls are atomic; equal endpoint replay is empty.
+Finish emits only novel real tail, not overlap-only/padded audio. Discontinuity and
+new begin discard previous context; same epoch requires forward counters, newer
+epoch permits counter reset. `discard` reports unissued novel tail only, not a
+persisted gap and not cancellation of windows already passed to a provider.
+Host must cancel/drain those jobs, retain PCM with backpressure, validate origin
+maps, record gaps and deduplicate actual text separately. Never pass these16k
+counters directly to the original44.1/48k capture timeline registry.
+
+Nine tests cover packet invariance, limits, order/replay, continuous speech,
+overlap ownership, gaps/epochs, discard and u64 extremes. A five-minute COUNTER
+simulation retains no segment list/PCM; it is not a five-minute ASR or memory
+benchmark of a real pipeline. Tuning max/overlap for natural speech remains open.

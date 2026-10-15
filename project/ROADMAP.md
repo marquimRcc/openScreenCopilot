@@ -146,6 +146,8 @@ qualquer integração; uma fala sintética pt-BR e falha parcial injetada passar
 mas voz natural/diversa e épocas live continuam pendentes. Interface provider/tipos
 do vendor adaptados para Rust std, com PCM emprestado/guardas/cancel aguardado;
 nenhum engine/provider concreto, Tauri, sidecar ou ASR novo integrado.
+Planejador original limitado de janelas16k também existe isolado, guiado por
+fronteiras fornecidas; não é Silero/VAD, bufferPCM ou deduplicação de texto.
 
 Pode iniciar depois de 01; integração depende de 02/03.
 
