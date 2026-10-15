@@ -61,6 +61,14 @@ VAD do snapshot trabalha com índices absolutos16kHz da sua sessão. Adaptador p
 declarar se o resultado é absoluto ou relativo ao buffer e aplicar offset uma vez.
 Não adicionar processed_samples a timestamp Silero já absoluto.
 
+Spike de arquivo rubato0.15 mediu convenção específica: output_delay46/42frames
+de saída NÃO é prefixo de zeros removível. Retirá-lo adiantou impulso; primeiro
+bloco é menor nessa configuração. Rampa corrigida pelo ganho DC aponta offset
+~1,76/~2,01frames de ENTRADA (44.1/48k), diferente de atraso de disponibilidade.
+Medição f32/ganho ripple não congela origem exata de PTS. Não ligar contador16k
+diretamente a44.1/48k nem subtrair output_delay sem mapa/phase convention validado.
+São testes isolados, não timestamp já emitido pelo capture/normalizador runtime.
+
 Pause/gap encerra ou descarta parcial com estado explícito; resume começa contexto
 novo sem colar a fala anterior através da descontinuidade. Fontes sistema/mic têm
 mapas independentes e podem sobrepor em mídia; isso não representa duplicata.

@@ -79,7 +79,7 @@ in the initial failing test. Keeping output intact measured peaks within one out
 frame of floor(source_position*16000/input_rate). No universal phase/latency claim;
 future live metadata must represent availability separately from media position.
 
-Seven integration tests cover tails0/1/2/3/511/512/513/1023/1024/1025, partition
+Eight integration tests cover tails0/1/2/3/511/512/513/1023/1024/1025, partition
 invariance, late impulse, 1kHz passband, 12kHz rejection, invalid inputs and cancel
 after partial conversion (no successful/original output returned). New calls have
 independent filter history. An intentionally undersized output buffer triggers a
@@ -99,8 +99,17 @@ sentence does not qualify diverse speakers, timing accuracy or thirty-minute ASR
 
 Run `cargo test --offline --locked --manifest-path crates/speech-core/Cargo.toml
 --test resample_spike -- --nocapture` for measured values. Existing23 unit tests
-remain separate from these seven experiment tests. No npm suite or app rebuild is
+remain separate from these eight experiment tests. No npm suite or app rebuild is
 needed for this test-only change; app runtime/package are unchanged.
+
+Additional DC/ramp characterization: interior DC gain error measured7.451ppm at
+44.1k and1.550ppm at48k (20ppm regression ceiling). Remove the same-phase DC gain
+before interpreting ramp amplitude as position. Measured source-frame offsets
+~1.76/~2.01 match this configuration's index/table prediction within0.05 input
+frame; they are NOT the declared46/42 OUTPUT-frame availability delay. These are
+empirical characterization bounds, not an exact live timestamp/wire convention,
+voice-quality certificate or hardware-clock measurement. An initial3ppm DC
+assumption failed; the measurement distinguishes gain ripple from phase shift.
 
 ## Isolated provider boundary (no engine)
 

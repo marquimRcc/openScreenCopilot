@@ -1621,6 +1621,18 @@ este job, nem homologação Linux/RegataOS. Sem app/runtime/nativeprodução alt
 pacote37d4a1c8 preservado, não rebuildado/instalado/relançado por mudança de CI.
 GUI e integrações seguem seus gates, estimativaGIF/Compartilhar continuam adiados.
 
+## Preparação04 — caracterização adicional de fase/ganho
+
+Após33094a84 enviado: novo spike DC/rampa. Primeira hipótese DC3ppm falhou;
+medido máximo interior7,451ppm44.1k/1,550ppm48k, teto diagnóstico20ppm explícito.
+Separar ganho da mesma fase antes de converter amplitude da rampa em posição:
+offsets~1,76/~2,01frames ORIGINAIS, coerentes com índices/tabelas sinc0.15 dentro
+0,05frame. NÃO confundir com availabilitydelay46/42frames SAÍDA nem congelarPTS.
+Ganho/phase regredidos apenas nessa configuração, não qualidade natural/universal
+ou medida de relógio físico. Fonte de captura/app/mapas runtime não alterados.
+Rust40unitários+8spikes debug/release offline/locked, clippy/fmt e docs53 passaram.
+FullTS5170pass e pacote anteriores não repetidos sem fonte TS/runtime nova.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

@@ -323,3 +323,36 @@ fn inclusive_file_budget_keeps_exact_count_and_bounded_scratch() {
         assert!((report.samples[1000] - 0.25).abs() < 0.001);
     }
 }
+
+#[test]
+fn dc_and_ramp_characterize_phase_separately_from_declared_delay() {
+    for rate in [44_100, 48_000] {
+        let dc = convert_file(&vec![1.0; rate], rate, &[513, 1], |_| false).unwrap();
+        let dc_error = dc.samples[256..OUTPUT_RATE - 256]
+            .iter()
+            .map(|v| (v - 1.0).abs())
+            .fold(0.0_f32, f32::max);
+        println!("dc rate={rate} max_interior_error={dc_error:.9}");
+        assert!(
+            dc_error < 0.00002,
+            "20ppm interior DC regression ceiling, not voice quality qualification"
+        );
+        let ramp: Vec<f32> = (0..rate).map(|n| n as f32 / rate as f32).collect();
+        let converted = convert_file(&ramp, rate, &[511, 1, 513], |_| false).unwrap();
+        let ratio = rate as f64 / OUTPUT_RATE as f64;
+        // Configuration-specific prediction from sinc table indexing in0.15:
+        // the index advances once before its first sample; sinc phase tables
+        // reverse factor-n-1. Verify empirically, never use output_delay as PTS.
+        let predicted_source_offset = ratio - 1.0 + 1.0 / 128.0;
+        for at in [256, 1000, 5000, 10000, 15000] {
+            // Remove this phase's DC gain ripple before measuring ramp position;
+            // gain error times a large ramp value is not a phase shift.
+            let measured = f64::from(converted.samples[at]) / f64::from(dc.samples[at])
+                * rate as f64
+                - at as f64 * ratio;
+            assert!((measured - predicted_source_offset).abs() < 0.05,
+                "rate={rate} output={at} source offset={measured} predicted={predicted_source_offset}");
+            println!("ramp rate={rate} out={at} offset_in={measured:.8} predicted_in={predicted_source_offset:.8} delay_out={}", converted.delay_out);
+        }
+    }
+}
