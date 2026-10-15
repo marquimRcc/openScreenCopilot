@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are112 unit +4 component-integration +8 resampling-spike tests, passing
+These are114 unit +4 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -355,3 +355,11 @@ deadlock by re-locking a held accounting mutex. Three added tests verify those
 boundaries and unchanged explicit access. This is NOT global logging/privacy or
 access control: public fields/getters and provider-error Display remain explicit
 data-bearing APIs, and future host must sanitize those before logging/transmitting.
+
+Checked provider completion now refuses EngineFailed/UnsupportedLanguage detail
+strings above4,096 UTF-8 bytes, returning InvalidResult without truncation or
+echoing the refused detail. Accepted errors remain exact and data-bearing;
+this is NOT sanitization, a language-support claim or an engine allocation cap.
+Two tests cover inclusive multibyte limits, completion ordering and late cancel
+precedence. Direct provider calls/error construction bypass this checked boundary;
+future host must use the managed checked path and its own safe diagnostics.

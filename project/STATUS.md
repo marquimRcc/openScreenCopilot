@@ -207,7 +207,8 @@ porengine real e manterfuture atéfim,semcriaroutrogateparacontornarincerto.
 
 ControlLineDecoder Rust isolado:UTF8incremental/1linha pronta/capconfigaté1MiB,
 LF/CRLF(CRcontano limite),semfila/concatenaçãounbounded;erros/EOFparcialterminal,
-Stringreusa buffer,Debugsemtexto.8testesfragmentosUnicode/cap/stop/overflow;
+Stringreusa buffer,Debugsemtexto.10testesfragmentosUnicode/cap/stop/overflow,
+65.280payloadscurtos e todosescalarsUnicode/splits determinísticos;
 NÃO JSON/schema/handshake/IPC/pipeaberto,host ainda limita chunks/instâncias/retidos.
 
 DebugRust de header/expected/decoder/frames/mono/request/result/error/pool agora
@@ -215,7 +216,12 @@ omite PCM/texto/languagehint/errostr/nonce/contadoresdeorigem;poolusa try_lock.
 3testes adicionais,acessoexplícitopreservado. Não é loggingglobal:Display de erro
 provider ecampos/getters ainda contêmdados,hostprecisasanitizar;semimportruntime.
 
-Rust112unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+Fronteira checkedprovider recusa detalhes EngineFailed/UnsupportedLanguage acima
+4.096bytesUTF8 comoInvalidResult apóscompletion,semtruncar/ecoar recusado.
+Errosaceitoscontinuamdados explícitos,nãosanitização/tetoallocengine.2testes
+limitesmultibyte/latecancel/aguardacompletion,semruntime/providerconcreto.
+
+Rust114unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider

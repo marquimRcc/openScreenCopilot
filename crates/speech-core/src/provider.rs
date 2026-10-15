@@ -14,6 +14,7 @@ use std::sync::Arc;
 
 pub const MAX_REQUEST_SAMPLES: usize = 1_048_576;
 pub const MAX_RESULT_TEXT_BYTES: usize = 65_536;
+pub const MAX_ERROR_DETAIL_BYTES: usize = 4_096;
 
 #[derive(Clone, PartialEq)]
 pub enum TranscriptionError {
@@ -25,6 +26,20 @@ pub enum TranscriptionError {
     InvalidLanguageHint,
     InvalidResult,
     Canceled,
+}
+impl TranscriptionError {
+    /// Post-completion acceptance only, not an engine allocation bound or a
+    /// sanitizer. Preserve accepted details exactly; never truncate UTF-8.
+    fn accepted(self) -> Self {
+        match &self {
+            Self::EngineFailed(detail) | Self::UnsupportedLanguage(detail)
+                if detail.len() > MAX_ERROR_DETAIL_BYTES =>
+            {
+                Self::InvalidResult
+            }
+            _ => self,
+        }
+    }
 }
 impl std::fmt::Debug for TranscriptionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -187,7 +202,7 @@ pub async fn transcribe_checked<'a>(
     if cancel.is_canceled() {
         return Err(TranscriptionError::Canceled);
     }
-    let result = result?;
+    let result = result.map_err(TranscriptionError::accepted)?;
     result.validate()?;
     Ok(result)
 }
@@ -197,6 +212,63 @@ mod tests {
     use super::*;
     use std::sync::atomic::AtomicUsize;
     use std::task::{Context, Poll, Waker};
+
+    #[test]
+    fn provider_error_details_have_inclusive_utf8_byte_acceptance_bounds() {
+        let request = TranscriptionRequest::new(&[0.25, -0.25], 16000, None).unwrap();
+        for make in [
+            TranscriptionError::EngineFailed as fn(String) -> TranscriptionError,
+            TranscriptionError::UnsupportedLanguage,
+        ] {
+            for length in [
+                0,
+                MAX_ERROR_DETAIL_BYTES / 2,
+                MAX_ERROR_DETAIL_BYTES / 2 + 1,
+            ] {
+                let detail = "é".repeat(length);
+                let error = make(detail);
+                let expected = if length * 2 > MAX_ERROR_DETAIL_BYTES {
+                    TranscriptionError::InvalidResult
+                } else {
+                    error.clone()
+                };
+                let mut provider = provider(true);
+                provider.response = Err(error);
+                let mut future = Box::pin(transcribe_checked(
+                    &provider,
+                    &request,
+                    Cancellation::default(),
+                ));
+                assert_eq!(
+                    future
+                        .as_mut()
+                        .poll(&mut Context::from_waker(Waker::noop())),
+                    Poll::Ready(Err(expected))
+                );
+                assert_eq!(provider.calls.load(Ordering::SeqCst), 1);
+            }
+        }
+    }
+
+    #[test]
+    fn oversized_error_does_not_resolve_before_completion_or_override_late_cancel() {
+        let request = TranscriptionRequest::new(&[0.25, -0.25], 16000, None).unwrap();
+        let mut provider = provider(false);
+        provider.response = Err(TranscriptionError::EngineFailed(
+            "x".repeat(MAX_ERROR_DETAIL_BYTES + 1),
+        ));
+        let cancel = Cancellation::default();
+        let mut future = Box::pin(transcribe_checked(&provider, &request, cancel.clone()));
+        let mut context = Context::from_waker(Waker::noop());
+        assert!(future.as_mut().poll(&mut context).is_pending());
+        cancel.cancel();
+        assert!(future.as_mut().poll(&mut context).is_pending());
+        provider.done.store(true, Ordering::Release);
+        assert_eq!(
+            future.as_mut().poll(&mut context),
+            Poll::Ready(Err(TranscriptionError::Canceled))
+        );
+    }
 
     #[test]
     fn diagnostic_debug_redacts_pcm_language_transcript_and_provider_error_payloads() {
