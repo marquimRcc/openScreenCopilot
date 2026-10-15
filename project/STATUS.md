@@ -1131,6 +1131,28 @@ precisão ASR,30min, interface ou todos endpoints. Sem fonte de produção/vendo
 alterada, sem rebuild/reempacotamento; GUI02Z continua bloqueada pela autorização
 pendente e não foi contornada. Docs apenas; suíte02Y não repetida.
 
+## Preparação04 — mapa amostras/mídia v0 (isolado, validado)
+
+[SPEECH-TIMELINE-DRAFT.md](SPEECH-TIMELINE-DRAFT.md) detalha domínios separados,
+épocas, pausas/lacunas, resampling/VAD e accepted versus checkpoint durável.
+Oito fixtures compartilháveis em contracts/copilot/source-timeline.v0.fixture.json;
+nenhum PCM/texto privado. sourceTimeline.ts é aritmética pura com BigInt, sem
+imports no runtime e sem IPC/permissão/transport. Caller precisa isolar sessão/fonte;
+não é validador do registro global. Rejeita u64 não canônico/overflow, epoch/rate
+inválido, range vazio/reverso, ausência ou ambiguidade inclusive interseção parcial.
+Não arredonda duração acumulada por chunk nem desconta pausa novamente.
+
+35 testes focados aprovados, ambos tsc, lint26 avisos herdados, i18n15/998chaves
+e docs52 aprovados. Suíte completa única364arquivos/5164pass/5skip/389,14s,
+Node22.22.1/2workers,exit0/sem signal, término2026-10-15T00:04:11Z;
+`.cache/source-timeline-full.{json,log}`. Vite e pacote completo aprovados;
+23payloads nativos, entry/main-C-zXdXuj/preload e27rendererassets/index SHA
+iguais ao dist/origem. Como o módulo não é importado no runtime, bundle de captura
+continua02Y. Pacote `.cache/result-package/win-unpacked` conferido, sem instalar
+ou relançar no perfil do usuário. Logs `.cache/source-timeline-final-*.log`.
+Sem fonte nativa/vendor alterada, modelo/download/extração Rust ou ASR novo.
+GUI02Z permanece bloqueada por autorização, sem contorno nem aceite inventado.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

@@ -117,6 +117,11 @@ Inventário inicial somente leitura registrado em
 [SPEECH-CORE-INVENTORY.md](SPEECH-CORE-INVENTORY.md); nenhuma extração/runtime novo
 implementado, sem dispensar dependências/aceites.
 
+Rascunho v0 de mapa amostras→mídia em
+[SPEECH-TIMELINE-DRAFT.md](SPEECH-TIMELINE-DRAFT.md), com fixtures compartilháveis
+e aritmética TypeScript isolada/testada, sem imports de runtime. Não é sidecar,
+extração Rust, protocolo congelado ou relógio já emitido pela captura.
+
 Pode iniciar depois de 01; integração depende de 02/03.
 
 - Inventariar dependências Tauri/FFI/Whisper/ONNX e licenças de modelos.

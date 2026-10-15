@@ -3,6 +3,10 @@
 Proposta para o primeiro spike; **não existe uma API implementada** nesta inicialização.
 Congelar v1 somente após um teste ponta a ponta Electron -> sidecar -> exportação.
 
+Detalhamento ainda v0 do relógio/amostras/pausas e fixtures iniciais em
+[SPEECH-TIMELINE-DRAFT.md](SPEECH-TIMELINE-DRAFT.md). Não são campos já emitidos
+pelo backend Windows ou uma autorização para conectar PCM sem mapa validado.
+
 ## Transporte e isolamento
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
