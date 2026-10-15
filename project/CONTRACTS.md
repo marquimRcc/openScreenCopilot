@@ -15,6 +15,11 @@ liga parser/adapter à captura; ver limites emAUDIO-FRAME-DRAFT.
 
 ## Transporte e isolamento
 
+Preparação isolada Rust control_lines.rs agora enquadra UTF-8/LF/CRLF com limite
+porlinha e contrapressão de1mensagem. NÃO validaJSON/schema/identidade nem abre
+stdin/pipe/socket/IPC;caps são provisórios,nãonegociação v1. Detalhes/limites em
+README do speech-core. JSON/handshake/ACL/timeout/supervisão seguempendentes.
+
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.
 - Áudio: canal binário dedicado, pipe local Windows / socket local Unix. Evitar base64,

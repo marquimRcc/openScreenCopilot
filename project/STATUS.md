@@ -205,7 +205,12 @@ não apagam abandonado.9testesfakeprovider/concurrency/cap/close/cancel/erro/pan
 poison. Não é workerdrain/timeout/recovery/lockSTTglobal;host devecompartilharumgate
 porengine real e manterfuture atéfim,semcriaroutrogateparacontornarincerto.
 
-Rust100unitários+3integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+ControlLineDecoder Rust isolado:UTF8incremental/1linha pronta/capconfigaté1MiB,
+LF/CRLF(CRcontano limite),semfila/concatenaçãounbounded;erros/EOFparcialterminal,
+Stringreusa buffer,Debugsemtexto.8testesfragmentosUnicode/cap/stop/overflow;
+NÃO JSON/schema/handshake/IPC/pipeaberto,host ainda limita chunks/instâncias/retidos.
+
+Rust108unitários+3integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider
