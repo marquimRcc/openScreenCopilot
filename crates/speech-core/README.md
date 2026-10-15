@@ -43,7 +43,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Forty-four Rust unit tests now pass in debug/release, including the original shared fixtures.
+Fifty-three Rust unit tests now pass in debug/release, including the original shared fixtures.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -175,3 +175,21 @@ The current timeline TS draft's safeNumber epoch differs from this descriptor's
 u64 epoch; future adapters must reconcile or refuse, never cast silently.
 See [descriptor draft](../../project/AUDIO-FRAME-DRAFT.md). No library dependency,
 hardware API, runtime import or binary channel is added to the application.
+
+## Incremental decoder v0 (still no pipe)
+
+`audio_decoder_v0.rs` and the independent TS decoder now assemble one frame from
+fragments. Schema/caps/trusted expectation/order are validated before payload
+allocation. Ready blocks feed until ownership handoff; no internal frame queue.
+Source/epoch/rate/channels are fixed per instance, sequence/start exact, no u64 wrap.
+EOF partial fails, ready survives clean EOF, stop discards only still-owned data.
+Rust allocation is fallible; tests inject refusal, not actual OOM. None of these
+operations cancel/drain a worker or prove sender authentication/durable ACK.
+
+Owned audio buffers are bounded to payloadcap+160bytes, excluding metadata,
+allocator/GC, external input queue and frames already taken by caller. Nine Rust
+tests include exact4MiB cap, every split/EOF, two coalesced frames, invalid binding
+before allocation, failure/stop/busy and sequence exhaustion. Ten TS decoder tests
+add primitive expectation snapshot/input alias checks and allocation refusal.
+No process/transport is opened and no PCM is sent to the renderer. Global credits,
+retained frames, journal and actual host/provider supervision remain gates.

@@ -41,8 +41,8 @@ fora[-1,1] aceito sem clipping; NaN/Infinity em qualquer canal recusados. Sem DS
 Host futuro lê cabeçalho fixo e valida ANTES de reservar payload. validate_frame
 reparseia cabeçalho original e confere tamanho real/scalars; não aceita objeto
 Header/TS do renderer como autorização. Já recebe slice existente: NÃO comprova
-que transporte externo manteve buffering limitado. Sem reader incremental, pipe,
-timeout, cancelamento ou loop de leitura implementado.
+que transporte externo manteve buffering limitado. O decoder isolado abaixo não
+cria pipe, timeout de processo ou loop de transporte ativo.
 
 ## Inteiros e isolamento
 
@@ -69,3 +69,36 @@ reservados/overflow e payloadcurto/extra/nãofinite nos dois lados. Testes adici
 todas truncagens, cap exato4MiB, byteOffset/snapshot TS, finite foraunitrange.
 Não comprovam interoperabilidade de processos/reconexão/ACL/backpressure/ASR.
 Sem PCM no renderer, nova porta, sidecar ativo, captura duplicada ou import runtime.
+
+## Decoder incremental isolado (subsequente, ainda sem transporte)
+
+[audio_decoder_v0.rs](../crates/speech-core/src/audio_decoder_v0.rs) e
+[audioDecoderV0.ts](../electron/copilot/audioDecoderV0.ts) aceitam fragmentos sem
+concatenar chunk arbitrário. Feed consome no máximo um pedaço de header/payload e
+devolve bytes consumidos; caller retém sufixo e deve limitar sua própria fila.
+Esperado por instância:nonce/source/epoch/rate/channels/sequence/start/maxpayload,
+snapshot literal main/host-owned futuro, nunca objeto do renderer. Igualdade desses
+campos é binding local, não handshake/ACL/autenticação de sender.
+
+Só depois de validar header, expectativa, ordem e orçamento aloca buffer único
+de frame completo. Header scratch80 + frame80+payload <=cap+160bytes de buffers
+OWNED. Não inclui metadata/allocator/GC/chunks recebidos/frames já entregues ao
+caller, portanto não é teto deRSS ou de memória do pipeline inteiro.
+Um frame pronto bloqueia feed até take. Handoff move ownership, NÃO confirma
+persistência/ACKdurável nem limita quantos frames o consumidor retém.
+
+Sequência/start precisam ser contíguos e são atualizados só após payload válido.
+Não há wrap de sequenceu64MAX. Mudança de fonte/época/formato exige instância nova
+e lifecycle do host; decoder não negocia reconexão/replay/checkpoint. Flags ainda
+exigem política de reset do normalizador/VAD pelo host, não há clockmap aqui.
+
+Erro/schema/binding/ordem/budget/PCM nãofinite/alocação recusada é terminal;
+sem scan para ressincronizar magic. EOF parcial falha sempadding; EOF com frame
+pronto preserva take. Stop idempotente descarta só buffers próprios; não retrai
+frames já entregues nem cancela inferência/writer/filho real. Rust try_reserve_exact
+trata recusa reportável; não promete sobreviver aOOMkill/crash doSO.
+
+Testes de partições1..frame+1, todasposiçõesEOF, framescoalescidos, busy/ordem,
+snapshots/aliases, cap exato4MiB, stop/erro/sequenceexhaustion e recusa de alocação
+injetada semOOM. Nada disso prova processo/pipe/timeout/ACL/créditos globais/journal,
+nem autoriza PCMlive antes dos aceites01–03/04.

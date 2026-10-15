@@ -40,7 +40,7 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Último checkpoint funcional enviado:7ee332dd (descritores binários isolados).
+Checkpoint funcional atual:decoderincremental v0 Rust/TS, sobre7ee332dd.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.
@@ -111,10 +111,11 @@ aaa797a9c1adeceed256f8bce9c8c0c511bc92d55e330250a14d49d6f3c6a1d5.
 Checker privado.cache/check-meter-ui-package.cjs respeita pathsWindowsasar;
 extraResources não são arquivos internos do asar.
 
-Última validação TS completa7ee332dd:366arquivos/5201pass/5skip/382,70s,
-Node22.22.1/2workers,exit0/sem signal,fim2026-10-15T15:58:43Z.
-Recibo/log.cache/audio-frame-full.{json,log}.31focadosTS do parser passaram.
-Ambos tsc,lint0erros/26avisos herdados,i18n15/1000chaves,docs54/diffcheck OK.
+Última validação TS completa:367arquivos/5211pass/5skip/461,94s,
+Node22.22.1/2workers,exit0/sem signal,fim2026-10-15T16:38:34Z.
+Recibo/log.cache/audio-decoder-full.{json,log}.41focadosTS do parser/decoder passaram.
+Ambos tsc,lint0erros/26avisos herdados,i18n15/1000chaves,docs55/diffcheck OK.
+Anterior7ee332dd:366arquivos/5201pass/5skip/382,70s,audio-frame-full.
 Anterior33094a84:365arquivos/5170pass/5skip/383,64s,recibo speech-core-ci-full.
 Não repetir full sem mudança/necessidade; novas bibliotecas isoladas não mudam
 bundle/runtime. Não rebuildar compositor/WGC/pacote por Rust não ligado ao app.
@@ -142,11 +143,18 @@ Implementado/testado, sem imports runtime:
   gap/epoch/discard semcolarcontexto. Não cancela jobs emitidos nem deduplica texto.
 - Descritor binário v0 candidato80bytes/Rust+TSmain-only/27fixtures,4MiB/f32le/
   scalarcaps/counteroverflow/finite. U64TS→strings, snapshotfrozen/byteOffset.
-  Sem readerincremental/pipe/IPC/ACL/replay/backpressure/journal. Nonce nãoauth.
+  Decoderincremental isolado agora existe abaixo; sempipe/IPC/ACL/replayglobal/
+  backpressurepipeline/journal. Nonce nãoauth.
   Epochu64 difere do safeNumber no mapaTSv0:adaptador ainda deve reconciliar/recusar.
   [AUDIO-FRAME-DRAFT.md](AUDIO-FRAME-DRAFT.md) não congela v1.
+- Decoderincremental Rust/TS isolado:1frame/instância,expectativas nonce/source/
+  epoch/rate/channels/sequence/start antes de alocar payload, atécap+160bytes de
+  buffers próprios,ready bloqueia entrada atéhandoff. EOF parcial/erro terminal,
+  stop idempotente,sequence semwrap,alocaçãofalhável,semresync/padding. Handoff não
+  édurableACK nem limita fila externa/frames retidos;semprocesso/pipe/ACL/journal.
+  9testesRust/10TS do decoder,41focadosTS comheader passaram;full5211pass aprovado.
 
-Rust44unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
+Rust53unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 
@@ -203,9 +211,9 @@ encode; não comprovam NV12/FPS/MP4/editor/licença/eficiência. App segueH264.
 
 ## Próximo trabalho seguro
 
-1. Trabalho independente04:reader incremental bounded do descritor, lifecycle/
-   cancel/admissão/replay/expectativas host-owned, testes de partições/EOF/erros;
-   não criar pipe/API/PCMlive nem confundir parser com autorização.
+1. Trabalho independente04:orçamento global/porfonte e ownership dos frames
+   entregues pelo decoder, lifecycle/supervisão/replay; reader isolado já feito.
+   Não criar pipe/API/PCMlive nem confundir binding/accepted com auth/durabilidade.
 2. Quando tela disponível, retomar GUI01/02 com fixture/perfil próprios/cobertura
    autorizada, respeitando rejeições; completar confirmação/tomada/resultado/áudio.
 3. Qualidade03 no caminho encoder existente e testes sintéticos/30min/licenças

@@ -1,6 +1,7 @@
 //! Isolated timeline metadata, mono downmix and provider boundary, not an ASR runtime.
 //! The caller must scope spans to one session/source. No Tauri, hardware, or models.
 
+pub mod audio_decoder_v0;
 pub mod audio_frame_v0;
 pub mod downmix;
 pub mod provider;
