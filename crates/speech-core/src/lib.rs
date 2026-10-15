@@ -1,6 +1,7 @@
-//! Draft v0 sample arithmetic only, not a capture/ASR runtime or wire parser.
+//! Isolated draft sample timeline metadata and mono downmix, not an ASR runtime.
 //! The caller must scope spans to one session/source. No Tauri, hardware, or models.
 
+pub mod downmix;
 pub mod timeline_registry;
 
 #[derive(Clone, Copy, Debug)]

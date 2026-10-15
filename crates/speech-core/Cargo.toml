@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 license = "MIT"
 publish = false
-description = "Isolated draft sample timeline arithmetic; no ASR or capture runtime"
+description = "Isolated draft timeline metadata and mono downmix; no ASR runtime"
 
 # Deliberately isolated from the compositor workspace and all vendor build scripts.
 [workspace]

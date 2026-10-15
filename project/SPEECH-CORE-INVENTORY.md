@@ -75,3 +75,22 @@ ou instalar vendor como atalho para descobrir dependências.
 
 Aceites continuam no [ROADMAP.md](ROADMAP.md). Esta análise não dispensa teste de
 fala real, gravação30min, falha/crash, recuperação ou RegataOS.
+
+## Primeira extração limitada — 2026-10-15
+
+Somente `audio_to_mono` foi adaptado em
+[downmix.rs](../crates/speech-core/src/downmix.rs), mantendo origem/commit/copyright
+e [MIT completa](../crates/speech-core/LICENSE-MEETING-COPILOT). Não importar
+audio_processing inteiro. Políticas AverageAll/FirstStereoPair explícitas: heurística
+mic-array do original não descarta canais do sistema silenciosamente. Canais1–32,
+frame completo, orçamento de frames e teto provisório1.048.576floats de entrada;
+valores finitos conferidos em TODOS canais antes de alocar saída. f64 evita overflow
+intermediário ao somar f32 finitos; não há clipping/ganho/filtragem.
+
+Mantém taxa e número de frames; não faz16kHz, layout-aware surround, resampling,
+delay/flush ou buffering entre chunks. Partição só em fronteira de frames completos;
+caller futuro retém bytes/amostras parciais. Média estéreo pode cancelar antiphase,
+limite inerente que não foi ocultado por teste de voz ou fallback de canal.
+7testes novos,21totais Rust debug/release/clippy/fmt aprovados offline. Sem dependência
+nova/Cargo.lock alterado, downloads, runtime, captura, modelo ou extração VAD/provider.
+Etapa04 ainda NÃO concluída; qualificação de fala pt-BR/normalização segue pendente.

@@ -1371,6 +1371,71 @@ journal/recuperação ou normalização/ASR/sidecar. Estado se perde ao descarta
 Limites não prometem duração/gravação longa/memória de inferência. Sem novo download,
 buildvendor, modelo, áudio capturado, Tauri ou FFI. Gates01–03/04 permanecem.
 
+## Interrupção humana do Computer Use — 2026-10-15
+
+HEADc1c3b5b0 enviado (registro Rust), runtime37d4a1c8 enviado (Record/picker),
+árvore limpa antes desta nota. Uma tentativa nova de diagnóstico adicionou somente
+logs de eventos/visibilidade/foco em .cache/full-app-qa.mjs, não em produto.
+Fixture11320 e cobertura17008 lançadas; primeiro list_windows foi recusado:
+"Computer Use was stopped by the user with the physical Escape key".
+Nenhum input GUI desta tentativa, nenhuma tomada/transcrição iniciada.
+
+Controle e desenvolvimento interrompidos conforme instrução da ferramenta. Sem
+outros calls Computer Use. Somente limpeza necessária: os dois processos próprios
+recém-lançados/ociosos tiveram executable/argumentos conferidos e foram encerrados;
+consulta final confirmou ambos ausentes. Não houve deleção de dados/mídia, apps
+humanos intocados. Logs region-return-{app,cover}.{stdout,stderr}.log preservados.
+
+Automação atualizada via ferramenta para PAUSED, confirmação explícita recebida.
+Não retomar GUI/trabalho automático até nova instrução humana. Créditos disponíveis
+não motivaram esta pausa: última consulta5h68%/semanal11%,allowedtrue. Continuam
+limiares89%5h/95%semanal e sem consumo de resets. Nota de interrupção preservada
+localmente, não commitada após o pedido de parar.
+
+## Retomada humana e bloqueio operacional da GUI — 2026-10-15T13:01Z
+
+Usuário: "Diga me o q está fazendo? Pode continuar". Revogou pausa por Escape;
+automação reativada via ferramenta, confirmação ACTIVE recebida. Consulta real:
+5h71%/semanal11%,allowedtrue. Chat original idle, este único ativo. Nota anterior
+de interrupção permanece histórica; não usar como nova recusa de desenvolvimento.
+
+Nova fixture24420/cobertura13404, perfil privado, apenas eventos próprios logging.
+Primeira screenshot de cobertura mostrou outro aplicativo por cima, apesar de
+coverage.json confirmar bounds/fullscreen/opaque do próprio cover. Nenhum input
+GUI/retângulo/gravação/transcrição foi iniciado; fatia interrompida imediatamente,
+sem ativar janelas para tentar expor/esconder dados privados. Identidade executable/
+argumentos conferida, somente esses dois processos próprios ociosos encerrados;
+consulta final ausentes. Aplicativos/edição humana intactos. Logs privados
+.cache/region-resume-{app,cover}.{stdout,stderr}.log, não enviar mídia.
+
+Falta reservar tela sem uso simultâneo para próximo teste; pergunta assíncrona
+enviada. Não repetir GUI em cada watchdog enquanto isso. Trabalho independente
+de tela continua autorizado, sem dispensar diagnóstico/aceites01–03.
+
+## Preparação04 — primeira adaptação DSP limitada — 2026-10-15
+
+downmix.rs adapta audio_processing.rs::audio_to_mono do meeting-copilot
+3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Mantidos copyright Zackriya Solutions,
+origem/alterações no cabeçalho e MIT completa em crate/LICENSE-MEETING-COPILOT;
+THIRD_PARTY_SOURCES/README atualizados. Vendor inalterado, sem dependências novas.
+
+Política explícita AverageAll/FirstStereoPair, nunca descartar canais do sistema
+implicitamente como a heurística mic-array original. Canais1–32, frames completos,
+max_frames do caller+teto provisório1.048.576scalars; rejeita NaN/Inf inclusive em
+canais excluídos, valida antes de alocar saída. f64 intermediário evita overflow
+f32 na soma; sem clipping/ganho/filtro. Preserva frame count/taxa, não normaliza16kHz.
+Sem resampler, VAD, provider, modelo, Tauri, captura, queue, journal ou runtime novo.
+
+21debug/21release, clippyalltargets-Dwarnings, fmt aprovados Rust1.98.1 offline/locked,
+target.cache/speech-core-target. 7testes novos: mono/stereo/vazio, multicanal/política,
+partialframe/canais/limites, não-finitos, capacidadeframes/scalars, extremosf32 e
+partições completas equivalentes em5contagens de canais. Clippy inicialmente exigiu
+is_multiple_of; corrigido e testes reexecutados. Sem MSRV/RegataOS/voz real homologados.
+Antiphase e surround semlayout são limites explícitos; não são redução de ruído.
+TS/runtime não alterados; não repetir full5167pass/pacote37d4a1c8 sem mudança app.
+docs53 OK, gitdiffcheck OK; texto MIT da cópia conferido igual ao original
+(somente normalização CRLF/LF/terminação na comparação), vendor/Cargo.lock semdiff.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

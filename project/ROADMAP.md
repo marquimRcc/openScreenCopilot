@@ -122,21 +122,23 @@ e editor capaz de abrir/exportar. Qualidade tem prioridade sobre tamanho; os
 
 ## 04 — Extrair speech-core e sidecar
 
-Inventário inicial somente leitura registrado em
-[SPEECH-CORE-INVENTORY.md](SPEECH-CORE-INVENTORY.md); nenhuma extração/runtime novo
-implementado, sem dispensar dependências/aceites.
+Inventário e primeira adaptação isolada registrados em
+[SPEECH-CORE-INVENTORY.md](SPEECH-CORE-INVENTORY.md); nenhum runtime ASR/sidecar
+integrado, sem dispensar dependências/aceites.
 
 Rascunho v0 de mapa amostras→mídia em
 [SPEECH-TIMELINE-DRAFT.md](SPEECH-TIMELINE-DRAFT.md), com fixtures compartilháveis
 e aritmética TypeScript isolada/testada, sem imports de runtime. Não é sidecar,
-extração Rust, protocolo congelado ou relógio já emitido pela captura.
+extração de VAD/provider, protocolo congelado ou relógio já emitido pela captura.
 
 Preparação adicional: crate speech-core isolado usa std e executa a mesma fixture
 aritmética JSON do TS, com testes/overflow verificado. Não é extração de VAD/provider
 do vendor nem sidecar/ASR implementado; integração e aceites continuam pendentes.
 Registro Rust limitado de mapas por sessão/fonte agora valida ordem/replay/épocas,
 sem PCM/persistência/autorização e sem import runtime. Tetos são provisórios do
-protótipo, não negociação v1. Ver SPEECH-TIMELINE-DRAFT; normalização/provider pendem.
+protótipo, não negociação v1. Ver SPEECH-TIMELINE-DRAFT. Primeira adaptação pequena
+do vendor: downmix mono com política de canais explícita/limites/validação e MIT
+preservada; sem resampling/VAD/provider/integração ou dispensa de aceites anteriores.
 
 Pode iniciar depois de 01; integração depende de 02/03.
 
