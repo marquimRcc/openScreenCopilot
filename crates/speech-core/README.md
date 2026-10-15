@@ -43,7 +43,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Sixty-three Rust unit tests now pass in debug/release, including the original shared fixtures.
+Sixty-seven Rust unit tests now pass in debug/release, including the original shared fixtures.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -212,8 +212,11 @@ frame ownership and releases only after its bytes are freed. Stop cannot reclaim
 a consumer-owned frame. Pool close blocks new admissions without revoking owners;
 poisoned/broken accounting fails closed. Cancellation of workers is still external.
 
-Seven pool and three decoder integration tests cover exact caps, concurrent
+Eight pool and six decoder integration tests cover exact caps, concurrent
 admission, overflow, scope, epochs, handoff, waiting/stop, allocation failure and
-EOF cleanup. The TS decoder has NO shared-pool integration yet. Input chunks,
+EOF cleanup, malformed PCM, dropped owners and10,000 deterministic operations
+against an independent accounting model. Rust OwnedFrame exposes metadata only
+as a value snapshot, with immutable byte access; neither can detach its reservation.
+The TS decoder has NO shared-pool integration yet. Input chunks,
 header scratch/metadata, normalized copies and engine allocations remain outside
 this accounting; future host must bound them and the number of decoder instances.

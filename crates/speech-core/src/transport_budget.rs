@@ -568,4 +568,73 @@ mod tests {
         .is_err());
         assert_eq!(pool.usage(), Err(BudgetError::Poisoned));
     }
+
+    #[test]
+    fn deterministic_admission_release_schedule_matches_independent_model() {
+        let limits = limits();
+        let pool = pool();
+        let mut owners: Vec<(Source, Cost, BufferLease)> = Vec::new();
+        let mut seed = 0x24a8_31d5_u64;
+        for step in 0..10_000 {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+            if !owners.is_empty() && seed.is_multiple_of(3) {
+                drop(owners.swap_remove((seed as usize) % owners.len()));
+            } else {
+                let source = if seed & 8 == 0 {
+                    Source::System
+                } else {
+                    Source::Microphone
+                };
+                let cost = Cost {
+                    bytes: 1 + ((seed >> 8) % 220),
+                    frames: 1 + ((seed >> 24) % 24),
+                };
+                let total_bytes: u64 = owners.iter().map(|v| v.1.bytes).sum();
+                let total_frames: u64 = owners.iter().map(|v| v.1.frames).sum();
+                let source_bytes: u64 = owners
+                    .iter()
+                    .filter(|v| v.0 == source)
+                    .map(|v| v.1.bytes)
+                    .sum();
+                let source_frames: u64 = owners
+                    .iter()
+                    .filter(|v| v.0 == source)
+                    .map(|v| v.1.frames)
+                    .sum();
+                let error =
+                    if cost.bytes > limits.source_bytes || cost.frames > limits.source_frames {
+                        Some(BudgetError::CostTooLarge)
+                    } else if total_bytes + cost.bytes > limits.global_bytes
+                        || total_frames + cost.frames > limits.global_frames
+                        || source_bytes + cost.bytes > limits.source_bytes
+                        || source_frames + cost.frames > limits.source_frames
+                        || owners.len() == limits.in_flight
+                    {
+                        Some(BudgetError::Capacity)
+                    } else {
+                        None
+                    };
+                match (pool.try_reserve(NONCE, source, cost), error) {
+                    (Ok(lease), None) => owners.push((source, cost, lease)),
+                    (Err(actual), Some(expected)) => assert_eq!(actual, expected, "step {step}"),
+                    mismatch => panic!("model mismatch at {step}: {mismatch:?}"),
+                }
+            }
+            assert_eq!(
+                pool.usage().unwrap(),
+                Usage {
+                    bytes: owners.iter().map(|v| v.1.bytes).sum(),
+                    frames: owners.iter().map(|v| v.1.frames).sum(),
+                    leases: owners.len(),
+                    sources: [Source::System, Source::Microphone]
+                        .iter()
+                        .filter(|&&source| owners.iter().any(|v| v.0 == source))
+                        .count(),
+                },
+                "step {step}"
+            );
+        }
+        drop(owners);
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+    }
 }

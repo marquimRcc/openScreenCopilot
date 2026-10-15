@@ -40,7 +40,7 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Checkpoint funcional atual:orçamento compartilhado opcional Rust sobre decoder79f2d8c8.
+Checkpoint funcional atual:hardening do orçamento3737afc1/decoder79f2d8c8.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.
@@ -158,10 +158,12 @@ Implementado/testado, sem imports runtime:
   4096leases,contagem atômica eepochs agregadas. Reservaantesalloc elease não
   clonável até consumidor liberar frame;capacidade temporária espera sóheader,
   retry explícito sempolling,oversize terminal. Close não revoga owners;stop não
-  recupera frame entregue.7testespool+3integração. Não é crédito da conta/RSS/auth;
+  recupera frame entregue.8testespool+6integração,10mil operações modelo independente;
+  EOFaguardando/PCM inválido/drop e snapshot imutável de metadadosOwnedFrame.
+  Não é crédito da conta/RSS/auth;
   sempoolTS/pipe/notificaçãohost/workerdrain/journal/PCMlive.
 
-Rust63unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
+Rust67unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 

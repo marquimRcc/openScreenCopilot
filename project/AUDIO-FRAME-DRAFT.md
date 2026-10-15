@@ -118,7 +118,10 @@ só header80 e pausa consumo de payload; retry explícito depende de futura noti
 do host, sem polling/fila de waiters implementados. Custo impossível falha terminal.
 Lease não clonável acompanha pending→ready→consumidor; bytes são liberados ANTES da
 reserva. Stop descarta apenas ownership próprio, não frame entregue/inferência.
-Sete testes do pool e três de integração passaram; nenhuma conexão TS/pipe/runtime.
+Oito testes do pool e seis de integração cobrem também EOF aguardando, sessão
+alheia, PCM inválido, drop pending/ready e10mil operações contra modelo independente.
+OwnedFrame Rust mantém metadados privados e retorna snapshot por valor: consumidor
+não pode alterar o header validado nem custo da reserva. Nenhuma conexão TS/pipe/runtime.
 
 Isso NÃO limita RSS, chunks externos, scratch/metadata, número de decoders, cópias
 normalizadas ou engine. Host ainda precisa limitar/admitir esses recursos, coordenar

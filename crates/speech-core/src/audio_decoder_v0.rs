@@ -49,12 +49,17 @@ fn allocate_buffer(length: usize) -> Result<Vec<u8>, DecoderError> {
 
 #[derive(Debug)]
 pub struct OwnedFrame {
-    pub header: Header,
+    header: Header,
     bytes: Vec<u8>,
     // Field drop order: free bytes BEFORE returning the reservation.
     _lease: Option<BufferLease>,
 }
 impl OwnedFrame {
+    /// Return a value snapshot; callers cannot detach the owned metadata from
+    /// the validated bytes or change the accounting cost of this frame.
+    pub fn header(&self) -> Header {
+        self.header
+    }
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
     }
@@ -662,5 +667,91 @@ mod tests {
             Err(DecoderError::GlobalBudget(BudgetError::CostTooLarge))
         );
         assert!(impossible.is_closed());
+    }
+
+    #[test]
+    fn waiting_eof_and_foreign_pool_do_not_allocate_or_lose_live_credit() {
+        let bytes = fixture();
+        let pool = budget(&bytes, 96);
+        let mut first = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        feed_all(&mut first, &bytes).unwrap();
+        let held = first.take().unwrap();
+        let mut waiting = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        waiting.allocate = |_| panic!("no allocation while source budget is exhausted");
+        assert_eq!(waiting.feed(&bytes), Ok(HEADER_BYTES));
+        assert!(waiting.is_waiting_for_budget());
+        assert_eq!(waiting.finish(), Err(DecoderError::Truncated));
+        assert_eq!(pool.usage().unwrap().bytes, 96);
+        assert_eq!(waiting.retry_budget(), Err(DecoderError::Closed));
+        drop(held);
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+
+        let mut foreign = expected(&bytes);
+        foreign.nonce = [9; 16];
+        let mut altered = bytes.clone();
+        altered[24..40].copy_from_slice(&foreign.nonce);
+        let mut decoder = AudioDecoderV0::with_budget(foreign, pool.clone()).unwrap();
+        decoder.allocate = |_| panic!("scope refusal must precede allocation");
+        assert_eq!(
+            decoder.feed(&altered),
+            Err(DecoderError::GlobalBudget(BudgetError::WrongScope))
+        );
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+    }
+
+    #[test]
+    fn malformed_payload_and_decoder_drop_release_only_their_own_lease() {
+        let bytes = fixture();
+        let pool = budget(&bytes, 192);
+        let mut first = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        feed_all(&mut first, &bytes).unwrap();
+        let held = first.take().unwrap();
+        let mut bad = bytes.clone();
+        bad[80..84].copy_from_slice(&f32::INFINITY.to_le_bytes());
+        let mut invalid = AudioDecoderV0::with_budget(expected(&bad), pool.clone()).unwrap();
+        assert_eq!(
+            feed_all(&mut invalid, &bad),
+            Err(DecoderError::Frame(FrameError::NonFinite))
+        );
+        assert_eq!(pool.usage().unwrap().bytes, 96);
+        for ready in [false, true] {
+            let mut abandoned =
+                AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+            abandoned.feed(&bytes).unwrap();
+            if ready {
+                abandoned.feed(&bytes[HEADER_BYTES..]).unwrap();
+            }
+            assert_eq!(pool.usage().unwrap().bytes, 192);
+            drop(abandoned);
+            assert_eq!(pool.usage().unwrap().bytes, 96);
+        }
+        drop(first);
+        assert_eq!(held.bytes(), bytes);
+        assert_eq!(pool.usage().unwrap().bytes, 96);
+        drop(held);
+        assert_eq!(pool.usage().unwrap(), Usage::default());
+    }
+
+    #[test]
+    fn handed_frame_metadata_snapshot_cannot_mutate_validated_owner() {
+        let bytes = fixture();
+        let pool = budget(&bytes, 192);
+        let mut decoder = AudioDecoderV0::with_budget(expected(&bytes), pool.clone()).unwrap();
+        feed_all(&mut decoder, &bytes).unwrap();
+        let frame = decoder.take().unwrap();
+        let original = frame.header();
+        let mut snapshot = frame.header();
+        snapshot.session_nonce = [9; 16];
+        snapshot.frame_count = u32::MAX;
+        snapshot.source = Source::Microphone;
+        assert_ne!(snapshot, original);
+        assert_eq!(frame.header(), original);
+        assert_eq!(validate_frame(frame.bytes()).unwrap(), original);
+        assert_eq!(
+            pool.usage().unwrap().frames,
+            u64::from(original.frame_count)
+        );
+        drop(frame);
+        assert_eq!(pool.usage().unwrap(), Usage::default());
     }
 }
