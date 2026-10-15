@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are122 unit +4 component-integration +8 resampling-spike tests, passing
+These are124 unit +4 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -389,3 +389,9 @@ tests: a future host MUST consistently use the managed factory on one session
 pool, not mix factories or create replacement pools to evade admission. This
 does not limit sessions, control-line decoders, external chunks, engine memory,
 RSS or authenticate the wire nonce. Close is admission closure, not worker drain.
+
+Provider and managed-provider errors expose diagnostic_code() as a static local
+category. No detail, counter, path or language is interpolated; checked error
+details and explicit Display remain separate data-bearing APIs. Two tests cover
+all categories and provider delegation. These strings are not localized UI,
+negotiated/frozen wire codes, telemetry or consent to transmit diagnostics.

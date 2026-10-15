@@ -232,7 +232,11 @@ FactoryRustwith_managed_budget opcional:2slotsfixos no poolEXATO,1porfonte entre
 integraçãocomponentes usa factory. Lowlevelnew/with_budget continuamnãogeridos,
 host futuro não deve misturar/criarpoolbypass. Semlimitechunks/control/session/RSS/auth.
 
-Rust122unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+diagnostic_code() de erroprovider/managed retorna categoria localestática,
+semstr/caminho/contadores/idioma;2testestodasvariantes/delegação. Não éwirev1,
+UItraduzida/telemetria/consentimento nem sanitizaDisplay/camposexplícitos.
+
+Rust124unitários+4integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider

@@ -22,6 +22,21 @@ pub enum ManagedTranscriptionError {
     Admission(AdmissionError),
     Provider(TranscriptionError),
 }
+impl ManagedTranscriptionError {
+    /// Static local category only, not serialization or a frozen wire contract.
+    pub fn diagnostic_code(&self) -> &'static str {
+        match self {
+            Self::Provider(error) => error.diagnostic_code(),
+            Self::Admission(error) => match error {
+                AdmissionError::InvalidLimit => "admission-limit-invalid",
+                AdmissionError::Busy => "admission-busy",
+                AdmissionError::Closed => "admission-closed",
+                AdmissionError::Uncertain => "admission-uncertain",
+                AdmissionError::Poisoned => "admission-poisoned",
+            },
+        }
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AdmissionStatus {
     /// Charged calls, including abandoned/uncertain ones. Not a thread count.
@@ -136,6 +151,25 @@ pub async fn transcribe_managed<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn managed_diagnostics_preserve_static_failure_categories_without_detail() {
+        for (error, expected) in [
+            (AdmissionError::InvalidLimit, "admission-limit-invalid"),
+            (AdmissionError::Busy, "admission-busy"),
+            (AdmissionError::Closed, "admission-closed"),
+            (AdmissionError::Uncertain, "admission-uncertain"),
+            (AdmissionError::Poisoned, "admission-poisoned"),
+        ] {
+            assert_eq!(
+                ManagedTranscriptionError::Admission(error).diagnostic_code(),
+                expected
+            );
+        }
+        let error = TranscriptionError::EngineFailed("private-engine-detail".into());
+        let managed = ManagedTranscriptionError::Provider(error.clone());
+        assert_eq!(managed.diagnostic_code(), error.diagnostic_code());
+        assert_eq!(managed, ManagedTranscriptionError::Provider(error));
+    }
     use crate::provider::ProviderFuture;
     use std::future::Future;
     use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};

@@ -28,6 +28,20 @@ pub enum TranscriptionError {
     Canceled,
 }
 impl TranscriptionError {
+    /// Static local diagnostic category, no detail/PCM/identity interpolation.
+    /// NOT a frozen wire code, localized UI string or logging permission.
+    pub fn diagnostic_code(&self) -> &'static str {
+        match self {
+            Self::ModelNotLoaded => "provider-model-not-loaded",
+            Self::AudioTooShort { .. } => "provider-audio-too-short",
+            Self::EngineFailed(_) => "provider-engine-failed",
+            Self::UnsupportedLanguage(_) => "provider-language-unsupported",
+            Self::InvalidAudio => "provider-audio-invalid",
+            Self::InvalidLanguageHint => "provider-language-hint-invalid",
+            Self::InvalidResult => "provider-result-invalid",
+            Self::Canceled => "provider-canceled",
+        }
+    }
     /// Post-completion acceptance only, not an engine allocation bound or a
     /// sanitizer. Preserve accepted details exactly; never truncate UTF-8.
     fn accepted(self) -> Self {
@@ -212,6 +226,41 @@ mod tests {
     use super::*;
     use std::sync::atomic::AtomicUsize;
     use std::task::{Context, Poll, Waker};
+    #[test]
+    fn static_diagnostic_categories_never_include_provider_details_or_counts() {
+        let cases = [
+            (
+                TranscriptionError::ModelNotLoaded,
+                "provider-model-not-loaded",
+            ),
+            (
+                TranscriptionError::AudioTooShort {
+                    samples: 1234567,
+                    minimum: 7654321,
+                },
+                "provider-audio-too-short",
+            ),
+            (
+                TranscriptionError::EngineFailed("private-path-and-error".into()),
+                "provider-engine-failed",
+            ),
+            (
+                TranscriptionError::UnsupportedLanguage("private-language-hint".into()),
+                "provider-language-unsupported",
+            ),
+            (TranscriptionError::InvalidAudio, "provider-audio-invalid"),
+            (
+                TranscriptionError::InvalidLanguageHint,
+                "provider-language-hint-invalid",
+            ),
+            (TranscriptionError::InvalidResult, "provider-result-invalid"),
+            (TranscriptionError::Canceled, "provider-canceled"),
+        ];
+        for (error, expected) in cases {
+            assert_eq!(error.diagnostic_code(), expected);
+            assert_eq!(error.clone().diagnostic_code(), expected);
+        }
+    }
 
     #[test]
     fn provider_error_details_have_inclusive_utf8_byte_acceptance_bounds() {
