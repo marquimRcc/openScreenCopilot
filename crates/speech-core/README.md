@@ -43,7 +43,7 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-Eighty-one Rust unit tests now pass in debug/release, including the original shared fixtures.
+Ninety Rust unit tests now pass in debug/release, including the original shared fixtures.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -256,3 +256,28 @@ reentrant callbacks, counter exhaustion and100 concurrent schedules. No sleep or
 input polling is used in those tests. Host/TS/pipe/worker supervision is NOT wired;
 number of decoder instances, external chunks and completed futures remain host
 responsibilities, not whole-pipeline RAM guarantees. Retry is still explicit.
+
+## Isolated provider admission (no engine or worker supervisor)
+
+`provider_admission.rs` optionally bounds simultaneous managed calls1..16 (prototype
+cap, not a production setting). Host must share ONE gate for the actual engine;
+unmanaged calls, another gate or the inherited STT are NOT globally protected.
+There is no queue, executor, model, download, retry or PCM routing here.
+
+Reservation precedes provider entry. The existing checked provider future is
+awaited even on late cancellation, and a slot is returned only after it resolves.
+Errors/invalid results also release after resolution. Pre-canceled/unpolled work
+never enters. Close stops new admission, not existing calls; it is not a drain.
+
+Dropping an entered managed future or a provider panic marks the gate uncertain
+and keeps that call charged. Known other calls may complete, but cannot erase
+the abandoned charge. No reset/reopen; constructing a new gate does NOT prove
+the old worker stopped. `active` is charged calls, not physical thread count;
+zero alone is not shutdown evidence if state is uncertain/poisoned. This is
+fail-closed bookkeeping, NOT worker cancellation/recovery or process exit.
+
+Nine fake-provider tests cover concurrency, inclusive cap, pre/late cancellation,
+close, error/result refusal, future drop, panic and poison. Real engine ownership,
+timeouts, resource/memory budgets and integration with legacy STT still need host
+supervision and roadmap gates. Borrowed requests retain caller-owned PCM; this
+module neither copies it nor sets a whole-process memory ceiling.

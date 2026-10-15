@@ -42,7 +42,8 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Checkpoint funcional atual:adaptador isolado TS de epoch/header→range sobre
+Checkpoint funcional atual:admissão isolada de providerRust sobre adaptadorTSd7054621,
+epoch/header→range sobre
 notificação limitada Rust4f19a3f8/duração84a3dd79,
 hardening1e991554 do orçamento3737afc1/decoder79f2d8c8;
 5ede5b01 documenta requisitos host futuros, sem runtime novo.
@@ -189,7 +190,14 @@ reserva. Release/close wake foraMutex,Drop sóregistropróprio,overflowfailclose
 8testesnotificação+1integração decoder/100corridas;poison/executor travado ainda
 exigem supervisão externa. Semhost/TS/liveASR.
 
-Rust81unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
+ProviderAdmission Rust opcional limita1–16jobsgeridos,semfila/executor/engine.
+Admiteantesprovider,aguarda cancel tardio/erro antesdevolvervaga;close sóadmissão.
+Dropfutureiniciada/panic deixa incerto e conserva cobrança;outrosjobs completados
+não apagam abandonado.9testesfakeprovider/concurrency/cap/close/cancel/erro/panic/
+poison. Não é workerdrain/timeout/recovery/lockSTTglobal;host devecompartilharumgate
+porengine real e manterfuture atéfim,semcriaroutrogateparacontornarincerto.
+
+Rust90unitários+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 

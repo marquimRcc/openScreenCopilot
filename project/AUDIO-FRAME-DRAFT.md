@@ -182,3 +182,10 @@ ainda exigem supervisão/deadline externa; não prometer drain só porFutureDrop
 Oito testes de notificação+um integração decoder:before-register/poll,100corridas
 threads,replace/cancel/close/overflow/callback reentrante,sem sleep/pollingentrada.
 Semexecutor/host/TS/pipe/PCMlive,semteste30min e semliberar aceites01–03/04.
+
+Admissão provider independente em provider_admission.rs agora limita jobs geridos
+e mantém cobrança apósDropfutureiniciada/panic incerto. Cancel tardio aguarda
+provider retornar antes liberar. Close não édrain;counterjobs não é threadcount.
+Nove testes comfakeprovider,semengine/STTreal conectado. O host ainda precisa
+supervisionar worker/processo/timeout e compartilharumgate porengine;criaroutra
+instância não autoriza bypass nem prova queworkerantigo encerrou.

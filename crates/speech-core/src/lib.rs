@@ -5,6 +5,7 @@ pub mod audio_decoder_v0;
 pub mod audio_frame_v0;
 pub mod downmix;
 pub mod provider;
+pub mod provider_admission;
 pub mod speech_windows;
 pub mod timeline_registry;
 pub mod transport_budget;
