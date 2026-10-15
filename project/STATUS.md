@@ -23,7 +23,7 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
   wake pode antecipar, garantir tentativa posterior à guarda, nunca DAILY isolado.
 - Renovação REAL14:49:47UTC15/10 confirmou5h2%/semanal16%, allowedtrue, superando
   notas históricas90–100%/timestamp antigo. Watchdog1min ACTIVE restaurado/conferido.
-  Última consulta16:56:34UTC:5h78%/semanal28%,allowedtrue; não é pausa atual.
+  Última consulta17:06:09UTC:5h86%/semanal29%,allowedtrue; não é pausa89.
   Consultar novamente antes de iniciar trabalho, não usar esse snapshot como saldo vivo.
 - Estimativa do GIF e Compartilhar SOMENTE após TODO restante roadmap.
   Base existente preservada, integração incompleta não ativada.
@@ -40,7 +40,8 @@ Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado at
 Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
 confirmar novamente antes da rodada, nunca escrever em paralelo.
 
-Checkpoint funcional atual:hardening do orçamento3737afc1/decoder79f2d8c8.
+Checkpoint funcional atual:hardening1e991554 do orçamento3737afc1/decoder79f2d8c8;
+5ede5b01 documenta requisitos host futuros, sem runtime novo.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.
@@ -182,6 +183,11 @@ Não é providerRust conectado, fala natural/timestamps/ASRlive/30min/diarizaç�
 CI speech-core separado configurado33094a84:Rust1.98.1,lockfetch antesoffline
 debug/release/clippy/fmt,contentsread/timeout15min/targettemp,semSDK/model/artifact.
 Guardas locais aprovadas; execução CI remota desse job ainda não observada.
+Consulta read-only GitHub do commit5ede5b01 em17:06UTC retornou0runs dePR.
+Esse endpoint filtraPR/primeirapágina, portanto não prova ausência de todosruns.
+ci.yml só dispara push para main, feat/ai-edition, release/** e PRs para esses destinos;
+push da branch de trabalho não dispara CI por si. Não abrir PR/alterar triggers/
+dispatch de distribuição só para obter CI; ghCLI ausente, nenhum instalado.
 Não alegar homologação Linux/RegataOS por teste localWindows.
 
 Relógio Windows atual usa steady_clock/pausas/mixerframes e descarta timestamps
