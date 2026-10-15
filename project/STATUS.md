@@ -1162,6 +1162,33 @@ Plano de comparação estático/rolagem/dinâmico/30min ainda não executado; n�
 tamanho ou qualidade por bitrate/nome da GPU. Docs somente, sem alterar encoder,
 pacote ou repetir suíte já aprovada. GUI01/02 e autorização continuam pendentes.
 
+## 02Z — autorização recebida; reteste GUI bloqueado no hit-test
+
+Usuário respondeu Sim à cobertura opaca temporária de todos os monitores.
+Em2026-10-15T03:39UTC créditos renovados(5h1%/semanal90%); watchdog1min restaurado,
+sem pausa entre incrementos. A falta de autorização descrita acima é HISTÓRICA.
+
+Cobertura própria foi executada e conferida por computer-use: um monitor retornado,
+bounds1280×800DIP/fullscreen/visível/opaco, somente pixels sintéticos no fundo.
+Recibo `.cache/opaque-source-qa-4533692b-7434-4c6f-9ff9-6c0cf69badb3/coverage.json`.
+App compilado02Y em appData privado `.cache/full-app-qa-d5b3ab81-c015-4a11-a28c-430932f778fe`,
+HUD QA desprotegido somente nessa instância. Árvore/screenshot mostrou controles
+e aviso inicial de idioma, mas clique Switch-to-Português falhou:
+`point (1052,986) is over electron.exe Chrome Legacy Window, not target openScreenCopilot`.
+Uma ativação+observação nova e uma tentativa por coordenadas frescas falharam
+novamente(1052,984). Tab não produziu foco utilizável. Sem cliques adicionais,
+DOM injection ou relaxamento de hit-test. Não foi identificado se causa está no
+app, DPI ou controle; HudNotice já tem data-hud-interactive, portanto não alterar
+esse código por suposição. NÃO homologa clique HUD, idioma, região ou resultado.
+
+Sem Gravar/MP4/streams. AltF4 normal fechou app e cobertura, processos próprios
+20620/21020 confirmados ausentes após conferir identidade/caminho/estado.
+Nenhuma cobertura ou instância desprotegida ficou ativa. Não reutilizar PIDs.
+Autorização continua válida; novo bloqueio é técnico, não pedir a mesma permissão.
+Arraste/Escape/borda física/DPI/fluxo completo seguem pendentes. Trabalho seguro
+independente pode avançar; próximo reteste precisa recuperar controle confiável
+ou ajuda humana, não repetir cegamente a mesma ação. Sem mudança de produção.
+
 ## Regra de atualização contínua (entregas)
 
 A cada PR, registrar: escopo, commits/helpers, comandos, resultados e testes não

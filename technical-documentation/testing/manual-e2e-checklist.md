@@ -905,6 +905,16 @@ These checks are the human slice: an agent cannot click Apple's picker (see abov
 
 ## Results log
 
+2026-10-15 — openScreenCopilot compiled02Y/HEAD4ce145dc, Windows11, **Partial/blocked**.
+Human explicitly approved temporary opaque monitor covers; coverage confirmed
+1280×800DIP/fullscreen, synthetic pixels only. Isolated app/HUD startup and controls
+observed via computer-use. First language button OS click failed hit-test against
+Chrome Legacy Window; activation/fresh observation/one coordinate retry also failed.
+Tab returned no actionable focus. No recording or injected clicks; all capture,
+region/Escape, physical border/DPI, audio and result-flow checks **skipped** due to
+unreliable input. Not an acceptance or release pass. AltF4 closed own idle app and
+cover; both process identities verified absent. Evidence/limits in project/STATUS.md.
+
 2026-10-14 — native own-window pause proof, Windows 11, helper02U unchanged.
 **Programmatic partial, no GUI-scope bypass:**10s wall/pause3s/resume5s, one ACK each;
 five synthetic tone/flash markers scheduled, paused marker excluded, four remain.
