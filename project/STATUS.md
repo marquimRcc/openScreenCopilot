@@ -251,7 +251,11 @@ Slice/filaoriginal nãoécontada por mágica;semreader/IPC/auth/tetoRSS/sessões
 Modelo misto10miloperações raw+áudio16k/44.1k/48k/caps/drop/close recalculacustos
 retidos emcadaetapa;raw nunca criaamostras/tempo. Não é30minreal/RSS.
 
-Rust132unitários+5integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+BudgetSnapshot lêusage/duração/decoders/closed sobUMAtrava,semcombinarobservações
+rasgadas;2testesclose/owners/concorraw-áudio,poison/brokenrecusam. Snapshot pode
+ficarvelho imediatamente,nãoéreserva/ACKdurável/auth/cleanup/workerdrain.
+
+Rust134unitários+5integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider

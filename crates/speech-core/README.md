@@ -315,7 +315,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are132 unit +5 component-integration +8 resampling-spike tests, passing
+These are134 unit +5 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
@@ -434,3 +434,11 @@ at16k/44.1k/48k, source caps, byte/frame/time/lease limits, release and close.
 Every step recomputes expected live costs from retained owners and compares both
 usage and duration; raw leases never create audio time. This is bookkeeping,
 not a real30min capture/ASR memory measurement.
+
+BudgetSnapshot observes usage, audio duration, managed-decoder count and admission
+closure under ONE mutex, avoiding a torn observation assembled from separate
+getters. Two added tests cover retained owners/close and concurrent raw/audio
+transitions; poisoned/broken pools refuse snapshots too. It is a value snapshot
+that can immediately become stale, not a reservation, durable ACK, authorization,
+permission to delete audio or worker-drain evidence. Unmanaged/control/external
+owners and provider-engine jobs are outside this snapshot.

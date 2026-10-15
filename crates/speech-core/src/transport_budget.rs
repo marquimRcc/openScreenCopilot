@@ -60,6 +60,15 @@ pub struct Usage {
     pub leases: usize,
     pub sources: usize,
 }
+/// One coherent accounting observation, not a durable ACK or worker drain proof.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BudgetSnapshot {
+    pub usage: Usage,
+    pub audio_ns: u64,
+    pub source_audio_ns: [u64; 2],
+    pub managed_decoders: usize,
+    pub admission_closed: bool,
+}
 #[derive(Debug, Clone, Copy, Default)]
 struct SourceUsage {
     bytes: u64,
@@ -151,6 +160,31 @@ impl BufferLease {
 }
 
 impl TransportBudget {
+    /// Read all tracked ownership under ONE lock. A snapshot can become stale
+    /// immediately; it grants no capacity, authentication or cleanup permission.
+    /// Unmanaged decoders/control/external buffers/provider jobs are not included.
+    pub fn snapshot(&self) -> Result<BudgetSnapshot, BudgetError> {
+        let state = self.state.lock().map_err(|_| BudgetError::Poisoned)?;
+        if state.broken {
+            return Err(BudgetError::Invariant);
+        }
+        Ok(BudgetSnapshot {
+            usage: Usage {
+                bytes: state.bytes,
+                frames: state.frames,
+                leases: state.leases,
+                sources: state
+                    .sources
+                    .iter()
+                    .filter(|source| source.leases != 0)
+                    .count(),
+            },
+            audio_ns: state.audio_ns,
+            source_audio_ns: [state.sources[0].audio_ns, state.sources[1].audio_ns],
+            managed_decoders: state.decoders.iter().filter(|&&used| used).count(),
+            admission_closed: state.closed,
+        })
+    }
     pub fn new(nonce: [u8; 16], limits: BudgetLimits) -> Result<Self, BudgetError> {
         if nonce.iter().all(|&v| v == 0) {
             return Err(BudgetError::InvalidScope);
@@ -471,6 +505,80 @@ impl Drop for BufferLease {
 mod tests {
     use super::*;
     const NONCE: [u8; 16] = [1; 16];
+    #[test]
+    fn coherent_snapshot_tracks_owned_input_audio_decoder_and_close_without_drain_claim() {
+        let pool = pool();
+        let permit = pool.admit_decoder(NONCE, Source::System).unwrap();
+        let raw = pool.reserve_input(NONCE, Source::Microphone, 4).unwrap();
+        let snapshot = pool.snapshot().unwrap();
+        assert_eq!(snapshot.managed_decoders, 1);
+        assert_eq!(snapshot.usage.bytes, 4);
+        assert_eq!(snapshot.usage.frames, 0);
+        assert_eq!(snapshot.audio_ns, 0);
+        assert!(!snapshot.admission_closed);
+        pool.close().unwrap();
+        assert!(!snapshot.admission_closed); // value observation, not live capability
+        let after_close = pool.snapshot().unwrap();
+        assert!(after_close.admission_closed);
+        assert_eq!(after_close.usage, snapshot.usage);
+        assert_eq!(after_close.managed_decoders, 1);
+        drop((raw, permit));
+        let empty = pool.snapshot().unwrap();
+        assert!(empty.admission_closed);
+        assert_eq!(empty.usage, Usage::default());
+        assert_eq!(empty.managed_decoders, 0);
+    }
+    #[test]
+    fn snapshots_never_mix_raw_byte_usage_with_audio_duration_under_concurrent_changes() {
+        use std::sync::Barrier;
+        let pool = TransportBudget::with_audio_time_limits(
+            NONCE,
+            BudgetLimits {
+                global_bytes: 100,
+                source_bytes: 100,
+                global_frames: 1,
+                source_frames: 1,
+                in_flight: 1,
+            },
+            AudioTimeLimits {
+                global_ns: 62_500,
+                source_ns: 62_500,
+            },
+        )
+        .unwrap();
+        let barrier = Arc::new(Barrier::new(2));
+        let other = pool.clone();
+        let start = barrier.clone();
+        let writer = std::thread::spawn(move || {
+            start.wait();
+            for _ in 0..10_000 {
+                let raw = other.reserve_input(NONCE, Source::System, 12).unwrap();
+                drop(raw);
+                let audio = other
+                    .try_reserve_frame(&audio_header(16_000, 1, Source::System, 0))
+                    .unwrap();
+                drop(audio);
+            }
+        });
+        barrier.wait();
+        for _ in 0..10_000 {
+            let value = pool.snapshot().unwrap();
+            assert!(!value.admission_closed);
+            assert_eq!(value.managed_decoders, 0);
+            assert!(matches!(
+                (
+                    value.usage.bytes,
+                    value.usage.frames,
+                    value.usage.leases,
+                    value.audio_ns,
+                    value.source_audio_ns
+                ),
+                (0, 0, 0, 0, [0, 0]) | (12, 0, 1, 0, [0, 0]) | (84, 1, 1, 62_500, [62_500, 0])
+            ));
+        }
+        writer.join().unwrap();
+        assert_eq!(pool.snapshot().unwrap().usage, Usage::default());
+    }
 
     #[test]
     fn mixed_unparsed_input_and_audio_reservations_match_independent_duration_model() {
@@ -597,6 +705,7 @@ mod tests {
             }
             drop(permit);
             assert_eq!(pool.managed_decoder_count(), Err(BudgetError::Invariant));
+            assert_eq!(pool.snapshot(), Err(BudgetError::Invariant));
             assert!(matches!(
                 pool.admit_decoder(NONCE, Source::System),
                 Err(BudgetError::Invariant)
@@ -617,6 +726,7 @@ mod tests {
         .is_err());
         drop(permit);
         assert_eq!(pool.managed_decoder_count(), Err(BudgetError::Poisoned));
+        assert_eq!(pool.snapshot(), Err(BudgetError::Poisoned));
         assert!(matches!(
             pool.admit_decoder(NONCE, Source::System),
             Err(BudgetError::Poisoned)
