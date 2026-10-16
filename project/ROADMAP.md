@@ -162,7 +162,7 @@ fronteiras fornecidas; não é Silero/VAD, bufferPCM ou deduplicação de texto.
 Descritor binário v0 experimental com parsersRust/TS e fixtures compartilhadas em
 [AUDIO-FRAME-DRAFT.md](AUDIO-FRAME-DRAFT.md), sem transporte/IPC/captura/runtime.
 
-Pode iniciar depois de 01; integração depende de 02/03.
+Preparação isolada pode avançar; integração com captura aguarda aceites01/02 e contratos de relógio/lifecycle;03 adiada.
 
 - Inventariar dependências Tauri/FFI/Whisper/ONNX e licenças de modelos.
 - Extrair normalização, VAD, segmentação, provider e ciclo de sessão para Rust puro.
@@ -176,7 +176,7 @@ amostra pt-BR conhecida, com memória limitada e cancelamento/reconexão testado
 
 ## 05 — Transcrição durante gravação
 
-Dependências: 02, 03, 04.
+Dependências: 02, 04 (03 adiada ao backlog, não bloqueia ASR).
 
 - Ramificar PCM antes do mix, separado por fonte.
 - Journal de áudio, fila com créditos, checkpoints e limites de retenção.
@@ -201,7 +201,7 @@ com o MP4. Não apagar áudio pendente por um simples ACK de transporte.
 
 ## 07 — Homologação e pacote Windows de teste
 
-Dependências: 03, 05, 06.
+Dependências: 05, 06 (03 adiada ao backlog).
 
 - Rodar matriz completa, regressão do editor e testes nativos reais.
 - Revisar privacidade, SBOM/avisos, binários, modelos e origem dos downloads.

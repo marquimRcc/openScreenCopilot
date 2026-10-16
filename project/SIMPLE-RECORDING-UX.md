@@ -27,7 +27,7 @@ Não há upload nem conversão automática neste incremento.
 Essa distinção também aparece em uma legenda curta na prévia (15 idiomas),
 sem abrir configuração extra nem obrigar exportação para acessar o original.
 
-## Compartilhar e GIF — desenho do próximo incremento
+## Compartilhar e GIF — desenho do backlog final (não próximo incremento)
 
 Fundação 02G em `electron/recording/derivedRecordingTarget.ts`, agora conectada à
 ação local **Salvar uma cópia** (02I) e ao controlador GIF via IPC (02M).
@@ -180,8 +180,8 @@ progresso100% não autoriza anunciar arquivo salvo antes da resposta final.
 Estado ocupado mútuo com cópia; Nova captura e rotas UI editor/HUD/start também
 recusam transição durante derivados. Não é lock global do bridge/MCP legado:
 uma troca externa de sessão invalida a publicação. Proteção do exportador legado
-não foi ampliada. Encerramento completo do processo/recuperação de órfãos ainda
-precisam de avaliação; teste de owner fechado com processo vivo não os homologa.
+não foi ampliada. Encerramento coordenado dos derivados foi implementado em 02N;
+recuperação de crash/órfãos continua como requisito da etapa 06.
 
 QA programática em Electron real com preload compilado, IPC real, compositor e
 decoder: gerou GIF validado; recusou outra janela e estado busy; recebeu progresso
@@ -189,8 +189,8 @@ com UUID consistente. Picker foi destino sintético pré-selecionado pelo harnes
 NÃO é passe do diálogo nativo/main completo, cliques OS ou fluxo captura→resultado.
 Primeiro harness tentou devolver função unsubscribe por executeJavaScript e
 falhou clone; corrigido retorno void, sem alterar API por causa desse erro.
-Interface principal continua sem botão GIF; opções/aviso/estimativa/progresso,
-teste manual OS e shutdown/recuperação permanecem próximos incrementos.
+Interface principal continua sem botão GIF; opções/aviso/estimativa/progresso e
+teste manual OS do GIF permanecem no backlog final (sem adiar a etapa 06).
 
 ### 02N — encerramento coordenado dos derivados
 
@@ -309,12 +309,12 @@ que o usuário entenda timeline, exportação ou configurações avançadas.
 - Validar o fluxo com input real no Windows 11; medir cliques e verificar descoberta
   do arquivo, reprodução, abrir pasta, cancelamento e preservação do original.
 
-## Ordem sugerida
+## Ordem sugerida (com Compartilhar e GIF no backlog final)
 
-1. Tela de resultado + localização + Abrir pasta + Nova captura.
-2. Navegação secundária para edição, tratando alterações não salvas.
-3. Compartilhamento explícito com destino e privacidade definidos.
-4. Conversão de trecho em GIF com progresso, cancelamento e orçamento de tamanho.
+1. Tela de resultado + localização + Abrir pasta + Nova captura (implementada).
+2. Navegação secundária para edição, tratando alterações não salvas (implementada).
+3. Backlog final: Compartilhamento explícito com destino e privacidade definidos.
+4. Backlog final: Conversão de trecho em GIF com progresso, cancelamento e orçamento de tamanho.
 
 Dependências: finalização confiável da gravação e seleção por região da etapa 02.
 Este pedido não dispensa os aceites de captura, qualidade, áudio e DPI.

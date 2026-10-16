@@ -9,51 +9,57 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
 
 ## Continuidade e prioridades humanas
 
-- Ordem humana16/10: concluir01/02; depois04/05→06→07/08/09→backlog.
-  Compressão/AV1(03) adiada, não bloqueia ASR/Windows; manterH264 e aceites reais
-  de captura/áudio/sincronização. Micruído/GIF/Compartilhar no backlog final.
-- PC liberado explicitamente para testes até9hBrasília16/10(12:00UTC), ou aviso
-  humano anterior. Pergunta de disponibilidade resolvida; preservar apps/jobs
-  humanos, usar perfil/fixtures próprios e remover cobertura própria ao fim.
-- RenovaçãoREAL06:05:53UTC16/10:2%5h/61%semanal,allowedtrue,
-  primaryreset1792148456; guarda06:01:51 cumprida, sem consumirreset.
-  HEADa03e86bb enviado/árvorelimpa; snapshots anteriores não são saldo vivo.
-
-- Trabalho contínuo, sem prazo final; usuário revogou meio-dia e autorizou continuar
-  até pedir pausa/encerramento. Status/perguntas não revogam autorização.
-- Watchdog1min só recupera chat ocioso/interrompido; não parar entre incrementos
-  para esperar wake nem trabalhar apenas por fatias de1/5/15min.
-- Conferir hora/limites reais antes da rodada e entre incrementos. Parar aos89%
-  usados5h OU95%semanal ou hardlimit; preservar checkpoint e retomar só após reset
-  aplicável+5min E confirmação real de saldo. Respeitar ambos se atingidos.
+- Retomada humana em 2026-10-16 autorizada: modelo de trabalho com IA implementadora
+  Antigravity e supervisora técnica Codex, com um único escritor ativo (Antigravity
+  programa e testa, supervisora revisa independentemente; commit e push somente após aceite formal).
+- Checkpoint base confirmado: 2908a017 na branch feat/windows-region-foundation, árvore limpa.
+- Ordem humana vigente 16/10: concluir 01/02; depois 04/05 → 06 → 07/08/09 → backlog.
+  Compressão/AV1 (03) adiada para o backlog, não bloqueia ASR/Windows; manter H264 e aceites
+  reais de captura/áudio/sincronização. Micruído/GIF/Compartilhar no backlog final.
+- Trabalho contínuo supervisionado, sem prazo final; continuar até pedido humano ou da supervisora de pausa/encerramento.
+- Watchdog 1min só recupera chat ocioso/interrompido; não parar entre incrementos para esperar wake
+  nem trabalhar apenas por fatias de 1/5/15min. Automação autônoma Codex continua PAUSED até supervisora reconfigurar.
+- Conferir hora/limites reais antes da rodada e entre incrementos. Parar aos 89% usados 5h
+  OU 95% semanal ou hardlimit; preservar checkpoint e retomar só após reset aplicável + 5min
+  E confirmação real de saldo renovado. Respeitar ambos se atingidos.
 - Não comprar/consumir créditos/resets, trocar modelo/conta ou contornar limites.
   Dois créditos de reset continuavam disponíveis na última consulta, não usados.
 - Se resetsAt passado mas quota alta, não inventar renovação/reset futuro:
-  verificações temporárias5min só durante pausa, sem loops. Scheduler BYHOUR é UTC;
+  verificações temporárias 5min só durante pausa, sem loops. Scheduler BYHOUR é UTC;
   wake pode antecipar, garantir tentativa posterior à guarda, nunca DAILY isolado.
-- Renovação REAL14:49:47UTC15/10 confirmou5h2%/semanal16%, allowedtrue, superando
-  notas históricas90–100%/timestamp antigo. Watchdog1min ACTIVE restaurado/conferido.
-  RETOMADA REAL19:51:14UTC15/10:5h1%/semanal31%,allowedtrue,primaryreset1792111875.
-  Pausa89 anterior e guarda18:34:42UTC JÁ CUMPRIDAS; saldo só renovou depois,
-  não usar timestamp passado como prova. Watchdog1min restaurado;nenhumresetconsumido.
-  Consultar novamente antes de iniciar trabalho, não usar esse snapshot como saldo vivo.
-- Renovação REAL00:56:51UTC16/10 confirmou1%5h/46%semanal,allowedtrue;
-  guarda00:56:15 cumprida e watchdog1min restaurado, sem consumir reset.
-  Consulta01:04:22UTC:11%5h/47%semanal. Snapshots não são saldo vivo.
-- Estimativa do GIF e Compartilhar SOMENTE após TODO restante roadmap.
+- Disponibilidade de GUI: janela anterior até 9h Brasília 16/10 (12:00 UTC) expirou;
+  enumeração de títulos pessoais foi rejeitada e permissão específica segue pendente,
+  sem reabrir perguntas. Essa restrição de GUI aplica-se à homologação/captura do OpenScreen
+  e janelas/apps pessoais no desktop humano, não ao controle e comandos autorizados do
+  Antigravity por esta supervisora técnica. Preservar apps/jobs humanos, não enumerar janelas/capturar tela
+  nem contornar por shell/UIA/CDP.
+- Estimativa do GIF e Compartilhar SOMENTE após TODO restante roadmap (backlog final).
   Base existente preservada, integração incompleta não ativada.
-- Qualidade antes de tamanho, sem teto rígido300MB/30min.
+- Qualidade antes de tamanho, sem teto rígido 300MB/30min.
   Redução de ruído mic é backlog futuro separado do sistema, padrão indefinido.
-- Ao pedido humano de parar:checkpoint/pausar automação. Escopo concluído:
+- Ao pedido humano/supervisora de parar: checkpoint/pausar automação. Escopo concluído:
   desativar/informar. Silêncio em wake sem mudança; avisar entrega/falha/bloqueio real.
+
+### Histórico operacional (recibos e snapshots numéricos anteriores — não são instruções vigentes)
+
+- Renovação REAL 06:05:53 UTC 16/10: 2% 5h / 61% semanal, allowed true, primary reset 1792148456;
+  guarda 06:01:51 cumprida, sem consumir reset. HEAD a03e86bb enviado/árvore limpa; snapshots anteriores não são saldo vivo.
+- Renovação REAL 00:56:51 UTC 16/10 confirmou 1% 5h / 46% semanal, allowed true;
+  guarda 00:56:15 cumprida e watchdog 1min restaurado, sem consumir reset.
+  Consulta 01:04:22 UTC: 11% 5h / 47% semanal. Snapshots não são saldo vivo.
+- Renovação REAL 14:49:47 UTC 15/10 confirmou 5h 2% / semanal 16%, allowed true, superando
+  notas históricas 90–100% / timestamp antigo. Watchdog 1min ACTIVE restaurado/conferido.
+  RETOMADA REAL 19:51:14 UTC 15/10: 5h 1% / semanal 31%, allowed true, primary reset 1792111875.
+  Pausa 89 anterior e guarda 18:34:42 UTC JÁ CUMPRIDAS; saldo só renovou depois,
+  não usar timestamp passado como prova. Watchdog 1min restaurado; nenhum reset consumido.
+  Consultar novamente antes de iniciar trabalho, não usar esse snapshot como saldo vivo.
 
 ## Checkout e entregas
 
 Repo C:\Users\marcos.gomes\Documents\Codex\2026-10-13\new-chat\work\openScreenCopilot,
 branch feat/windows-region-foundation.
-Este chat01a13ac2-d4ba-7362-8640-b031f0b49e41 é o único escritor autorizado ativo.
-Chat original01a13651-66a1-76a1-8ee0-d74f053a7833 estava notLoaded na última consulta;
-confirmar novamente antes da rodada, nunca escrever em paralelo.
+Escritor ativo: IA implementadora Antigravity, sob supervisão técnica Codex (chat original
+confirmado notLoaded; nenhum trabalho paralelo).
 
 Checkpoint funcional atual:OwnedInputChunk/orçamento misto sobre propriedades
 windowac546706/códigosdiagnóstico60060ecd/factorydecoders160a3107/Debugtimelinee1a57d0c,
@@ -82,7 +88,7 @@ PR2 de01 continua dependente dos aceites; não promover distribuição por teste
 |02 região/dispositivos/resultado|Implementados; homologação física/audível/fluxo completo pendente|
 |03 compressão|Inventário/sondas MF apenas; AV1 não grava, comparação30min não feita|
 |04 speech-core|Preparação isolada com testes abaixo; sem VAD/engine/provider concreto/sidecar ativo|
-|05 ASRlive|Não integrado; depende02/03/04/relógio/journal/créditos|
+|05 ASRlive|Não integrado; depende02/04 (03 adiada ao backlog)/relógio/journal/créditos|
 |06 recuperação|Não implementada; depende05|
 |07 pacote Windows homologado|Pendente; nenhum release aprovado|
 |08 Copilot|Pendente/opcional, APIs remotas exigem consentimento|
@@ -321,7 +327,10 @@ VAD/providerconcreto/normalizadorruntime/hostsidecar/journal/créditos ainda pen
 ## GUI — bloqueio operacional, não repetir a cada wake
 
 Autorização humana Sim para cobertura opaca temporária de TODOS monitores permanece.
-Não é aceite. Disponibilidade confirmada16/10 até9hBrasília ou aviso anterior.
+Não é aceite. Janela anterior de disponibilidade até 9h Brasília (12:00 UTC) expirou;
+enumeração de títulos pessoais foi rejeitada e permissão específica segue pendente,
+sem reabrir perguntas. Restrição aplica-se à homologação/captura do OpenScreen e janelas/apps
+pessoais humanos, não ao controle e comandos autorizados do Antigravity por esta supervisora técnica.
 Outra apphumana apareceu acima da cobertura na tentativa antiga; revalidar condição
 segura com observação fresca, sem repetir a pergunta já respondida.
 

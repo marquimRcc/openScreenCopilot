@@ -2,7 +2,7 @@
 
 Preparação04 isolada. Layout candidato de fixture, NÃO protocolo v1 congelado,
 capability de captura, endpoint IPC ou permissão para conectar PCM. Nenhum byte
-deste formato é emitido pelo WGC/app atual. Integração depende dos aceites01–03,
+deste formato é emitido pelo WGC/app atual. Integração depende dos aceites01/02/04 (03 adiada ao backlog),
 relógio e lifecycle/ownership/journal/créditos necessários.
 
 Código original std Rust em
@@ -109,7 +109,7 @@ trata recusa reportável; não promete sobreviver aOOMkill/crash doSO.
 Testes de partições1..frame+1, todasposiçõesEOF, framescoalescidos, busy/ordem,
 snapshots/aliases, cap exato4MiB, stop/erro/sequenceexhaustion e recusa de alocação
 injetada semOOM. Nada disso prova processo/pipe/timeout/ACL/créditos globais/journal,
-nem autoriza PCMlive antes dos aceites01–03/04.
+nem autoriza PCMlive antes dos aceites01/02/04.
 
 ## Orçamento opcional Rust de buffers (não créditos da conta)
 
@@ -163,7 +163,7 @@ Nenhum sidecar, checkpoint ou reconexão foi criado por esta tabela.
 host/TS ainda precisa supervisão, consumidor lento, cópia bloqueada e
 disconnect/reconnect com resultado tardio.
 Teste de10mil operações do pool é contagem sintética, não comprova memória estável
-de captura+ASR real30min. Não implementar ligação PCM antes de01–03/04 aceitos.
+de captura+ASR real30min. Não implementar ligação PCM antes de01/02/04 aceitos.
 
 ## Notificação limitada de mudança Rust (isolada)
 
@@ -181,7 +181,7 @@ trava;panic de wake contido no Drop da lease. Mutexpoison/worker/executor travad
 ainda exigem supervisão/deadline externa; não prometer drain só porFutureDrop.
 Oito testes de notificação+um integração decoder:before-register/poll,100corridas
 threads,replace/cancel/close/overflow/callback reentrante,sem sleep/pollingentrada.
-Semexecutor/host/TS/pipe/PCMlive,semteste30min e semliberar aceites01–03/04.
+Semexecutor/host/TS/pipe/PCMlive,semteste30min e semliberar aceites01/02/04.
 
 Admissão provider independente em provider_admission.rs agora limita jobs geridos
 e mantém cobrança apósDropfutureiniciada/panic incerto. Cancel tardio aguarda
