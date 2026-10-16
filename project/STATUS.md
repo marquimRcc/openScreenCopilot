@@ -9,6 +9,16 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
 
 ## Continuidade e prioridades humanas
 
+- Ordem humana16/10: concluir01/02; depois04/05→06→07/08/09→backlog.
+  Compressão/AV1(03) adiada, não bloqueia ASR/Windows; manterH264 e aceites reais
+  de captura/áudio/sincronização. Micruído/GIF/Compartilhar no backlog final.
+- PC liberado explicitamente para testes até9hBrasília16/10(12:00UTC), ou aviso
+  humano anterior. Pergunta de disponibilidade resolvida; preservar apps/jobs
+  humanos, usar perfil/fixtures próprios e remover cobertura própria ao fim.
+- RenovaçãoREAL06:05:53UTC16/10:2%5h/61%semanal,allowedtrue,
+  primaryreset1792148456; guarda06:01:51 cumprida, sem consumirreset.
+  HEADa03e86bb enviado/árvorelimpa; snapshots anteriores não são saldo vivo.
+
 - Trabalho contínuo, sem prazo final; usuário revogou meio-dia e autorizou continuar
   até pedir pausa/encerramento. Status/perguntas não revogam autorização.
 - Watchdog1min só recupera chat ocioso/interrompido; não parar entre incrementos
@@ -311,9 +321,9 @@ VAD/providerconcreto/normalizadorruntime/hostsidecar/journal/créditos ainda pen
 ## GUI — bloqueio operacional, não repetir a cada wake
 
 Autorização humana Sim para cobertura opaca temporária de TODOS monitores permanece.
-Não é aceite. Pergunta assíncrona PCsemuso5min segue pendente; outra apphumana
-apareceu acima da cobertura, fatia parou antesinput/captura. Não relançar GUI sem
-disponibilidade/condição segura, nem repetir pergunta a cada wake.
+Não é aceite. Disponibilidade confirmada16/10 até9hBrasília ou aviso anterior.
+Outra apphumana apareceu acima da cobertura na tentativa antiga; revalidar condição
+segura com observação fresca, sem repetir a pergunta já respondida.
 
 GUI só skillcomputer-use/refs/@oai/sky,seleçãoúnica/observaçãofresca/umaação/reobserve;
 semDOMinjection/cliquescegos/forçarChrome/alterarWindows/contornar hit-test/rejeição/
@@ -369,8 +379,8 @@ admissãobounded e exitobservado;prioridade/preempção humana ainda pendente.
    Não criar pipe/API/PCMlive nem confundir binding/accepted com auth/durabilidade.
 2. Quando tela disponível, retomar GUI01/02 com fixture/perfil próprios/cobertura
    autorizada, respeitando rejeições; completar confirmação/tomada/resultado/áudio.
-3. Qualidade03 no caminho encoder existente e testes sintéticos/30min/licenças
-   depois das dependências; não criar segundo encoder/fallback renderer.
+3. Compressão03 adiada para backlog após07/08/09 por decisão humana16/10;
+   manterH264, não criar segundo encoder/fallback renderer.
 4. Core/sidecar/ASR/journal/recuperação e etapas seguintes conformeROADMAP.
    Coordenar engine/cache com STT herdado, não duplicar captura/inferência.
 5. EstimativaGIF/Compartilhar somente ao final de TODO restante.

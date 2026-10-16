@@ -1,5 +1,16 @@
 # Plano passo a passo
 
+## Ordem humana vigente — 2026-10-16
+
+Concluir e homologar gravação Windows (01/02); depois core/sidecar e transcrição
+durante gravação (04/05), recuperação (06), Windows/Copilot/Linux (07/08/09),
+e só então o backlog. Compressão/AV1 (03) foi explicitamente adiada e deixa de
+ser pré-requisito de 04/05/07: manter H.264 existente. Isso não dispensa estabilidade,
+legibilidade, sincronização, ownership/cancelamento ou os aceites de captura/áudio.
+Redução de ruído mic e GIF/Compartilhar permanecem no backlog final.
+Os números das etapas abaixo são identificadores, não a nova ordem de execução;
+esta decisão prevalece sobre dependências antigas que exigem 03 antes de ASR.
+
 ## Prioridade atualizada — 2026-10-14
 
 Por pedido explícito do usuário, **estimativa de tamanho do GIF** e
