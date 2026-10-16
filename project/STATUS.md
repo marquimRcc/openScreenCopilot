@@ -9,6 +9,9 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
 
 ## Continuidade e prioridades humanas
 
+- Encerramento humano em 2026-10-16: desenvolvimento e automação permanecem pausados.
+  Pedido posterior autoriza somente validar, fazer commit e push do patch pendente;
+  não autoriza retomar incrementos, gravações ou homologação GUI.
 - Retomada humana em 2026-10-16 autorizada: modelo de trabalho com IA implementadora
   Antigravity e supervisora técnica Codex, com um único escritor ativo (Antigravity
   programa e testa, supervisora revisa independentemente; commit e push somente após aceite formal).
@@ -56,12 +59,20 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
 
 ## Checkout e entregas
 
+Validação do patch pré-spawn em 2026-10-16: suíte completa Node22.22.1/npm10.9.4,
+2 workers, 5229 testes aprovados/5 ignorados/0 falhas, exit0. Recibo privado:
+`.cache/capture-startup-final.json` e `.log`. Ambos tsc, lint (26 avisos herdados),
+i18n e docs aprovados. Prova controlada do callback mostrou troca de retângulo
+recusada antes do spawn, com reserva liberada; não equivale à homologação física.
+Build/pacote atualizado e QA GUI não executados neste fechamento; pacote anterior
+permanece inalterado. Sem rebuild nativo (nenhuma fonte nativa alterada).
+
 Repo C:\Users\marcos.gomes\Documents\Codex\2026-10-13\new-chat\work\openScreenCopilot,
 branch feat/windows-region-foundation.
 Escritor ativo: IA implementadora Antigravity, sob supervisão técnica Codex (chat original
 confirmado notLoaded; nenhum trabalho paralelo).
 
-Checkpoint funcional atual:OwnedInputChunk/orçamento misto sobre propriedades
+Checkpoint funcional atual: guarda pré-spawn síncrona fail-closed de fonte, região e geometria/DPI em startupWindows (windowsCaptureStartupValidation.ts, 13 testes focados aprovados); OwnedInputChunk/orçamento misto sobre propriedades
 windowac546706/códigosdiagnóstico60060ecd/factorydecoders160a3107/Debugtimelinee1a57d0c,
 errosproviderdb273eba/UTF8exhaustivo81f72884/sondaMF50d4bf06,
 downmixf32le/OwnedMonoFrame isolados sobre admissãoRust406af964,
@@ -85,7 +96,7 @@ PR2 de01 continua dependente dos aceites; não promover distribuição por teste
 |---|---|
 |00 fundação|Concluída:fork/históricos/licenças/vendor/contratos/política CI|
 |01 Windows/identidade|Código/pacote isolados, timestamps corrigidos; GUI completa/carga longa pendentes|
-|02 região/dispositivos/resultado|Implementados; homologação física/audível/fluxo completo pendente|
+|02 região/dispositivos/resultado|Implementados (guarda pré-spawn de geometria/DPI/fonte incluída); homologação física/audível/fluxo completo pendente|
 |03 compressão|Inventário/sondas MF apenas; AV1 não grava, comparação30min não feita|
 |04 speech-core|Preparação isolada com testes abaixo; sem VAD/engine/provider concreto/sidecar ativo|
 |05 ASRlive|Não integrado; depende02/04 (03 adiada ao backlog)/relógio/journal/créditos|

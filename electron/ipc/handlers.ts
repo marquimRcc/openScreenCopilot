@@ -153,6 +153,10 @@ import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
 import { resolveWindowsAudioOutputForRecording } from "../recording/windowsAudioOutputs";
 import { WindowsCaptureStartGate } from "../recording/windowsCaptureStartGate";
+import {
+	assertWindowsCapturePreSpawnValid,
+	type WindowsCapturePreSpawnSnapshot,
+} from "../recording/windowsCaptureStartupValidation";
 import { WindowsMeterCaptureGuard } from "../recording/windowsMeterCaptureGuard";
 import { WindowsOutputMeter } from "../recording/windowsOutputMeter";
 import { WindowsRegionIndicator } from "../recording/windowsRegionIndicator";
@@ -3129,6 +3133,16 @@ export function registerIpcHandlers(
 				releaseStart();
 				return { success: false, error: "Windows capture is active or shutting down." };
 			}
+			const initialPreSpawnSnapshot: WindowsCapturePreSpawnSnapshot = {
+				initialSourceGeneration: selectSourceGeneration.value,
+				initialSelectedSource: selectedSource
+					? {
+							id: selectedSource.id,
+							display_id: selectedSource.display_id,
+						}
+					: null,
+				initialTrustedRegion: trustedWindowsRegion,
+			};
 			try {
 				await meterCapture.settled;
 				if (!meterCapture.isCurrent()) throw new Error("Windows capture preparation cancelled.");
@@ -3318,6 +3332,31 @@ export function registerIpcHandlers(
 					throw new Error("System audio output changed during preparation. Try again.");
 				}
 				if (!meterCapture.isCurrent()) throw new Error("Windows capture preparation cancelled.");
+				assertWindowsCapturePreSpawnValid(
+					initialPreSpawnSnapshot,
+					{
+						sourceType: config.sourceType,
+						sourceId: config.sourceId,
+						effectiveDisplayId: sourceDisplay?.id ?? null,
+						displayX: config.displayX,
+						displayY: config.displayY,
+						displayW: config.displayW,
+						displayH: config.displayH,
+						hasCaptureRegion: config.hasCaptureRegion,
+						regionX: config.regionX,
+						regionY: config.regionY,
+						regionWidth: config.regionWidth,
+						regionHeight: config.regionHeight,
+					},
+					{
+						currentSourceGeneration: selectSourceGeneration.value,
+						currentSelectedSource: selectedSource,
+						currentTrustedRegion: trustedWindowsRegion,
+						displays: screen.getAllDisplays(),
+						toHelperBounds: toHelperRect,
+						isRegionCurrent: isWindowsRegionCurrent,
+					},
+				);
 				const proc = spawn(helperPath, [JSON.stringify(config)], {
 					cwd: RECORDINGS_DIR,
 					stdio: ["pipe", "pipe", "pipe"],
