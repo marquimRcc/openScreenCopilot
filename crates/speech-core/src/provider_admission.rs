@@ -179,6 +179,7 @@ mod tests {
         calls: AtomicUsize,
         result: Result<TranscriptResult, TranscriptionError>,
         panic_on_enter: bool,
+        panic_on_poll: AtomicBool,
     }
     impl TranscriptionProvider for Fake {
         fn transcribe<'a>(
@@ -189,6 +190,10 @@ mod tests {
             assert!(!self.panic_on_enter, "synthetic provider constructor panic");
             self.calls.fetch_add(1, Ordering::SeqCst);
             Box::pin(std::future::poll_fn(move |_| {
+                assert!(
+                    !self.panic_on_poll.load(Ordering::Acquire),
+                    "synthetic provider poll panic"
+                );
                 if self.done.load(Ordering::Acquire) {
                     Poll::Ready(self.result.clone())
                 } else {
@@ -209,6 +214,7 @@ mod tests {
     fn fake(done: bool) -> Fake {
         Fake {
             panic_on_enter: false,
+            panic_on_poll: AtomicBool::new(false),
             done: AtomicBool::new(done),
             calls: AtomicUsize::new(0),
             result: Ok(TranscriptResult {
@@ -432,6 +438,51 @@ mod tests {
                 uncertain: true
             }
         );
+    }
+
+    #[test]
+    fn later_poll_panic_after_cancel_and_close_keeps_engine_uncertain() {
+        let gate = ProviderAdmission::new(1).unwrap();
+        let provider = fake(false);
+        let request = TranscriptionRequest::new(&[0.0], 16000, None).unwrap();
+        let cancel = Cancellation::default();
+        let mut job = Box::pin(transcribe_managed(
+            &gate,
+            &provider,
+            &request,
+            cancel.clone(),
+        ));
+        let mut cx = Context::from_waker(Waker::noop());
+        assert!(job.as_mut().poll(&mut cx).is_pending());
+        cancel.cancel();
+        gate.close().unwrap();
+        provider.panic_on_poll.store(true, Ordering::Release);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _ = job.as_mut().poll(&mut cx);
+        }))
+        .is_err());
+        drop(job);
+        assert_eq!(
+            gate.status().unwrap(),
+            AdmissionStatus {
+                active: 1,
+                closed: true,
+                uncertain: true,
+            }
+        );
+        let mut next = Box::pin(transcribe_managed(
+            &gate,
+            &provider,
+            &request,
+            Cancellation::default(),
+        ));
+        assert_eq!(
+            next.as_mut().poll(&mut cx),
+            Poll::Ready(Err(ManagedTranscriptionError::Admission(
+                AdmissionError::Uncertain
+            ),))
+        );
+        assert_eq!(provider.calls.load(Ordering::SeqCst), 1);
     }
 
     #[test]

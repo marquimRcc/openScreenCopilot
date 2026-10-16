@@ -273,7 +273,7 @@ viaregistryâncora5s,nunca arrivalprovider. Semclockreal/resampler/ASR/checkpoin
 1integração com2providersfalsos/mesmogate:segundo recusadoatéprimeirocancelado
 completar. Gatesindependentesbypassariam;NÃO coordenaSTTherdado real.
 
-Rust139unitários+8integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+Rust140unitários+8integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider
@@ -346,6 +346,12 @@ Shutdown2S_OK/exit0/signalnull/guardaoff;ZEROSetType/frames/streaming/D3D/captur
 Não prova NV12/FPS/encode nem mudaH264produção;detalhes/refs no spike.
 
 ## Próximo trabalho seguro
+
+A pergunta sobre convivência STTmanual/Copilot NÃO bloqueia revisão/testes isolados
+e contratos independentes; não ficar ocioso em wakes por essa pendência específica.
+Regressão nova providerfake:primeiro pollPending,depois cancel+close+panic em poll
+posterior preserva active1/closed/uncertain e recusa novo job sem entrarengine.
+Não é workerreal/crashabrupto/drain; comportamento runtime não alterado.
 
 Revisãoestática STTherdado emSPEECH-CORE-INVENTORY:singleton/cache/processo/fila
 Promise/cancelentrechunks/timeoutHTTP/exitnãoequivalem gateRustglobal/drain.

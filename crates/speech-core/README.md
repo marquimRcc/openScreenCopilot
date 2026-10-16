@@ -325,7 +325,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are139 unit +8 component-integration +8 resampling-spike tests, passing
+These are140 unit +8 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
