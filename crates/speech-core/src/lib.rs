@@ -93,6 +93,13 @@ pub fn map_source_range(
     spans: &[SourceSpan<'_>],
     range: SourceRange<'_>,
 ) -> Result<(u64, u64), TimelineError> {
+    map_source_range_iter(spans.iter().copied(), range)
+}
+
+fn map_source_range_iter<'a>(
+    spans: impl IntoIterator<Item = SourceSpan<'a>>,
+    range: SourceRange<'_>,
+) -> Result<(u64, u64), TimelineError> {
     epoch(range.epoch)?;
     let start = u64_decimal(range.start)?;
     let end = u64_decimal(range.end)?;

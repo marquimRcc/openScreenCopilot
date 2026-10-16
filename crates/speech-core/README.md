@@ -43,7 +43,13 @@ hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is 
 explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
 limit, recording-duration guarantee, authorization service, journal or recovery.
 No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
-One hundred ten Rust unit tests now pass in debug/release, including the original shared fixtures.
+Mapping queries filter borrowed spans without allocating a temporary list. Source
+counting uses fixed scratch for the inclusive64-source cap. Session/entry strings
+and entry storage use fallible reservations; `RegistryError::Allocation` leaves
+previous maps and logical capacity unchanged, with explicit retry possible. Four
+tests inject each refusal and exercise the inclusive cap. This is not a promise
+against process OOM termination or allocator overhead/RSS; metadata remains bounded
+by prototype counts, not audio-time credits. The original shared fixtures still pass.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -315,7 +321,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are134 unit +8 component-integration +8 resampling-spike tests, passing
+These are138 unit +8 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.

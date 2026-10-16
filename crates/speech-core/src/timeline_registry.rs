@@ -2,7 +2,9 @@
 //! Identity matching is not caller authentication. Limits are prototype guards,
 //! not negotiated transport credits or a supported recording duration.
 
-use crate::{map_source_range, u64_decimal, SourceRange, SourceSpan, TimelineError};
+use crate::{
+    map_source_range, map_source_range_iter, u64_decimal, SourceRange, SourceSpan, TimelineError,
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct RegistryLimits {
@@ -22,6 +24,7 @@ pub enum RegistryError {
     MediaOrder,
     RateChangedWithinEpoch,
     Timeline(TimelineError),
+    Allocation,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -60,11 +63,28 @@ fn identity(value: &str) -> Result<(), RegistryError> {
     }
     Ok(())
 }
+type TextCopier = fn(&str) -> Result<String, RegistryError>;
+type EntryReserver = fn(&mut Vec<Entry>) -> Result<(), RegistryError>;
+fn copy_text(value: &str) -> Result<String, RegistryError> {
+    let mut text = String::new();
+    text.try_reserve_exact(value.len())
+        .map_err(|_| RegistryError::Allocation)?;
+    text.push_str(value);
+    Ok(text)
+}
+fn reserve_entry(entries: &mut Vec<Entry>) -> Result<(), RegistryError> {
+    entries
+        .try_reserve(1)
+        .map_err(|_| RegistryError::Allocation)
+}
 
 pub struct TimelineRegistry {
     session: String,
     limits: RegistryLimits,
     entries: Vec<Entry>,
+    // Private fault-injection seams; no caller-supplied allocator/API.
+    copy_text: TextCopier,
+    reserve_entry: EntryReserver,
 }
 impl std::fmt::Debug for TimelineRegistry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -77,14 +97,23 @@ impl std::fmt::Debug for TimelineRegistry {
 
 impl TimelineRegistry {
     pub fn new(session: &str, limits: RegistryLimits) -> Result<Self, RegistryError> {
+        Self::with_copier(session, limits, copy_text)
+    }
+    fn with_copier(
+        session: &str,
+        limits: RegistryLimits,
+        copy_text: TextCopier,
+    ) -> Result<Self, RegistryError> {
         identity(session)?;
         if limits.sources == 0 || limits.sources > 64 || limits.spans == 0 || limits.spans > 4096 {
             return Err(RegistryError::InvalidLimits);
         }
         Ok(Self {
-            session: session.into(),
+            session: copy_text(session)?,
             limits,
             entries: Vec::new(),
+            copy_text,
+            reserve_entry,
         })
     }
 
@@ -154,28 +183,33 @@ impl TimelineRegistry {
                 return Err(RegistryError::MediaOrder);
             }
         } else {
-            let mut sources: Vec<&str> = Vec::new();
+            let mut sources = [None; 64];
+            let mut count = 0;
             for entry in &self.entries {
-                if !sources.contains(&entry.source.as_str()) {
-                    sources.push(&entry.source);
+                let source = Some(entry.source.as_str());
+                if !sources[..count].contains(&source) {
+                    sources[count] = source;
+                    count += 1;
+                    if count >= self.limits.sources {
+                        return Err(RegistryError::Capacity);
+                    }
                 }
-            }
-            if sources.len() >= self.limits.sources {
-                return Err(RegistryError::Capacity);
             }
         }
         if self.entries.len() >= self.limits.spans {
             return Err(RegistryError::Capacity);
         }
-        self.entries.push(Entry {
-            source: source.into(),
+        let entry = Entry {
+            source: (self.copy_text)(source)?,
             epoch: span.epoch,
             rate: span.rate,
-            start: span.start.into(),
-            end: span.end.into(),
-            media_start_ns: span.media_start_ns.into(),
+            start: (self.copy_text)(span.start)?,
+            end: (self.copy_text)(span.end)?,
+            media_start_ns: (self.copy_text)(span.media_start_ns)?,
             media_end_ns,
-        });
+        };
+        (self.reserve_entry)(&mut self.entries)?;
+        self.entries.push(entry);
         Ok(Inserted::New)
     }
 
@@ -186,22 +220,155 @@ impl TimelineRegistry {
         range: SourceRange<'_>,
     ) -> Result<(u64, u64), RegistryError> {
         self.check_identity(session, source)?;
-        let spans: Vec<_> = self
-            .entries
-            .iter()
-            .filter(|e| e.source == source)
-            .map(Entry::span)
-            .collect();
-        if spans.is_empty() {
+        if !self.entries.iter().any(|entry| entry.source == source) {
             return Err(RegistryError::UnknownSource);
         }
-        map_source_range(&spans, range).map_err(RegistryError::Timeline)
+        let spans = self
+            .entries
+            .iter()
+            .filter(|entry| entry.source == source)
+            .map(Entry::span);
+        map_source_range_iter(spans, range).map_err(RegistryError::Timeline)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::Cell;
+    thread_local! { static COPIES_BEFORE_REFUSAL: Cell<usize> = const { Cell::new(usize::MAX) }; }
+    fn refusing_copy(value: &str) -> Result<String, RegistryError> {
+        COPIES_BEFORE_REFUSAL.with(|remaining| {
+            let count = remaining.get();
+            if count == 0 {
+                return Err(RegistryError::Allocation);
+            }
+            remaining.set(count - 1);
+            copy_text(value)
+        })
+    }
+    fn refuse_entry(_: &mut Vec<Entry>) -> Result<(), RegistryError> {
+        Err(RegistryError::Allocation)
+    }
+    #[test]
+    fn constructor_validates_identity_and_limits_before_fallible_session_copy() {
+        let limits = RegistryLimits {
+            sources: 1,
+            spans: 1,
+        };
+        COPIES_BEFORE_REFUSAL.set(0);
+        assert!(matches!(
+            TimelineRegistry::with_copier("", limits, refusing_copy),
+            Err(RegistryError::InvalidIdentity)
+        ));
+        assert!(matches!(
+            TimelineRegistry::with_copier(
+                "session-A",
+                RegistryLimits {
+                    sources: 0,
+                    ..limits
+                },
+                refusing_copy
+            ),
+            Err(RegistryError::InvalidLimits)
+        ));
+        assert!(matches!(
+            TimelineRegistry::with_copier("session-A", limits, refusing_copy),
+            Err(RegistryError::Allocation)
+        ));
+    }
+    #[test]
+    fn every_entry_copy_and_reserve_refusal_preserves_old_spans_and_allows_retry() {
+        let next = SourceSpan {
+            media_start_ns: "2000000000",
+            ..SPAN
+        };
+        for failure in 0..5 {
+            let mut r = registry(2, 3);
+            r.insert("session-A", "system", SPAN).unwrap();
+            r.copy_text = refusing_copy;
+            COPIES_BEFORE_REFUSAL.set(failure);
+            if failure == 4 {
+                r.reserve_entry = refuse_entry;
+            }
+            assert_eq!(
+                r.insert("session-A", "mic", next),
+                Err(RegistryError::Allocation)
+            );
+            assert_eq!(r.len(), 1);
+            assert_eq!(r.map("session-A", "system", RANGE), Ok((0, 1_000_000_000)));
+            assert_eq!(
+                r.map("session-A", "mic", RANGE),
+                Err(RegistryError::UnknownSource)
+            );
+            assert_eq!(
+                r.insert("session-A", "system", SPAN),
+                Ok(Inserted::Duplicate)
+            );
+            r.copy_text = copy_text;
+            r.reserve_entry = reserve_entry;
+            assert_eq!(r.insert("session-A", "mic", next), Ok(Inserted::New));
+            assert_eq!(
+                r.map("session-A", "mic", RANGE),
+                Ok((2_000_000_000, 3_000_000_000))
+            );
+        }
+    }
+    #[test]
+    fn queries_replay_and_capacity_checks_need_no_metadata_copies_or_entry_reserve() {
+        let mut r = registry(1, 1);
+        r.insert("session-A", "system", SPAN).unwrap();
+        r.copy_text = refusing_copy;
+        r.reserve_entry = refuse_entry;
+        COPIES_BEFORE_REFUSAL.set(0);
+        assert_eq!(r.map("session-A", "system", RANGE), Ok((0, 1_000_000_000)));
+        assert_eq!(
+            r.map("session-A", "unknown", RANGE),
+            Err(RegistryError::UnknownSource)
+        );
+        assert_eq!(
+            r.insert("session-A", "system", SPAN),
+            Ok(Inserted::Duplicate)
+        );
+        assert_eq!(
+            r.insert("session-A", "mic", SPAN),
+            Err(RegistryError::Capacity)
+        );
+        assert_eq!(
+            r.insert(
+                "session-A",
+                "system",
+                SourceSpan {
+                    end: "47999",
+                    ..SPAN
+                }
+            ),
+            Err(RegistryError::ConflictingReplay)
+        );
+        assert_eq!(r.len(), 1);
+    }
+    #[test]
+    fn fixed_source_scratch_handles_inclusive_sixty_four_source_cap() {
+        let mut r = registry(64, 65);
+        for at in 0..64 {
+            let source = format!("source-{at}");
+            assert_eq!(r.insert("session-A", &source, SPAN), Ok(Inserted::New));
+        }
+        assert_eq!(r.len(), 64);
+        assert_eq!(
+            r.insert("session-A", "source-64", SPAN),
+            Err(RegistryError::Capacity)
+        );
+        assert_eq!(
+            r.insert("session-A", "source-63", SPAN),
+            Ok(Inserted::Duplicate)
+        );
+        assert_eq!(
+            r.map("session-A", "source-63", RANGE),
+            Ok((0, 1_000_000_000))
+        );
+        assert_eq!(r.len(), 64);
+    }
     #[test]
     fn diagnostics_omit_session_source_and_raw_timeline_values() {
         let span = SourceSpan {

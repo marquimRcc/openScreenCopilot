@@ -1,6 +1,6 @@
 # Estado atual — openScreenCopilot
 
-Checkpoint operacional em2026-10-15. Git e este arquivo são autoritativos.
+Checkpoint operacional em2026-10-16. Git e este arquivo são autoritativos.
 O registro anterior foi preservado INTEGRALMENTE em
 [STATUS-HISTORY-2026-10-15.md](STATUS-HISTORY-2026-10-15.md), mesmo blob Git
 d692b88dffc902c2314e3941c6a6e7b153f2ad86 do STATUS em7ee332dd.
@@ -27,6 +27,9 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
   Pausa89 anterior e guarda18:34:42UTC JÁ CUMPRIDAS; saldo só renovou depois,
   não usar timestamp passado como prova. Watchdog1min restaurado;nenhumresetconsumido.
   Consultar novamente antes de iniciar trabalho, não usar esse snapshot como saldo vivo.
+- Renovação REAL00:56:51UTC16/10 confirmou1%5h/46%semanal,allowedtrue;
+  guarda00:56:15 cumprida e watchdog1min restaurado, sem consumir reset.
+  Consulta01:04:22UTC:11%5h/47%semanal. Snapshots não são saldo vivo.
 - Estimativa do GIF e Compartilhar SOMENTE após TODO restante roadmap.
   Base existente preservada, integração incompleta não ativada.
 - Qualidade antes de tamanho, sem teto rígido300MB/30min.
@@ -150,6 +153,11 @@ Implementado/testado, sem imports runtime:
 
 - Mapa amostras/mídia u64/u128, epochs/overflow/ambiguidade e8fixtures comunsTS/Rust.
   Registro limitado por sessão/fonte/order/replay/capacidade, não auth/journal.
+  Consulta agora filtra spans emprestados sem lista temporária; contagem de fontes
+  usa scratchfixo64. Cópias de sessão/metadados e reservaVec são falháveis:
+  RegistryError::Allocation preserva mapas/capacidade lógica, semevicção.
+  4testes novos cobrem cada recusa/retry e limite64 inclusivo. Não é tetoRSS,
+  garantia contra OOM do processo nem autorização/runtime.
 - Downmix AverageAll/FirstStereoPair explícitos,1–32canais,frames completos,
   finiteantesalloc/f64sum e1.048.576scalarscap. Semclip/gain/noise/resample.
   Entrada f32le desalinhada compartilha implementação,não cria cópia interleaved;
@@ -262,7 +270,7 @@ viaregistryâncora5s,nunca arrivalprovider. Semclockreal/resampler/ASR/checkpoin
 1integração com2providersfalsos/mesmogate:segundo recusadoatéprimeirocancelado
 completar. Gatesindependentesbypassariam;NÃO coordenaSTTherdado real.
 
-Rust134unitários+8integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+Rust138unitários+8integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider
