@@ -50,6 +50,10 @@ previous maps and logical capacity unchanged, with explicit retry possible. Four
 tests inject each refusal and exercise the inclusive cap. This is not a promise
 against process OOM termination or allocator overhead/RSS; metadata remains bounded
 by prototype counts, not audio-time credits. The original shared fixtures still pass.
+A full-capacity regression populates4096 maps across64 interleaved sources and64
+epochs at16/44.1/48kHz. Independent integer expectations check source-specific
+anchors, replay and refusal of the4097th span while metadata allocation is denied.
+This synthetic metadata test is not a long-recording/RSS or hardware-clock test.
 
 `downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
 meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
@@ -321,7 +325,7 @@ Original48k mono is explicitly refused by the16k request constructor; declaring
 synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
 time and no sample range is converted to a different rate.
 
-These are138 unit +8 component-integration +8 resampling-spike tests, passing
+These are139 unit +8 component-integration +8 resampling-spike tests, passing
 debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
 futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
 Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.

@@ -370,6 +370,89 @@ mod tests {
         assert_eq!(r.len(), 64);
     }
     #[test]
+    fn full_registry_preserves_interleaved_sources_epochs_and_exact_mapping() {
+        let mut r = registry(64, 4096);
+        // Fully populate both prototype caps. Every epoch has one second of
+        // source samples; anchors include source-specific offsets and gaps.
+        for epoch in 0..64u64 {
+            for source in 0..64u64 {
+                let id = format!("source-{source}");
+                let rate = [16000u32, 44100, 48000][source as usize % 3];
+                let end = rate.to_string();
+                let anchor = (epoch * 2_000_000_000 + source * 1_000_000).to_string();
+                r.insert(
+                    "session-A",
+                    &id,
+                    SourceSpan {
+                        epoch,
+                        rate,
+                        start: "0",
+                        end: &end,
+                        media_start_ns: &anchor,
+                    },
+                )
+                .unwrap();
+            }
+        }
+        assert_eq!(r.len(), 4096);
+        r.copy_text = refusing_copy;
+        r.reserve_entry = refuse_entry;
+        COPIES_BEFORE_REFUSAL.set(0);
+        for epoch in [0, 31, 63] {
+            for source in 0..64u64 {
+                let id = format!("source-{source}");
+                let rate = [16000u32, 44100, 48000][source as usize % 3];
+                let end = rate.to_string();
+                let anchor = epoch * 2_000_000_000 + source * 1_000_000;
+                let anchor_text = anchor.to_string();
+                assert_eq!(
+                    r.insert(
+                        "session-A",
+                        &id,
+                        SourceSpan {
+                            epoch,
+                            rate,
+                            start: "0",
+                            end: &end,
+                            media_start_ns: &anchor_text,
+                        }
+                    ),
+                    Ok(Inserted::Duplicate)
+                );
+                assert_eq!(
+                    r.map(
+                        "session-A",
+                        &id,
+                        SourceRange {
+                            epoch,
+                            start: "1",
+                            end: &end,
+                        }
+                    ),
+                    Ok((
+                        anchor + 1_000_000_000 / u64::from(rate),
+                        anchor + 1_000_000_000
+                    ))
+                );
+            }
+        }
+        assert_eq!(
+            r.insert(
+                "session-A",
+                "source-0",
+                SourceSpan {
+                    epoch: 64,
+                    rate: 16000,
+                    start: "0",
+                    end: "16000",
+                    media_start_ns: "128000000000",
+                }
+            ),
+            Err(RegistryError::Capacity)
+        );
+        assert_eq!(r.len(), 4096);
+    }
+    #[test]
     fn diagnostics_omit_session_source_and_raw_timeline_values() {
         let span = SourceSpan {
             epoch: 54321,

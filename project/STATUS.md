@@ -158,6 +158,9 @@ Implementado/testado, sem imports runtime:
   RegistryError::Allocation preserva mapas/capacidade lógica, semevicção.
   4testes novos cobrem cada recusa/retry e limite64 inclusivo. Não é tetoRSS,
   garantia contra OOM do processo nem autorização/runtime.
+  Regressão adicional preenche4096mapas/64fontes/64épocas intercaladas a16/44.1/48k,
+  confere âncoras/replay/4097recusado com cópias negadas. Sintético metadata,
+  não teste de gravação longa/RSS/clockhardware.
 - Downmix AverageAll/FirstStereoPair explícitos,1–32canais,frames completos,
   finiteantesalloc/f64sum e1.048.576scalarscap. Semclip/gain/noise/resample.
   Entrada f32le desalinhada compartilha implementação,não cria cópia interleaved;
@@ -270,7 +273,7 @@ viaregistryâncora5s,nunca arrivalprovider. Semclockreal/resampler/ASR/checkpoin
 1integração com2providersfalsos/mesmogate:segundo recusadoatéprimeirocancelado
 completar. Gatesindependentesbypassariam;NÃO coordenaSTTherdado real.
 
-Rust138unitários+8integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
+Rust139unitários+8integraçõescomponentes+8spikes aprovados debug/release offline/locked,clippyalltargets
 -Dwarnings/fmt. Clippy exigiu as_chunks::<4> no parser; corrigido/revalidado.
 Avisos de hardlink no cache incremental levaram a cópia, não falha dos testes.
 core_pipeline.rs junta decoderbytespartidos/mono/pool/request/admissão/provider
