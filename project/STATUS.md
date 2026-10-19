@@ -35,12 +35,10 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
 - Se resetsAt passado mas quota alta, não inventar renovação/reset futuro:
   verificações temporárias 5min só durante pausa, sem loops. Scheduler BYHOUR é UTC;
   wake pode antecipar, garantir tentativa posterior à guarda, nunca DAILY isolado.
-- Disponibilidade de GUI: janela anterior até 9h Brasília 16/10 (12:00 UTC) expirou;
-  enumeração de títulos pessoais foi rejeitada e permissão específica segue pendente,
-  sem reabrir perguntas. Essa restrição de GUI aplica-se à homologação/captura do OpenScreen
-  e janelas/apps pessoais no desktop humano, não ao controle e comandos autorizados do
-  Antigravity por esta supervisora técnica. Preservar apps/jobs humanos, não enumerar janelas/capturar tela
-  nem contornar por shell/UIA/CDP.
+- Disponibilidade de GUI: autorização humana expressa concedida em 19/10/2026 (SIM do usuário
+  para listar títulos de janelas e deixar PC sem uso durante homologação). Supervisora técnica conduziu
+  execução real via computer-use/skill sob perfil privado isolado e cobertura opaca controlada.
+  Preservar apps/jobs humanos, não interferir nos processos da supervisora (app PID 28284, cover PID 16096).
 - Estimativa do GIF e Compartilhar SOMENTE após TODO restante roadmap (backlog final).
   Base existente preservada, integração incompleta não ativada.
 - Qualidade antes de tamanho, sem teto rígido 300MB/30min.
@@ -73,8 +71,7 @@ idênticos por SHA256, strings da guarda pré-spawn presentes no bundle do app.a
 nativos em resources/electron/native/bin/win32-x64 conferido bi-direcionalmente byte a byte (ffmpeg.exe excluído,
 zero extras e zero ausentes), e todos os 7 extraResources validados. Recibo e log privados em
 `.cache/package-windows-region-receipt.json` e `.cache/package-windows-region.log`.
-Pacote puramente local, não instalado/executado; homologação física de GUI, carga de 30min e integração ASR
-permanecem pendentes e NÃO aceitos.
+Pacote win-unpacked puramente local, não instalado/executado (código em dist compilado teve ensaio 30min sintético aprovado, mas execução direta do pacote win-unpacked e integração ASR permanecem pendentes e NÃO aceitos).
 
 Validação de testes: suíte completa executada em 2026-10-16 (.cache/capture-startup-final.json e
 .cache/capture-startup-final.log) totalizou 5229 testes aprovados (testResults.length=369, numPassedTests=5229,
@@ -110,8 +107,8 @@ PR2 de01 continua dependente dos aceites; não promover distribuição por teste
 | Etapa | Estado real |
 |---|---|
 |00 fundação|Concluída:fork/históricos/licenças/vendor/contratos/política CI|
-|01 Windows/identidade|Código/pacote isolados, timestamps corrigidos; GUI completa/carga longa pendentes|
-|02 região/dispositivos/resultado|Implementados (guarda pré-spawn de geometria/DPI/fonte incluída); homologação física/audível/fluxo completo pendente|
+|01 Windows/identidade|Código/pacote isolados, timestamps corrigidos; GUI curta/longa 30min sintética aprovada; execução empacotada/títulos reais/DPI misto pendentes|
+|02 região/dispositivos/resultado|Implementados (guarda pré-spawn, região e loopback sintético 30min validados); borda física/mic audível/DPI misto/fluxo completo pendente|
 |03 compressão|Inventário/sondas MF apenas; AV1 não grava, comparação30min não feita|
 |04 speech-core|Preparação isolada com testes abaixo; sem VAD/engine/provider concreto/sidecar ativo|
 |05 ASRlive|Não integrado; depende02/04 (03 adiada ao backlog)/relógio/journal/créditos|
@@ -350,30 +347,49 @@ WASAPI/QPC; integração exige device→sessão/source/epoch/amostras/mapas vali
 Não usar arrivalASR comoPTS, índiceFrame/FPS ou contador16k como48/44.1k.
 VAD/providerconcreto/normalizadorruntime/hostsidecar/journal/créditos ainda pendentes.
 
-## GUI — bloqueio operacional, não repetir a cada wake
+## GUI e homologação física — parcial real curta e longa 19/10/2026
 
-Autorização humana Sim para cobertura opaca temporária de TODOS monitores permanece.
-Não é aceite. Janela anterior de disponibilidade até 9h Brasília (12:00 UTC) expirou;
-enumeração de títulos pessoais foi rejeitada e permissão específica segue pendente,
-sem reabrir perguntas. Restrição aplica-se à homologação/captura do OpenScreen e janelas/apps
-pessoais humanos, não ao controle e comandos autorizados do Antigravity por esta supervisora técnica.
-Outra apphumana apareceu acima da cobertura na tentativa antiga; revalidar condição
-segura com observação fresca, sem repetir a pergunta já respondida.
+Autorização humana expressa concedida em 19/10/2026: SIM explícito do usuário para listar
+títulos de janelas e deixar PC sem uso durante homologação. Execução real realizada
+pela supervisora técnica via computer-use/skill: perfil privado `.cache/full-app-qa-cdb1eca9-7958-47af-823a-535017a731d2`,
+app processo 28284 via wrapper `.cache/full-app-qa.mjs`; cobertura própria curta `.cache/opaque-qa-source.cjs`
+(PID 16096, 15min timeout) e longa `.cache/opaque-qa-long.cjs` (PID 7348, 60min timeout).
+CORREÇÃO OPERACIONAL: A homologação executou o código compilado em `dist/` através de wrapper isolado (`.cache/full-app-qa.mjs`),
+NÃO o pacote `win-unpacked`; o pacote em `.cache/package-windows-region/win-unpacked` (SHA256 app.asar `99dbed44…`)
+foi apenas verificado por hash/recursos. Os PIDs citados (cover longa 7348, main 28284, WGC 8800) são registros históricos
+de processos já encerrados normalmente e ausentes no Get-Process, não processos permanentes em execução.
 
-GUI só skillcomputer-use/refs/@oai/sky,seleçãoúnica/observaçãofresca/umaação/reobserve;
-semDOMinjection/cliquescegos/forçarChrome/alterarWindows/contornar hit-test/rejeição/
-desktopbloqueado. Respeitar Escape físico. InterativoNormal/helpersHidden.
-ContentprotectionOFF sóQAisolada, nunca gravação real. Remover covers próprias ao fim.
-Últimasfixtures24420/13404 identificadas/ociosas encerradas e ausentes; PIDsantigos
-não reutilizar. Appantigo21240 de.cache/indicator-package foi deixado intacto:
-verificar identidade/caminho/args/estado atuais antes de qualquer limpeza.
+Regras operacionais de segurança mantidas: GUI só via skill computer-use (refs/@oai/sky), seleção única, observação fresca, uma ação por vez e reobservação obrigatória; sem DOM injection, sem cliques cegos, sem forçar Chrome, sem alterar Windows, sem contornar hit-test, rejeição ou desktop bloqueado. Respeitar Escape físico. Interativo Normal / helpers Hidden. OPENSCREEN_DISABLE_CONTENT_PROTECTION=1 apenas para QA isolada, nunca em gravação real. Remover covers próprias ao fim de qualquer ensaio.
 
-Parcial real:CtrlN→Record→Source→Region→monitor→Draw→drag158,120a798,520DIP mostrou
-960×600px150%; Escape fechouoverlay, semfonte/autostart/MP4. Depois imagem picker
-divergiu deUIA (editor/cover); ativaçãofresh única não resolveu. Causa não diagnosticada;
-não alterar zorder/transparência por suposição. Medidor componente/Stop passou parcial.
-Captura→resultado,confirmarárea,bordafísica,DPImisto,endpointaudível,disconnect/retorno/
-formatos/TeamsSlackYouTube/carga30min continuam SEM aceite.
+Parcial real aprovado (curta e longa passaram nos escopos testados; pendências globais de 30min e loopback sintético retiradas):
+- Passada curta (57s):
+  - Fluxo: Ctrl+N → Record → Source → Region → monitor → Draw → arraste (157,120) a (797,520) → UI 958×600 px → Enter.
+  - Editor reativado por skill, fonte confirmada em 958×600 px; sistema/mic/cam/cursor Off.
+  - Gravação iniciada (Start); pausa com contador em 00:51 imóvel enquanto fixture animada continuou; resume; Stop.
+  - Tela de resultado exibiu Original 00:57 / 4.8MB; playback avançou; "Open folder" com arquivo selecionado; "Nova captura" retornou ao HUD sem autostart.
+  - Integridade do arquivo: SHA256 original antes/depois idêntico: `2b2c63d1bdfff23a053ab7e57f96af58f18fec2f0e2adbede11bb25b875a8333`.
+  - Mídia gerada: MP4 privado `recording-1792436046920.mp4` (4.765.146 bytes, 958×600, H.264 High 60fps, duração 57.58s, 3455 frames decode).
+  - Frame extraído t=1s (`.cache/qa-20261019-first-frame.png`): 4 bordas amarelas e texto legível preservados, sem vazamento de área externa.
+  - ffmpeg decode nulo: aviso inicial DTS por arredondamento tbn 60; PTS showinfo estritamente crescente; decode completo via `-fps_mode passthrough -enc_time_base 1:60000 -f null NUL` exit 0 sem avisos.
+  - Fonte WGC reportou `videoInput cpu-rgb32 / runtime hardware`; zeroCopy GPU não comprovado.
+- Passada longa (30m32s):
+  - Execução contínua das 19:02:58Z às 19:33:31Z; Stop/Save normal; tela de resultado exibiu 30:32 / 195,1MB; playback avançou de 0:00 a 0:10.
+  - MP4 privado `recording-1792436577801.mp4` (195.128.727 bytes, SHA256 `34e984e5293e6e80f49cb1519fbe953e9067556efc026fc8d4c4d0d42ee42308`, duração 1832.41s, 958×600, H.264 High, 109.942 quadros; AAC LC 48000Hz stereo 192kb/s).
+  - Decode AV COMPLETO exit 0 sem avisos com `-fps_mode:v passthrough -enc_time_base:v 1:60000 -f null NUL`.
+  - Tom sintético local 440Hz ativado por gesto OS na fixture longa `.cache/opaque-qa-long.cjs`; endpoint explícito Alto-falantes (Senary Audio), medidor 5%; start enquanto medidor ativo drenou helper anterior (só 1 WGC captura ativo).
+  - Astats de áudio: início RMS -28.535807 / peak -25.394006 dB; últimos 10s RMS -28.530503 / peak -25.414331 dB, zero-cross 0.018334 (não prova audibilidade física nem sincronização com fala humana).
+  - Frame extraído t=1825s (`.cache/qa-20261019-long-end.png`): quatro bordas amarelas, texto legível e relógio em 1963s preservados, sem vazamento de área externa ou exibição de HUD.
+  - Memória: 18 amostras agregadas de 10 processos entre 19:07:47Z e 19:31:47Z com PrivateMemorySize64 (private committed bytes, não working set) entre 2016 e 2030 MiB sem crescimento sustentado (não prova limite absoluto de RSS; inclui processo whisper herdado com 1158 MiB sem ASR executado).
+  - Escala: 1 único monitor a 150%, não DPI misto.
+- Permanece SEM aceite (pendências ativas):
+  - Comprovação física da borda vermelha protegida no desktop real.
+  - Microfone real / fala audível / sincronização labial.
+  - Escala de DPI misto / múltiplos monitores.
+  - Janelas / aplicações reais de terceiros ou títulos pessoais do usuário.
+  - Execução no runtime empacotado autônomo (win-unpacked standalone, não instalador obrigatório).
+  - Etapas 01 e 02 completas e integração ASR (05).
+
+Alinhamento da auditoria de speech-core: "nenhum defeito confirmado" na auditoria estática dos módulos isolados não prova ausência absoluta de defeitos nem garante limites RSS de processo; git status limpo não prova que `target/` foi mantido limpo ou ignorado.
 
 Provas curtas nativas usaram sóHWND opaco próprio/endpoint explícito,mic/cursor/camOFF.
 Baseline/pausa/rápidas passaram decode; PTSreais deram áudio−vídeo39/6/6/6ms,
