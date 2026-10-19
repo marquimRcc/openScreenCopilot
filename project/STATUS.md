@@ -1,6 +1,6 @@
 # Estado atual — openScreenCopilot
 
-Checkpoint operacional em2026-10-16. Git e este arquivo são autoritativos.
+Checkpoint operacional em 2026-10-19. Git e este arquivo são autoritativos.
 O registro anterior foi preservado INTEGRALMENTE em
 [STATUS-HISTORY-2026-10-15.md](STATUS-HISTORY-2026-10-15.md), mesmo blob Git
 d692b88dffc902c2314e3941c6a6e7b153f2ad86 do STATUS em7ee332dd.
@@ -9,14 +9,19 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
 
 ## Continuidade e prioridades humanas
 
-- Encerramento humano em 2026-10-16: desenvolvimento e automação permanecem pausados.
-  Pedido posterior autoriza somente validar, fazer commit e push do patch pendente;
-  não autoriza retomar incrementos, gravações ou homologação GUI.
-- Retomada humana em 2026-10-16 autorizada: modelo de trabalho com IA implementadora
-  Antigravity e supervisora técnica Codex, com um único escritor ativo (Antigravity
-  programa e testa, supervisora revisa independentemente; commit e push somente após aceite formal).
-- Checkpoint base confirmado: 2908a017 na branch feat/windows-region-foundation, árvore limpa.
-- Ordem humana vigente 16/10: concluir 01/02; depois 04/05 → 06 → 07/08/09 → backlog.
+- Retomada humana em 2026-10-19 autorizada sob supervisão Codex: conclusão de build
+  e empacotamento local do patch pré-spawn já aceito e commitado/enviado em
+  74b16c9fb021db9f9cd9327f5187e2137bd905de, sem novo runtime. Antigravity como única
+  implementadora/escritora de código, supervisora técnica Codex em verificação independente;
+  commit e push somente após aceite formal.
+- Pausa histórica em 2026-10-16 (desenvolvimento e automação pausados após envio do patch pendente)
+  preservada como registro operacional documental, agora superada pela retomada autorizada
+  em 19/10/2026 para build/empacotamento local sob supervisão técnica.
+- Alinhamento de diagnóstico: alteração de posição de monitor isolada não prova captura errada,
+  pois monitor_utils resolve por bounds e o helper nativo já verifica dimensões; a guarda pré-spawn
+  revalida fail-closed e síncrona a coerência de fonte, região e snapshot imediatamente antes de spawn.
+- Checkpoint base confirmado: 74b16c9f na branch feat/windows-region-foundation, árvore limpa.
+- Ordem humana vigente 16/10 e 19/10: concluir 01/02; depois 04/05 → 06 → 07/08/09 → backlog.
   Compressão/AV1 (03) adiada para o backlog, não bloqueia ASR/Windows; manter H264 e aceites
   reais de captura/áudio/sincronização. Micruído/GIF/Compartilhar no backlog final.
 - Trabalho contínuo supervisionado, sem prazo final; continuar até pedido humano ou da supervisora de pausa/encerramento.
@@ -59,13 +64,23 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
 
 ## Checkout e entregas
 
-Validação do patch pré-spawn em 2026-10-16: suíte completa Node22.22.1/npm10.9.4,
-2 workers, 5229 testes aprovados/5 ignorados/0 falhas, exit0. Recibo privado:
-`.cache/capture-startup-final.json` e `.log`. Ambos tsc, lint (26 avisos herdados),
-i18n e docs aprovados. Prova controlada do callback mostrou troca de retângulo
-recusada antes do spawn, com reserva liberada; não equivale à homologação física.
-Build/pacote atualizado e QA GUI não executados neste fechamento; pacote anterior
-permanece inalterado. Sem rebuild nativo (nenhuma fonte nativa alterada).
+Build e empacotamento local em 2026-10-19: patch pré-spawn commitado em 74b16c9fb021db9f9cd9327f5187e2137bd905de
+empacotado via Vite + electron-builder --win --dir em `.cache/package-windows-region/win-unpacked`
+(offline Node 22.22.1 / npm 10.9.4, sem rebuild nativo, sem sobrescrever pacote anterior .cache/result-package).
+Verificação de integridade aprovada (.cache/verify-package-windows-region.cjs): app.asar gerado com SHA256
+99dbed44acd5c6466c0eaa4d03161974f25d461c53403a62d929665ff4513329 (79.250.262 bytes); main/preload/assets
+idênticos por SHA256, strings da guarda pré-spawn presentes no bundle do app.asar, conjunto de 23 binários
+nativos em resources/electron/native/bin/win32-x64 conferido bi-direcionalmente byte a byte (ffmpeg.exe excluído,
+zero extras e zero ausentes), e todos os 7 extraResources validados. Recibo e log privados em
+`.cache/package-windows-region-receipt.json` e `.cache/package-windows-region.log`.
+Pacote puramente local, não instalado/executado; homologação física de GUI, carga de 30min e integração ASR
+permanecem pendentes e NÃO aceitos.
+
+Validação de testes: suíte completa executada em 2026-10-16 (.cache/capture-startup-final.json e
+.cache/capture-startup-final.log) totalizou 5229 testes aprovados (testResults.length=369, numPassedTests=5229,
+numPendingTests=5, success=true; vs 5216 histórico de rodadas anteriores, refletindo os +13 novos testes focados
+da guarda pré-spawn em windowsCaptureStartupValidation.test.ts), 5 ignorados e 0 falhas em 369 arquivos de teste;
+recibos preservados. Automação autônoma Codex continua PAUSED; trabalho atual em retomada autorizada sob supervisão técnica.
 
 Repo C:\Users\marcos.gomes\Documents\Codex\2026-10-13\new-chat\work\openScreenCopilot,
 branch feat/windows-region-foundation.
