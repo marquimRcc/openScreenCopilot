@@ -68,7 +68,7 @@ idênticos por SHA256, strings da guarda pré-spawn presentes no bundle do app.a
 nativos em resources/electron/native/bin/win32-x64 conferido bi-direcionalmente byte a byte (ffmpeg.exe excluído,
 zero extras e zero ausentes), e todos os 7 extraResources validados. Recibo e log privados em
 `.cache/package-windows-region-receipt.json` e `.cache/package-windows-region.log`.
-Pacote win-unpacked puramente local, não instalado/executado (código em dist compilado teve ensaio 30min sintético aprovado, mas execução direta do pacote win-unpacked e integração ASR permanecem pendentes e NÃO aceitos).
+Pacote win-unpacked puramente local, gerado em `.cache/package-windows-profile-isolation/win-unpacked` (app.asar SHA256 5810df70feb90abf0a2494cfecdfff8c3f7135ff6b4d8152edac0c07db607670, exe 0f3399f13fcb075b447eaa69c681ca52998ea92f1c271c540c4d0887ebc3e35f; anterior 99dbed44 preservado): verificação de integridade aprovada (.cache/verify-package-profile-isolation.cjs) com presença de OPENSCREEN_APP_DATA_DIR e 23 binários nativos idênticos. Executado diretamente via launcher privado `.cache/launch-package-qa.cjs` (PID 35068) em ambiente por processo com raiz UUID isolada (.cache/package-qa-f9b33c62-32c4-4d33-b649-922841ae8a75). Aceite parcial da execução empacotada autônoma (win-unpacked) para captura de região (30s), pausa, resultado, playback, Open folder e New capture; homologação longa 30min no pacote com áudio, microfone e integração ASR permanecem pendentes e NÃO aceitos.
 Isolamento de perfil via OPENSCREEN_APP_DATA_DIR: override explícito opcional implementado em electron/app-identity.ts e electron/initialize-identity.ts (validação estrita de raiz absoluta por plataforma, rejeição de caminhos vazios/brancos/relativos/drive-dependentes, criação da raiz e setPath("appData") antes da derivação de userData/sessionData e stores; falha explícita sem fallback ao perfil humano).
 
 Validação de testes: suíte completa executada em 2026-10-19 com 2 workers (.cache/profile-isolation-full.json e
@@ -105,7 +105,7 @@ PR2 de01 continua dependente dos aceites; não promover distribuição por teste
 | Etapa | Estado real |
 |---|---|
 |00 fundação|Concluída:fork/históricos/licenças/vendor/contratos/política CI|
-|01 Windows/identidade|Código/pacote isolados, timestamps corrigidos; GUI curta/longa 30min sintética aprovada; execução empacotada/títulos reais/DPI misto pendentes|
+|01 Windows/identidade|Código/pacote isolados, timestamps corrigidos; GUI curta/longa 30min sintética (dist) e execução empacotada curta (win-unpacked 30s) aprovadas; pacote 30min com áudio/títulos reais/DPI misto pendentes|
 |02 região/dispositivos/resultado|Implementados (guarda pré-spawn, região e loopback sintético 30min validados); borda física/mic audível/DPI misto/fluxo completo pendente|
 |03 compressão|Inventário/sondas MF apenas; AV1 não grava, comparação30min não feita|
 |04 speech-core|Preparação isolada com testes abaixo; sem VAD/engine/provider concreto/sidecar ativo|
@@ -345,14 +345,14 @@ WASAPI/QPC; integração exige device→sessão/source/epoch/amostras/mapas vali
 Não usar arrivalASR comoPTS, índiceFrame/FPS ou contador16k como48/44.1k.
 VAD/providerconcreto/normalizadorruntime/hostsidecar/journal/créditos ainda pendentes.
 
-## GUI e homologação física — parcial real curta e longa 19/10/2026
+## GUI e homologação física — parciais reais em 19/10/2026 e 20/10/2026
 
 Autorização humana expressa concedida em 19/10/2026: SIM explícito do usuário para listar
 títulos de janelas e deixar PC sem uso durante homologação. Execução real realizada
 pela supervisora técnica via computer-use/skill: perfil privado `.cache/full-app-qa-cdb1eca9-7958-47af-823a-535017a731d2`,
 app processo 28284 via wrapper `.cache/full-app-qa.mjs`; cobertura própria curta `.cache/opaque-qa-source.cjs`
 (PID 16096, 15min timeout) e longa `.cache/opaque-qa-long.cjs` (PID 7348, 60min timeout).
-CORREÇÃO OPERACIONAL: A homologação executou o código compilado em `dist/` através de wrapper isolado (`.cache/full-app-qa.mjs`),
+CORREÇÃO OPERACIONAL: A homologação de 19/10 executou o código compilado em `dist/` através de wrapper isolado (`.cache/full-app-qa.mjs`),
 NÃO o pacote `win-unpacked`; o pacote em `.cache/package-windows-region/win-unpacked` (SHA256 app.asar `99dbed44…`)
 foi apenas verificado por hash/recursos. Os PIDs citados (cover longa 7348, main 28284, WGC 8800) são registros históricos
 de processos já encerrados normalmente e ausentes no Get-Process, não processos permanentes em execução.
@@ -360,7 +360,7 @@ de processos já encerrados normalmente e ausentes no Get-Process, não processo
 Regras operacionais de segurança mantidas: GUI só via skill computer-use (refs/@oai/sky), seleção única, observação fresca, uma ação por vez e reobservação obrigatória; sem DOM injection, sem cliques cegos, sem forçar Chrome, sem alterar Windows, sem contornar hit-test, rejeição ou desktop bloqueado. Respeitar Escape físico. Interativo Normal / helpers Hidden. OPENSCREEN_DISABLE_CONTENT_PROTECTION=1 apenas para QA isolada, nunca em gravação real. Remover covers próprias ao fim de qualquer ensaio.
 
 Parcial real aprovado (curta e longa passaram nos escopos testados; pendências globais de 30min e loopback sintético retiradas):
-- Passada curta (57s):
+- Passada curta (57s, 19/10/2026, wrapper dist):
   - Fluxo: Ctrl+N → Record → Source → Region → monitor → Draw → arraste (157,120) a (797,520) → UI 958×600 px → Enter.
   - Editor reativado por skill, fonte confirmada em 958×600 px; sistema/mic/cam/cursor Off.
   - Gravação iniciada (Start); pausa com contador em 00:51 imóvel enquanto fixture animada continuou; resume; Stop.
@@ -370,7 +370,7 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
   - Frame extraído t=1s (`.cache/qa-20261019-first-frame.png`): 4 bordas amarelas e texto legível preservados, sem vazamento de área externa.
   - ffmpeg decode nulo: aviso inicial DTS por arredondamento tbn 60; PTS showinfo estritamente crescente; decode completo via `-fps_mode passthrough -enc_time_base 1:60000 -f null NUL` exit 0 sem avisos.
   - Fonte WGC reportou `videoInput cpu-rgb32 / runtime hardware`; zeroCopy GPU não comprovado.
-- Passada longa (30m32s):
+- Passada longa (30m32s, 19/10/2026, wrapper dist):
   - Execução contínua das 19:02:58Z às 19:33:31Z; Stop/Save normal; tela de resultado exibiu 30:32 / 195,1MB; playback avançou de 0:00 a 0:10.
   - MP4 privado `recording-1792436577801.mp4` (195.128.727 bytes, SHA256 `34e984e5293e6e80f49cb1519fbe953e9067556efc026fc8d4c4d0d42ee42308`, duração 1832.41s, 958×600, H.264 High, 109.942 quadros; AAC LC 48000Hz stereo 192kb/s).
   - Decode AV COMPLETO exit 0 sem avisos com `-fps_mode:v passthrough -enc_time_base:v 1:60000 -f null NUL`.
@@ -379,12 +379,35 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
   - Frame extraído t=1825s (`.cache/qa-20261019-long-end.png`): quatro bordas amarelas, texto legível e relógio em 1963s preservados, sem vazamento de área externa ou exibição de HUD.
   - Memória: 18 amostras agregadas de 10 processos entre 19:07:47Z e 19:31:47Z com PrivateMemorySize64 (private committed bytes, não working set) entre 2016 e 2030 MiB sem crescimento sustentado (não prova limite absoluto de RSS; inclui processo whisper herdado com 1158 MiB sem ASR executado).
   - Escala: 1 único monitor a 150%, não DPI misto.
+- Passada em runtime empacotado autônomo win-unpacked (30s, 20/10/2026, EXE real):
+  - Execução conduzida pela supervisora Codex via skill (minuto aproximado 05:09 UTC; medições de mídia por Codex, registradas por Antigravity), executando diretamente o EXE real do pacote (`.cache/package-windows-profile-isolation/win-unpacked/openScreenCopilot.exe`, app.asar `5810df70…`, exe `0f3399f1…`, WGC `aaa797a9…a1d5`) via launcher privado `.cache/launch-package-qa.cjs` (launcher executado em Node 22.22.1 / npm 10.9.4 offline; app executou runtime Electron empacotado, NÃO wrapper dist), removendo `ELECTRON_RUN_AS_NODE`.
+  - Processo próprio PID 35068 (histórico encerrado) iniciado às 05:02:25.043Z; raiz isolada `.cache/package-qa-f9b33c62-32c4-4d33-b649-922841ae8a75`; logs stdout/stderr e receipt homônimos em `.cache`. Logs confirmam `RECORDINGS_DIR` e `userData` nessa raiz (não prova ausência global de IO de pre-bootstrap ou do SO).
+  - Fixture curta própria `.cache/opaque-qa-source.cjs` (cover PID 28132, iniciada às 05:01:27.813Z), `coverage.json` em `.cache/opaque-source-qa-6224ed65-d8e2-4641-9ee7-3c7dff4d0499`; monitor único 1280×800 DIP / 1920×1200 px (150%). Cobertura observada antes da captura; não garantia 100% contra janelas de terceiros no topo.
+  - GUI: Ctrl+N → Record → Source → Region → monitor → Draw → arraste (157,120) a (797,520) → 958×600 px → Enter → reativar preparo → Start. Sistema/mic/cam/cursor editável OFF; sem voz, sem ASR, sem modelos.
+  - WGC helper PID 25820, start 1792472721982 (05:05:21.982Z), `cpu-rgb32 / runtime hardware (fragmented MP4)`, não GPU zero-copy.
+  - Pausa no HUD em 00:12 permaneceu fixa em 00:12 enquanto fixture progrediu de 246.67s a 261.09s; clique Resume com HUD em 00:12, contador avançou até 00:26 → Stop.
+  - Resultado: Original 00:30 / 2,4 MB; playback avançou de 0:00 a 0:10 e 0:18; "Open folder" selecionou MP4 correto em nova janela Explorer (Window.id opaco 264106 retornado pelo sky, NÃO HWND); apenas essa janela foi fechada, preservando janela de usuário existente (Window.id opaco 8784030 retornado pelo sky).
+  - "Nova captura": HUD retornou ao estado ocioso ("Start recording"), 0 helpers ativos.
+  - Mídia gerada: `recording-1792472720844.mp4` (2.352.276 bytes, ffprobe H.264 High 958×600, r_frame_rate 60000/1001, 1798 frames, duração 30.018317s, SEM stream de áudio). Decode COMPLETO exit 0 sem avisos (`-fps_mode:v passthrough -enc_time_base:v 1:60000 -f null NUL`).
+  - SHA256 antes e depois de playback, Open folder e New capture idêntico: `1e3a9b14cff40168e6873da6fee013d0c7219e07f8fc1f8345ee9c6b187c9525`.
+  - Frames t=1s e t=29s inspecionados visualmente na raiz QA: 4 bordas amarelas, texto legível e movimento confirmados; sem área externa ou HUD em ambas as amostras (não prova cada frame individual).
+  - Limitações e incidentes: stderr contém aviso de erro do Chromium WGC thumbnail timeout (5000ms GetFrame às 05:04:05 UTC) ANTES da tomada (não declarar QA globalmente sem avisos). Clique no Quit do HUD recusado 2 vezes por hit-test apontando para `electronChromeLegacyWindow`; 1 reativação/reobservação/retry feita sem forçar clique. Alt+F4 normal fechou o app; cover fechada com Alt+F4; conferência às 05:09 UTC confirmou 0 processos `openScreenCopilot`, `wgc-capture`, `whisper` ou `electron`. PIDs são históricos e não devem ser reutilizados. Nenhum processo ou cover deixado.
+  - Aceite PARCIAL de execução empacotada autônoma (win-unpacked) no escopo coberto (captura de região curta, pausa, resultado, playback, open folder, new capture). Recibo privado em `.cache/qa-20261020-standalone-receipt.json`.
+- Ensaio de seleção de janela e fechamento de fonte no pacote win-unpacked (20/10/2026, SKIPPED / sem aceite):
+  - Tentativa adicional conduzida pela supervisora Codex via skill às ~05:13 UTC com raiz isolada `.cache/package-qa-34e17800-3e1a-480f-bff7-c555b02bb4fc` (launcher app PID 14592, histórico encerrado).
+  - Coberturas: cover base PID 13368 (`opaque-qa-long.cjs`, tom não ativado) e alvo PID 7112 (`opaque-qa-source.cjs`), logs `.cache/window-close-{base,target}-59f0df09-65f0-454b-bf4b-aabd45286864.*`.
+  - Na aba Windows, acessibilidade utilizada sem capturar screenshots de miniaturas pessoais. Navegação por teclado selecionou `openScreenCopilot` em vez do alvo; nome conferido no preparo e gravação NÃO iniciada.
+  - Reabertura do seletor e tentativa no botão exato `OPAQUE SYNTHETIC QA COVER`: erro `point (172,715) outside window bounds 680x580`; navegação e rolagem por teclado não alcançaram o alvo.
+  - Seguindo política de segurança: clique não forçado, sem contorno de hit-test ou limites de janela; defeito de captura não declarado. Caso de teste de fechamento de janela segue SEM aceite.
+  - Botão Cancel funcionou normalmente; Alt+F4 encerrou o app e ambas as fixtures.
+  - Conferência posterior: 0 processos `openScreenCopilot`, `wgc-capture`, `whisper` ou `electron`, e ZERO arquivos gerados em `recordings` nessa raiz. Todos os PIDs são históricos e não devem ser reutilizados. Não houve segunda gravação, áudio, ASR, alteração produtiva ou upload. Recibo privado em `.cache/qa-20261020-window-close-skipped-receipt.json`.
 - Permanece SEM aceite (pendências ativas):
   - Comprovação física da borda vermelha protegida no desktop real.
   - Microfone real / fala audível / sincronização labial.
   - Escala de DPI misto / múltiplos monitores.
   - Janelas / aplicações reais de terceiros ou títulos pessoais do usuário.
-  - Execução no runtime empacotado autônomo (win-unpacked standalone, não instalador obrigatório).
+  - Execução longa (30min) com áudio/mic no runtime empacotado autônomo (win-unpacked standalone teve apenas passada curta 30s sem áudio aprovada).
+  - Ensaio de fechamento de janela/fonte durante a captura (caso segue sem aceite após interrupção no seletor).
   - Etapas 01 e 02 completas e integração ASR (05).
 
 Alinhamento da auditoria de speech-core: "nenhum defeito confirmado" na auditoria estática dos módulos isolados não prova ausência absoluta de defeitos nem garante limites RSS de processo; git status limpo não prova que `target/` foi mantido limpo ou ignorado.
