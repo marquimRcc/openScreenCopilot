@@ -724,7 +724,10 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		};
 
 		try {
-			const result = await window.electronAPI.stopNativeWindowsRecording(discard);
+			const result = await window.electronAPI.stopNativeWindowsRecording(
+				discard,
+				activeNativeRecording.recordingId,
+			);
 			if (discard || result.discarded) {
 				clearNativeRecordingState();
 				return true;
@@ -1078,6 +1081,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 
 	useEffect(() => {
 		let cleanup: (() => void) | undefined;
+		let cleanupEnded: (() => void) | undefined;
 
 		if (window.electronAPI?.onStopRecordingFromTray) {
 			cleanup = window.electronAPI.onStopRecordingFromTray(() => {
@@ -1085,9 +1089,21 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			});
 		}
 
+		if (window.electronAPI?.onNativeWindowsCaptureEnded) {
+			cleanupEnded = window.electronAPI.onNativeWindowsCaptureEnded((payload) => {
+				const active = nativeWindowsRecording.current;
+				if (!active || active.recordingId !== payload.recordingId || active.finalizing) {
+					return;
+				}
+				console.warn("[screen-recorder] native Windows helper exited unexpectedly", payload);
+				void finalizeNativeWindowsRecording(false);
+			});
+		}
+
 		return () => {
 			const activeRunId = countdownRunId.current;
 			if (cleanup) cleanup();
+			if (cleanupEnded) cleanupEnded();
 			countdownRunId.current += 1;
 			void safeHideCountdownOverlay(activeRunId);
 			allowAutoFinalize.current = false;
@@ -1318,6 +1334,27 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			setRecording(true);
 			setPaused(false);
 			setElapsedSeconds(0);
+
+			if (window.electronAPI?.queryNativeWindowsCaptureStatus) {
+				try {
+					const status = await window.electronAPI.queryNativeWindowsCaptureStatus(
+						result.recordingId,
+					);
+					if (status?.closed) {
+						const active = nativeWindowsRecording.current;
+						if (active && active.recordingId === result.recordingId && !active.finalizing) {
+							console.warn(
+								"[screen-recorder] helper was already closed when start completed",
+								status,
+							);
+							void finalizeNativeWindowsRecording(false);
+						}
+					}
+				} catch (queryError) {
+					console.warn("[screen-recorder] failed to query capture status after start:", queryError);
+				}
+			}
+
 			return true;
 		} catch (error) {
 			console.error("Native Windows capture failed:", error);

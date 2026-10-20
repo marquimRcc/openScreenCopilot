@@ -208,7 +208,10 @@ interface Window {
 		startNativeWindowsRecording: (
 			request: import("../src/lib/nativeWindowsRecording").NativeWindowsRecordingRequest,
 		) => Promise<import("../src/lib/nativeWindowsRecording").NativeWindowsRecordingStartResult>;
-		stopNativeWindowsRecording: (discard?: boolean) => Promise<{
+		stopNativeWindowsRecording: (
+			discard?: boolean,
+			expectedRecordingId?: number,
+		) => Promise<{
 			success: boolean;
 			path?: string;
 			session?: import("../src/lib/recordingSession").RecordingSession;
@@ -221,6 +224,25 @@ interface Window {
 			 */
 			webcamDropped?: boolean;
 		}>;
+		queryNativeWindowsCaptureStatus: (expectedRecordingId: number) => Promise<{
+			active: boolean;
+			closed: boolean;
+			code?: number | null;
+			signal?: string | null;
+			reason?: string | null;
+			stopState?: string;
+			stale?: boolean;
+			unauthorized?: boolean;
+			invalidId?: boolean;
+		}>;
+		onNativeWindowsCaptureEnded: (
+			callback: (payload: {
+				recordingId: number;
+				code?: number | null;
+				signal?: string | null;
+				reason?: string;
+			}) => void,
+		) => () => void;
 		pauseNativeWindowsRecording: () => Promise<{
 			success: boolean;
 			error?: string;

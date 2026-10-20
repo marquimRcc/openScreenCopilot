@@ -311,8 +311,31 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	startNativeWindowsRecording: (request: NativeWindowsRecordingRequest) => {
 		return ipcRenderer.invoke("start-native-windows-recording", request);
 	},
-	stopNativeWindowsRecording: (discard?: boolean) => {
-		return ipcRenderer.invoke("stop-native-windows-recording", discard);
+	stopNativeWindowsRecording: (discard?: boolean, expectedRecordingId?: number) => {
+		return ipcRenderer.invoke("stop-native-windows-recording", discard, expectedRecordingId);
+	},
+	queryNativeWindowsCaptureStatus: (expectedRecordingId: number) => {
+		return ipcRenderer.invoke("query-native-windows-capture-status", expectedRecordingId);
+	},
+	onNativeWindowsCaptureEnded: (
+		callback: (payload: {
+			recordingId: number;
+			code?: number | null;
+			signal?: NodeJS.Signals | null;
+			reason?: string;
+		}) => void,
+	) => {
+		const listener = (
+			_: unknown,
+			payload: {
+				recordingId: number;
+				code?: number | null;
+				signal?: NodeJS.Signals | null;
+				reason?: string;
+			},
+		) => callback(payload);
+		ipcRenderer.on("native-windows-capture-ended", listener);
+		return () => ipcRenderer.removeListener("native-windows-capture-ended", listener);
 	},
 	pauseNativeWindowsRecording: () => {
 		return ipcRenderer.invoke("pause-native-windows-recording");
