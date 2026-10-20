@@ -24,12 +24,9 @@ Consultar histórico só para evidências antigas, não reler como checkpoint de
 - Ordem humana vigente 16/10 e 19/10: concluir 01/02; depois 04/05 → 06 → 07/08/09 → backlog.
   Compressão/AV1 (03) adiada para o backlog, não bloqueia ASR/Windows; manter H264 e aceites
   reais de captura/áudio/sincronização. Micruído/GIF/Compartilhar no backlog final.
-- Trabalho contínuo supervisionado, sem prazo final; continuar até pedido humano ou da supervisora de pausa/encerramento.
-- Watchdog 1min só recupera chat ocioso/interrompido; não parar entre incrementos para esperar wake
-  nem trabalhar apenas por fatias de 1/5/15min. Automação autônoma Codex continua PAUSED até supervisora reconfigurar.
-- Conferir hora/limites reais antes da rodada e entre incrementos. Parar aos 89% usados 5h
-  OU 95% semanal ou hardlimit; preservar checkpoint e retomar só após reset aplicável + 5min
-  E confirmação real de saldo renovado. Respeitar ambos se atingidos.
+- Trabalho contínuo supervisionado, sem prazo final; continuar até pedido humano ou da supervisora de pausa/encerramento (pedido humano STOP respeitado como pausa imediata).
+- Supervisão técnica ACTIVE em 19/10 e 20/10/2026; watchdog atual de 5min e margem pós-reset de reset + 180s (a margem anterior de 5min foi substituída por determinação humana; estado anterior PAUSED em 16/10 preservado como histórico superado). Watchdog só recupera chat ocioso/interrompido; não parar entre incrementos para esperar wake nem trabalhar apenas por fatias de 1/5/15min.
+- Conferir hora/limites reais antes da rodada e entre incrementos com saldo REAL medido (snapshots anteriores não são estado vivo). Parar aos 89% usados 5h OU 95% semanal ou hardlimit; preservar checkpoint e retomar só após reset aplicável + 180s E confirmação real de saldo renovado. Respeitar ambos os limites se atingidos.
 - Não comprar/consumir créditos/resets, trocar modelo/conta ou contornar limites.
   Dois créditos de reset continuavam disponíveis na última consulta, não usados.
 - Se resetsAt passado mas quota alta, não inventar renovação/reset futuro:
@@ -72,12 +69,13 @@ nativos em resources/electron/native/bin/win32-x64 conferido bi-direcionalmente 
 zero extras e zero ausentes), e todos os 7 extraResources validados. Recibo e log privados em
 `.cache/package-windows-region-receipt.json` e `.cache/package-windows-region.log`.
 Pacote win-unpacked puramente local, não instalado/executado (código em dist compilado teve ensaio 30min sintético aprovado, mas execução direta do pacote win-unpacked e integração ASR permanecem pendentes e NÃO aceitos).
+Isolamento de perfil via OPENSCREEN_APP_DATA_DIR: override explícito opcional implementado em electron/app-identity.ts e electron/initialize-identity.ts (validação estrita de raiz absoluta por plataforma, rejeição de caminhos vazios/brancos/relativos/drive-dependentes, criação da raiz e setPath("appData") antes da derivação de userData/sessionData e stores; falha explícita sem fallback ao perfil humano).
 
-Validação de testes: suíte completa executada em 2026-10-16 (.cache/capture-startup-final.json e
-.cache/capture-startup-final.log) totalizou 5229 testes aprovados (testResults.length=369, numPassedTests=5229,
-numPendingTests=5, success=true; vs 5216 histórico de rodadas anteriores, refletindo os +13 novos testes focados
-da guarda pré-spawn em windowsCaptureStartupValidation.test.ts), 5 ignorados e 0 falhas em 369 arquivos de teste;
-recibos preservados. Automação autônoma Codex continua PAUSED; trabalho atual em retomada autorizada sob supervisão técnica.
+Validação de testes: suíte completa executada em 2026-10-19 com 2 workers (.cache/profile-isolation-full.json e
+.cache/profile-isolation-full.log) totalizou 5240 testes aprovados (testResults.length=369, numPassedTests=5240,
+numPendingTests=5, success=true; vs 5229 histórico de 2026-10-16 em .cache/capture-startup-final.json, refletindo os +11 novos
+testes focados do override OPENSCREEN_APP_DATA_DIR em app-identity.test.ts), 5 ignorados e 0 falhas em 369 arquivos de teste;
+recibos preservados. Histórico de 16/10 (automação PAUSED) superado pela supervisão técnica ACTIVE em 19/10 e 20/10/2026 sob autorização humana.
 
 Repo C:\Users\marcos.gomes\Documents\Codex\2026-10-13\new-chat\work\openScreenCopilot,
 branch feat/windows-region-foundation.
