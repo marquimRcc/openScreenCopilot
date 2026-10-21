@@ -196,3 +196,12 @@ if (!fs.existsSync(encoderColorTestPath)) {
 // ffprobe/ffmpeg are not on PATH.
 await run(encoderColorTestPath, [], { cwd: BUILD_DIR });
 console.log(`Passed ${encoderColorTestPath}`);
+
+const sourceStateTestPath = path.join(BUILD_DIR, "wgc_source_state_test.exe");
+if (!fs.existsSync(sourceStateTestPath)) {
+	throw new Error(`WGC helper build completed but ${sourceStateTestPath} was not found.`);
+}
+// Guards the source liveness evaluator: WinRT closed, process signaled,
+// HWND invalidity, PID/TID mismatch, and API query degradation flags.
+await run(sourceStateTestPath, [], { cwd: BUILD_DIR });
+console.log(`Passed ${sourceStateTestPath}`);

@@ -132,6 +132,16 @@ bool WgcSession::createD3DDevice() {
 }
 
 bool WgcSession::createCaptureItem(HMONITOR monitor) {
+    revokeItemClosedHandler();
+    sourceClosedState_.reset();
+    targetProcess_.reset();
+    targetWindow_ = nullptr;
+    originalPid_ = 0;
+    originalTid_ = 0;
+    isWindowSource_ = false;
+    warnedWaitFailed_.store(false, std::memory_order_relaxed);
+    warnedQueryFailed_.store(false, std::memory_order_relaxed);
+
     auto factory = winrt::get_activation_factory<wgcap::GraphicsCaptureItem>();
     auto interop = factory.as<IGraphicsCaptureItemInterop>();
 
@@ -152,6 +162,41 @@ bool WgcSession::createCaptureItem(HMONITOR monitor) {
 }
 
 bool WgcSession::createCaptureItem(HWND window) {
+    revokeItemClosedHandler();
+    sourceClosedState_.reset();
+    targetProcess_.reset();
+    targetWindow_ = nullptr;
+    originalPid_ = 0;
+    originalTid_ = 0;
+    isWindowSource_ = false;
+    warnedWaitFailed_.store(false, std::memory_order_relaxed);
+    warnedQueryFailed_.store(false, std::memory_order_relaxed);
+
+    if (!window || !IsWindow(window)) {
+        return false;
+    }
+
+    DWORD initialPid = 0;
+    DWORD initialTid = GetWindowThreadProcessId(window, &initialPid);
+    if (initialPid == 0 || initialTid == 0) {
+        return false;
+    }
+
+    ScopedHandle localHandle(OpenProcess(SYNCHRONIZE, FALSE, initialPid));
+    if (!localHandle) {
+        const DWORD err = GetLastError();
+        std::cerr << "WARNING: [wgc-capture] OpenProcess(SYNCHRONIZE) failed for PID " << initialPid
+                  << " (error " << err << "); degrading to HWND/PID/TID liveness monitoring"
+                  << std::endl;
+    }
+
+    // Revalidate window identity before CreateForWindow
+    DWORD checkPid = 0;
+    DWORD checkTid = GetWindowThreadProcessId(window, &checkPid);
+    if (!IsWindow(window) || checkPid != initialPid || checkTid != initialTid) {
+        return false;
+    }
+
     auto factory = winrt::get_activation_factory<wgcap::GraphicsCaptureItem>();
     auto interop = factory.as<IGraphicsCaptureItemInterop>();
 
@@ -164,10 +209,43 @@ bool WgcSession::createCaptureItem(HWND window) {
         return false;
     }
 
+    // Revalidate window identity after CreateForWindow
+    checkPid = 0;
+    checkTid = GetWindowThreadProcessId(window, &checkPid);
+    if (!IsWindow(window) || checkPid != initialPid || checkTid != initialTid) {
+        item_ = nullptr;
+        return false;
+    }
+
     item_ = item;
     const auto size = item_.Size();
     width_ = roundUpToEven(static_cast<int>(size.Width));
     height_ = roundUpToEven(static_cast<int>(size.Height));
+    if (width_ <= 0 || height_ <= 0) {
+        item_ = nullptr;
+        return false;
+    }
+
+    auto state = std::make_shared<WgcSourceClosedState>();
+    try {
+        itemClosedToken_ = item_.Closed([state](auto&&, auto&&) {
+            if (state) {
+                state->markClosed(WgcSourceCloseReason::WinRtClosedEvent);
+            }
+        });
+        sourceClosedState_ = std::move(state);
+    } catch (...) {
+        item_ = nullptr;
+        return false;
+    }
+
+    // Move ownership to member only after all setup has fully succeeded.
+    targetWindow_ = window;
+    originalPid_ = initialPid;
+    originalTid_ = initialTid;
+    targetProcess_ = std::move(localHandle);
+    isWindowSource_ = true;
+
     return width_ > 0 && height_ > 0;
 }
 
@@ -271,14 +349,32 @@ bool WgcSession::initialize(HWND window, int fps, bool captureCursor, bool inclu
         return false;
     }
 
-    framePool_ = wgcap::Direct3D11CaptureFramePool::CreateFreeThreaded(
-        winrtDevice_,
-        wgdx::DirectXPixelFormat::B8G8R8A8UIntNormalized,
-        2,
-        winrt::Windows::Graphics::SizeInt32{width_, height_});
-    session_ = framePool_.CreateCaptureSession(item_);
+    try {
+        framePool_ = wgcap::Direct3D11CaptureFramePool::CreateFreeThreaded(
+            winrtDevice_,
+            wgdx::DirectXPixelFormat::B8G8R8A8UIntNormalized,
+            2,
+            winrt::Windows::Graphics::SizeInt32{width_, height_});
+        session_ = framePool_.CreateCaptureSession(item_);
+    } catch (...) {
+        revokeItemClosedHandler();
+        item_ = nullptr;
+        targetProcess_.reset();
+        targetWindow_ = nullptr;
+        originalPid_ = 0;
+        originalTid_ = 0;
+        isWindowSource_ = false;
+        return false;
+    }
 
     if (!applySessionOptions(captureCursor)) {
+        revokeItemClosedHandler();
+        item_ = nullptr;
+        targetProcess_.reset();
+        targetWindow_ = nullptr;
+        originalPid_ = 0;
+        originalTid_ = 0;
+        isWindowSource_ = false;
         return false;
     }
 
@@ -456,7 +552,91 @@ bool WgcSession::quiesceLegacyCallback(int drainTimeoutMs) {
     return true;
 }
 
+void WgcSession::revokeItemClosedHandler() {
+    if (item_ && itemClosedToken_.value != 0) {
+        try {
+            item_.Closed(itemClosedToken_);
+        } catch (...) {
+        }
+        itemClosedToken_ = {};
+    }
+}
+
+bool WgcSession::isSourceClosed() const {
+    auto state = sourceClosedState_;
+    if (!state) {
+        return false;
+    }
+    if (state->closed.load(std::memory_order_acquire)) {
+        return true;
+    }
+
+    if (!isWindowSource_) {
+        return false;
+    }
+
+    DWORD waitResult = WAIT_TIMEOUT;
+    if (targetProcess_) {
+        waitResult = WaitForSingleObject(targetProcess_.get(), 0);
+    }
+
+    const bool windowValid = targetWindow_ != nullptr && IsWindow(targetWindow_) != FALSE;
+    DWORD curPid = 0;
+    DWORD curTid = 0;
+    if (targetWindow_) {
+        curTid = GetWindowThreadProcessId(targetWindow_, &curPid);
+    }
+
+    WgcSourceCloseReason reason = WgcSourceCloseReason::None;
+    bool warnWait = false;
+    bool warnQuery = false;
+
+    const bool alive = evaluateSourceLiveness(
+        false, // winrtClosed checked above
+        true,
+        static_cast<bool>(targetProcess_),
+        waitResult,
+        windowValid,
+        curPid,
+        curTid,
+        originalPid_,
+        originalTid_,
+        &reason,
+        &warnWait,
+        &warnQuery);
+
+    if (warnWait && !warnedWaitFailed_.exchange(true, std::memory_order_relaxed)) {
+        std::cerr << "WARNING: [wgc-capture] WaitForSingleObject(targetProcess) failed; preserving window alive state"
+                  << std::endl;
+    }
+    if (warnQuery && !warnedQueryFailed_.exchange(true, std::memory_order_relaxed)) {
+        std::cerr << "WARNING: [wgc-capture] GetWindowThreadProcessId returned 0 while IsWindow was true; preserving window alive state"
+                  << std::endl;
+    }
+
+    if (!alive) {
+        state->markClosed(reason);
+        return true;
+    }
+    return false;
+}
+
+WgcSourceCloseReason WgcSession::sourceCloseReason() const {
+    auto state = sourceClosedState_;
+    if (!state) {
+        return WgcSourceCloseReason::None;
+    }
+    return state->getReason();
+}
+
 void WgcSession::stop() {
+    revokeItemClosedHandler();
+    targetProcess_.reset();
+    targetWindow_ = nullptr;
+    originalPid_ = 0;
+    originalTid_ = 0;
+    isWindowSource_ = false;
+
     if (!started_ && !framePool_) {
         return;
     }

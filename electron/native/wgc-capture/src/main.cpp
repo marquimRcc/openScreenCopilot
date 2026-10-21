@@ -1150,6 +1150,7 @@ int wmain(int argc, wchar_t* argv[]) {
     const bool legacyFrameCallback = useLegacyFrameCallback();
     CaptureControl control;
     std::atomic<bool> firstFrameWritten = false;
+    std::atomic<bool> firstVideoSampleSubmitted = false;
     std::atomic<bool> encodeFailed = false;
     // Frames the GPU bridge was too busy to take. Reported at stop rather than
     // per frame: a handful over a recording is normal contention, a stream of
@@ -1254,6 +1255,11 @@ int wmain(int argc, wchar_t* argv[]) {
             // Whether the picture this tick encodes differs from the last one:
             // a new WGC frame, or a new camera frame drawn into it. The legacy
             // callback path cannot tell, so it always reads back.
+            if (session.isSourceClosed()) {
+                control.requestStop();
+                break;
+            }
+
             bool pictureChanged = legacyFrameCallback;
 
             std::unique_lock<std::timed_mutex> legacyLock;
@@ -1273,11 +1279,17 @@ int wmain(int argc, wchar_t* argv[]) {
                         continue;
                     }
                     frameCv.wait_for(legacyLock, std::chrono::milliseconds(100), [&] {
-                        return control.stopRequested.load() ||
-                            encodeFailed.load() ||
-                            (!control.paused.load() && latestFrameTexture);
+                        return evaluateLegacyWaitPredicate(
+                            control.stopRequested.load(),
+                            encodeFailed.load(),
+                            session.isSourceClosed(),
+                            control.paused.load(),
+                            latestFrameTexture != nullptr);
                     });
-                    if (control.stopRequested || encodeFailed) {
+                    if (control.stopRequested || encodeFailed || session.isSourceClosed()) {
+                        if (session.isSourceClosed()) {
+                            control.requestStop();
+                        }
                         break;
                     }
                     if (control.paused || !latestFrameTexture) {
@@ -1288,15 +1300,37 @@ int wmain(int argc, wchar_t* argv[]) {
                     tickStartHns = recordingElapsedHns();
                 } else {
                     if (control.paused) {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        if (shouldBreakPauseForSourceClose(true, session.isSourceClosed())) {
+                            control.requestStop();
+                            break;
+                        }
+                        std::this_thread::sleep_for(std::chrono::milliseconds(50));
                         continue;
                     }
 
                     ID3D11Texture2D* wgcTexture = nullptr;
                     int64_t wgcTimestampHns = 0;
                     const bool gotFrame = session.tryGetNextFrame(&wgcTexture, &wgcTimestampHns);
-                    pictureChanged = gotFrame;
-                    if (gotFrame) {
+                    const auto decision = evaluatePullFrameDecision(
+                        control.stopRequested.load(),
+                        encodeFailed.load(),
+                        session.isSourceClosed(),
+                        gotFrame,
+                        latestFrameTexture != nullptr);
+
+                    if (decision == WgcPullFrameDecision::StopDueToControlOrFailure) {
+                        break;
+                    }
+                    if (decision == WgcPullFrameDecision::StopDueToSourceClosed) {
+                        control.requestStop();
+                        break;
+                    }
+                    if (decision == WgcPullFrameDecision::WaitForInitialFrame) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                        continue;
+                    }
+                    if (decision == WgcPullFrameDecision::ProcessNewFrame) {
+                        pictureChanged = true;
                         // The wedge risk this class exists to avoid: this call
                         // can block inside the display driver and never return
                         // (#252, still true of PR #305's DXGI path on some
@@ -1310,14 +1344,8 @@ int wmain(int argc, wchar_t* argv[]) {
                             break;
                         }
                         firstFrameWritten = true;
-                    } else if (!latestFrameTexture) {
-                        // No frame captured yet at all: nothing to encode
-                        // this iteration, and nothing gated on it either (the
-                        // first-frame wait below polls firstFrameWritten
-                        // directly, not a condition variable this thread
-                        // would need to notify).
-                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                        continue;
+                    } else {
+                        // RepeatStaticFrame: pictureChanged remains false (unless camera updated)
                     }
                 }
                 if (webcamActive) {
@@ -1452,6 +1480,9 @@ int wmain(int argc, wchar_t* argv[]) {
                 encodeFailed = true;
                 control.requestStop();
                 break;
+            }
+            if (hasVideoSample) {
+                firstVideoSampleSubmitted = true;
             }
 
             frameIndex += 1;
@@ -1636,24 +1667,32 @@ int wmain(int argc, wchar_t* argv[]) {
     control.recordingStartedAt = std::chrono::steady_clock::now();
     startVideoWriter();
 
-    // firstFrameWritten is set by writeVideoFrames on its own thread; this
-    // just polls it with the same 10s ceiling the old condition-variable wait
-    // used.
+    // firstVideoSampleSubmitted is set by writeVideoFrames only after at least
+    // one video sample has been successfully submitted to the sink writer
+    // (distinguishing texture copy from actual writer submission). This polls
+    // it alongside stopRequested and session.isSourceClosed() with the same 10s
+    // ceiling the old condition-variable wait used.
     bool firstFrameArrived = false;
     {
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-        while (!firstFrameWritten.load() && !control.stopRequested.load() &&
+        while (shouldContinueStartupWait(
+                   firstVideoSampleSubmitted.load(),
+                   control.stopRequested.load(),
+                   session.isSourceClosed()) &&
                std::chrono::steady_clock::now() < deadline) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        firstFrameArrived = firstFrameWritten.load();
+        firstFrameArrived = firstVideoSampleSubmitted.load();
     }
     if (!firstFrameArrived) {
         control.requestStop();
         if (stdinThread.joinable()) {
             stdinThread.detach();
         }
-        stopVideoWriter();
+        if (audioMixer) {
+            audioMixer->setPaused(true);
+        }
+        const bool wgcDrained = session.quiesceLegacyCallback();
         microphoneCapture.stop();
         loopbackCapture.stop();
         stopDeviceWatchIfActive();
@@ -1662,15 +1701,45 @@ int wmain(int argc, wchar_t* argv[]) {
         if (audioMixer) {
             audioMixer->stop();
         }
+        if (!wgcDrained) {
+            std::cerr << "ERROR: A WGC frame callback did not finish during startup abort; terminating process"
+                      << std::endl;
+            std::cout << "{\"event\":\"stop-timeout\",\"schemaVersion\":2,\"step\":\"wgc-quiesce-startup\"}"
+                      << std::endl;
+            std::cout.flush();
+            std::cerr.flush();
+            TerminateProcess(GetCurrentProcess(), 3);
+            _exit(3);
+        }
+        stopVideoWriter();
         session.stop();
-        std::cerr << "ERROR: Timed out waiting for first WGC frame" << std::endl;
+        if (session.isSourceClosed()) {
+            std::cerr << "ERROR: Source window closed before first video sample was submitted (reason: "
+                      << wgcSourceCloseReasonToString(session.sourceCloseReason()) << ")" << std::endl;
+        } else {
+            std::cerr << "ERROR: Timed out waiting for first WGC frame" << std::endl;
+        }
         return 1;
     }
 
     std::cout << "{\"event\":\"recording-started\",\"schemaVersion\":2}" << std::endl;
     std::cout << "Recording started" << std::endl;
 
-    control.waitForStop();
+    while (!control.stopRequested.load()) {
+        if (session.isSourceClosed()) {
+            control.requestStop();
+            break;
+        }
+        std::unique_lock lock(control.stopMutex);
+        control.stopCv.wait_for(lock, std::chrono::milliseconds(50), [&] {
+            return control.stopRequested.load();
+        });
+    }
+
+    if (session.isSourceClosed()) {
+        std::cerr << "[wgc-capture] Source closed (reason: "
+                  << wgcSourceCloseReasonToString(session.sourceCloseReason()) << ")" << std::endl;
+    }
 
     // The take ends here, for the sound as for the picture: the video writer
     // stops on this same request. The mixer is clock-driven, so left running
@@ -1951,6 +2020,11 @@ int wmain(int argc, wchar_t* argv[]) {
         return 1;
     }
     if (!screenFinalized || !webcamFinalized) {
+        return 1;
+    }
+
+    if (!firstVideoSampleSubmitted.load()) {
+        std::cerr << "ERROR: Capture ended without submitting any video samples" << std::endl;
         return 1;
     }
 
