@@ -93,6 +93,16 @@ aceites de 01/02 continuam pendentes. Sequência detalhada e evidências em
   ambiente com comparação ligado/desligado, sem cortes perceptíveis na fala.
   Apenas registrado; implementação e escolha do padrão ainda pendentes.
 - Tratamento de fechamento de janela, desconexão e mudança de formato.
+  Fechamento ativo/pausado com aceite parcial em win-unpacked 811C; ensaio do harness
+  privado (run 5920ed60-b925-416c-8f5f-74b489599cd3 em 2026-10-24, helper SHA-256
+  811CD9051F90C35DBCE0EA4355737E2CB3BA24EB3F6DE3B9DF957468E778E7B6 verificado)
+  resultou em 8/8 INIT_REJECT no Caso A (INCONCLUSIVE) e INIT_REJECT/OTHER no Caso B
+  antes de gravação ativa, por limitação do ambiente em inicializar sessões WGC.
+  Sem timeout, cleanupCompleted true, zero resíduos, árvore limpa. Harness privado
+  corrigido (about:blank, timeout idempotente, ciclo window-all-closed) e mantido ignorado
+  (não commitado). Sem bug funcional confirmado; repetição no mesmo ambiente não agrega
+  evidência e a validação de startup/legado exige ambiente com WGC operacional.
+  Prioridade 01/02 preservada; avanço ao próximo trabalho independente seguro do roadmap.
 - Fixar contrato do relógio de sessão e das pausas antes de adicionar ASR.
 
 Aceite: monitor/janela/retângulo com pixels corretos em DPI misto; Teams, Slack e

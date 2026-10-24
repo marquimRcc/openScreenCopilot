@@ -209,6 +209,16 @@ Tentativa de startup / fechamento pré-primeira amostra via GUI sob stall artifi
 - Captura já iniciada codificou 3 frames válidos sob stall; resultado autônomo "Recording saved 00:10 / 37.2 KB"; mídia `recording-1792621646620.mp4` (37.170 bytes, 10.030967s, 3 frames H.264 1920×1200 via `ffprobe -count_frames`, SHA256 `2D0BBB61ED7EA673D5EE8347E65014F057708D478F7864D055D1E4932F61B4EC`). Sem playback, Edit ou New capture; sem decode completo adicional. App e base fechados normalmente; 0 processos residuais às 22:28:16Z.
 - Classificação: **SKIPPED de cobertura (condição pré-primeira amostra não atingida pela latência de interação na GUI; nenhum defeito de produto afirmado; fechamento pré-primeira amostra permanece pendente)**. Recibo privado em `.cache/qa-20261021-startup-close-missed-receipt.json`.
 
+Ensaio do harness privado de source close em startup e legado (2026-10-24, ~22:50 UTC) — INCONCLUSIVO:
+- Execução única conduzida pela supervisora Codex via Electron local a partir da raiz do repositório (`runUuid: 5920ed60-b925-416c-8f5f-74b489599cd3`), sem relançamento, sem testes concorrentes e sob safety global de 150 s.
+- Helper WGC empacotado validado com SHA-256 `811CD9051F90C35DBCE0EA4355737E2CB3BA24EB3F6DE3B9DF957468E778E7B6` (`verified: true`, path `.cache/package-windows-source-close-fallback/win-unpacked/resources/electron/native/bin/win32-x64/wgc-capture.exe`).
+- **Caso A (8 tentativas sequenciais):** Delays após `encoder-selection` em `[0, 1, 2, 4, 8, 12, 16, 24]` ms, cada uma com nova janela opaca (`about:blank`), HWND 64-bit BigInt (`591728`, `657264`, `722800`, `788336`, `853872`, `919408`, `984944`, `1050480`), UUID/diretório próprios e `OPENSCREEN_WGC_TEST_STALL_READBACK_MS=5000` (registrado: ocorre após obtenção da textura e não revalida sourceClosed antes da submissão; não é garantia). Helper PIDs: 25100, 27156, 8512, 5512, 33892, 31736, 28124, 25248.
+- **Resultado do Caso A:** Todas as 8 tentativas (8/8) foram rejeitadas na inicialização gráfica pelo Windows com `ERROR: Failed to initialize WGC window session` antes da emissão de `encoder-selection` ou `recording-started` (exitCode 1, timedOut false, durações 180–235 ms). Classificação sem falso positivo: **8/8 INIT_REJECT; Caso A INCONCLUSIVO**.
+- **Caso B (Legado e auto-encerramento pós-início):** Janela exclusiva HWND `1116016` (`0x110770`), helper PID 17840, `OPENSCREEN_WGC_LEGACY_FRAME_CALLBACK=1`, sem stall. O helper também retornou `ERROR: Failed to initialize WGC window session` (exitCode 1, timedOut false, duração 216 ms) antes de `recording-started`. Classificação: **INIT_REJECT / OTHER; a condição de fechamento de janela fonte pós-início não pôde ser exercitada**.
+- **Isolamento, Limpeza e Ciclo de Vida:** Sem timeout global ou de tentativa (`timedOut: false`, duração total 4.231 ms); `cleanupCompleted: true`; conferência confirmou zero processos residuais de Electron ou helper e zero janelas abertas; árvore git permaneceu limpa.
+- **Harness privado:** Corrigido com navegação local estável (`about:blank`), timeout idempotente e supressão explícita de auto-quit em `window-all-closed`, gravando recibo determinístico no `finally`. Permanece em `.cache/wgc-private-source-close-harness.cjs` ignorado no Git e NÃO deve ser commitado.
+- **Classificação:** **Evidência INCONCLUSIVA POR LIMITAÇÃO DO AMBIENTE, NÃO falha de produto**. Não há bug funcional confirmado e nova repetição neste mesmo ambiente não agrega evidência; a próxima validação exige ambiente em que a API Windows Graphics Capture consiga inicializar sessões de janela. Preservar a prioridade vigente de estabilização da gravação Windows (01/02) e avançar para os próximos trabalhos independentes seguros do roadmap. Recibo privado consolidado em `.cache/wgc-source-close-harness-receipt.json` e run em `.cache/wgc-source-close-run-5920ed60-b925-416c-8f5f-74b489599cd3/`.
+
 Repo C:\Users\marcos.gomes\Documents\Codex\2026-10-13\new-chat\work\openScreenCopilot,
 branch feat/windows-region-foundation.
 Escritor ativo: IA implementadora Antigravity, sob supervisão técnica Codex (chat original
@@ -539,7 +549,7 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
   - Escala de DPI misto / múltiplos monitores.
   - Janelas / aplicações reais de terceiros ou títulos pessoais do usuário.
   - Execução longa (30min) com áudio/mic no runtime empacotado autônomo (win-unpacked standalone teve apenas passada curta 30s sem áudio aprovada).
-  - Fechamento de janela/fonte durante captura ativa E durante captura pausada teve aceite parcial no pacote win-unpacked 811C (autofinalização autônoma, resultado, playback, retorno ao HUD); minimizar/restaurar janela fonte sem falso encerramento validado com aceite parcial; fechamento pré-primeiro frame, legacy real, janelas reais de terceiros e DPI misto seguem pendentes.
+  - Fechamento de janela/fonte durante captura ativa E durante captura pausada teve aceite parcial no pacote win-unpacked 811C (autofinalização autônoma, resultado, playback, retorno ao HUD); minimizar/restaurar janela fonte sem falso encerramento validado com aceite parcial; fechamento pré-primeiro frame, legacy real, janelas reais de terceiros e DPI misto seguem pendentes (ensaio do harness privado em 2026-10-24 inconclusivo por limitação do ambiente gráfico/WGC, sem falha funcional de produto).
   - Etapas 01 e 02 completas e integração ASR (05).
 
 Alinhamento da auditoria de speech-core: "nenhum defeito confirmado" na auditoria estática dos módulos isolados não prova ausência absoluta de defeitos nem garante limites RSS de processo; git status limpo não prova que `target/` foi mantido limpo ou ignorado.
@@ -563,11 +573,14 @@ Não prova NV12/FPS/encode nem mudaH264produção;detalhes/refs no spike.
 
 A pergunta sobre convivência STTmanual/Copilot NÃO bloqueia revisão/testes isolados
 e contratos independentes; não ficar ocioso em wakes por essa pendência específica.
-Regressão nova providerfake:primeiro pollPending,depois cancel+close+panic em poll
-posterior preserva active1/closed/uncertain e recusa novo job sem entrarengine.
-Não é workerreal/crashabrupto/drain; comportamento runtime não alterado.
-
-Revisãoestática STTherdado emSPEECH-CORE-INVENTORY:singleton/cache/processo/fila
+Como o ensaio de source close em startup/legado (run 5920ed60 em 2026-10-24) foi
+inconclusivo por limitação do ambiente gráfico (WGC INIT_REJECT) sem bug funcional
+confirmado, repetições no mesmo host não agregam evidência; nova validação deste item
+exige ambiente que consiga inicializar sessões WGC. A prioridade vigente (2026-10-16)
+prevalece: concluir e homologar gravação Windows (01/02) antes de ASR integrado (04/05).
+O próximo trabalho seguro e independente deve avançar nos itens não dependentes de WGC
+ativo dentro de 02 (como validações de DPI misto, borda física ou persistência) ou nos
+contratos isolados de speech-core (04) sem depender de captura ativa.
 Promise/cancelentrechunks/timeoutHTTP/exitnãoequivalem gateRustglobal/drain.
 Nenhumhelper/modelo/rede iniciado. Adapterconcreto exige coordenaçãoexclusive,
 admissãobounded e exitobservado;prioridade/preempção humana ainda pendente.
