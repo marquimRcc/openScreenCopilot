@@ -2194,10 +2194,15 @@ export function registerIpcHandlers(
 		options?: { persist?: boolean },
 		region?: TrustedWindowsRegion,
 	) {
+		const persistence = region
+			? "clear"
+			: shouldPersistSelectedSource(options)
+				? "persist"
+				: "preserve";
 		const next = await selectSourceWithOwnership(
 			selectSourceContext,
 			{ id: source.id, name: source.name, display_id: source.display_id },
-			options,
+			persistence,
 			{
 				getSources: () =>
 					desktopCapturer.getSources({
@@ -2210,13 +2215,14 @@ export function registerIpcHandlers(
 						describeRecordingSource(process.platform, live as Required<SelectedSource>),
 					);
 				},
+				clearPersisted: () => {
+					appSettings.setLastSource(null);
+				},
 				broadcast: broadcastSelectedSource,
-				shouldPersist: shouldPersistSelectedSource,
 				decorate: (live) => {
 					if (region && (live.id !== region.sourceId || !isWindowsRegionCurrent(region))) {
 						throw new Error("Display changed. Select the area again.");
 					}
-					trustedWindowsRegion = region ?? null;
 					return region
 						? {
 								...live,
@@ -2224,6 +2230,9 @@ export function registerIpcHandlers(
 								captureRegion: region.region,
 							}
 						: live;
+				},
+				beforeCommit: () => {
+					trustedWindowsRegion = region ?? null;
 				},
 			},
 		);

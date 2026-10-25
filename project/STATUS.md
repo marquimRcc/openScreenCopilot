@@ -267,6 +267,10 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
 - Região React/arraste/Escape, cropD3D11 GPU, cursor físico recortado; requests
   inválidos recusados. Borda pontilhada helper-owned protegida, independenteHUD,
   removida stop/cancel/reset/exit. DPI misto/borda física ainda sem aceite.
+- Seleção de região limpa de forma fail-closed a fonte inteira persistida antes de
+  publicar a nova seleção em memória; reiniciar não pode ampliar silenciosamente o
+  retângulo para tela inteira. Seleções temporárias CLI/MCP continuam sem alterar a
+  preferência durável. Contrato coberto apenas por testes focados; GUI não homologada.
 - SistemaON só perfilnovo/chaveausente, false salvo preservado; mic/câmera opcionais.
 - Seletor saída Windows HUD/RecStage porID MMDevice, persistência independente mic,
   desconectado visível/preservado, resetdefault explícito e reenumeração sem polling.

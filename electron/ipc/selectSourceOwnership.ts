@@ -5,6 +5,8 @@ export type SelectedSourceSnapshot = {
 	captureRegion?: import("../../src/lib/windowsCaptureRegion").WindowsCaptureRegion;
 };
 
+export type SelectedSourcePersistence = "persist" | "preserve" | "clear";
+
 export type SelectSourceContext<TLive extends { id: string; name: string; display_id: string }> = {
 	generation: { value: number };
 	getSelected: () => { source: SelectedSourceSnapshot | null; live: TLive | null };
@@ -16,10 +18,12 @@ export type SelectSourceContext<TLive extends { id: string; name: string; displa
 export type SelectSourceDeps<TLive extends { id: string; name: string; display_id: string }> = {
 	getSources: () => Promise<TLive[]>;
 	persist: (source: SelectedSourceSnapshot) => void;
+	clearPersisted: () => void;
 	broadcast: (source: SelectedSourceSnapshot | null) => void;
-	shouldPersist: (options?: { persist?: boolean }) => boolean;
 	/** Main-owned metadata, applied only after live source ownership is verified. */
 	decorate?: (source: SelectedSourceSnapshot) => SelectedSourceSnapshot;
+	/** Main-owned state committed only after the durable policy succeeds. */
+	beforeCommit?: (source: SelectedSourceSnapshot) => void;
 };
 
 export function bumpSelectSourceGeneration(generation: { value: number }): number {
@@ -32,7 +36,7 @@ export async function selectSourceWithOwnership<
 >(
 	ctx: SelectSourceContext<TLive>,
 	source: { id?: string; name: string; display_id?: string },
-	options: { persist?: boolean } | undefined,
+	persistence: SelectedSourcePersistence,
 	deps: SelectSourceDeps<TLive>,
 ): Promise<SelectedSourceSnapshot | null> {
 	const generation = bumpSelectSourceGeneration(ctx.generation);
@@ -70,14 +74,20 @@ export async function selectSourceWithOwnership<
 		display_id: live.display_id,
 	};
 	const next = deps.decorate ? deps.decorate(base) : base;
-	ctx.setSelected(next, live);
-	if (deps.shouldPersist(options)) {
+	if (persistence === "clear") {
+		// A region cannot be restored safely after restart. Clearing an older
+		// full-display descriptor is therefore part of the commit, not best effort.
+		// If the durable write fails, leave the previous live selection untouched.
+		deps.clearPersisted();
+	} else if (persistence === "persist") {
 		try {
 			deps.persist(next);
 		} catch (error) {
 			console.warn("Failed to persist the selected recording source:", error);
 		}
 	}
+	deps.beforeCommit?.(next);
+	ctx.setSelected(next, live);
 	deps.broadcast(next);
 	return next;
 }

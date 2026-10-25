@@ -69,6 +69,9 @@ audível/visual real ainda pendentes. Fundação CLI/protocolo de medidor implem
 e validada isoladamente02U. Transporte/controller validado isoladamente02V;
 02W integra drenagem no main antes da captura nativa/Chromium e no quit.
 02X conecta API/preload start/stop/event;02Y monta teste explícito no seletor existente.
+Persistência da fonte agora distingue persistir/preservar/limpar: confirmar região
+limpa fail-closed o descritor durável de tela inteira antes da publicação em memória,
+enquanto seleções temporárias CLI/MCP preservam a preferência existente.
 Aceite GUI/áudio audível segue pendente. Evidências no STATUS.
 QA real pela rota Ctrl+N → Record identificou que o seletor inline do editor
 não oferecia retângulo. Windows agora encaminha ao seletor dedicado existente,

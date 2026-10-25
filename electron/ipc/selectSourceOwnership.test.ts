@@ -41,29 +41,81 @@ describe("selectSourceWithOwnership", () => {
 	it("broadcasts a trusted crop atomically, without an intermediate full-screen source", async () => {
 		const harness = createContext();
 		harness.seedCache(sourceA);
-		const broadcast = vi.fn();
+		const order: string[] = [];
+		const broadcast = vi.fn(() => order.push("broadcast"));
 		const persist = vi.fn();
+		const clearPersisted = vi.fn(() => order.push("clear"));
 		const crop = {
 			displayId: 1,
 			sourceWidthPx: 1920,
 			sourceHeightPx: 1080,
 			regionPx: { x: 20, y: 40, width: 800, height: 600 },
 		};
-		const result = await selectSourceWithOwnership(
-			harness.ctx,
-			sourceA,
-			{ persist: false },
-			{
-				getSources: async () => [sourceA],
-				persist,
-				broadcast,
-				shouldPersist: (options) => options?.persist !== false,
-				decorate: (live) => ({ ...live, captureRegion: crop }),
-			},
-		);
+		const result = await selectSourceWithOwnership(harness.ctx, sourceA, "clear", {
+			getSources: async () => [sourceA],
+			persist,
+			clearPersisted,
+			broadcast,
+			decorate: (live) => ({ ...live, captureRegion: crop }),
+		});
 		expect(result?.captureRegion).toEqual(crop);
+		expect(clearPersisted).toHaveBeenCalledOnce();
 		expect(broadcast).toHaveBeenCalledExactlyOnceWith(result);
+		expect(order).toEqual(["clear", "broadcast"]);
 		expect(persist).not.toHaveBeenCalled();
+	});
+
+	it("fails closed without committing or broadcasting when clearing the durable source fails", async () => {
+		const harness = createContext();
+		harness.seedCache(sourceA);
+		harness.ctx.setSelected(sourceB, sourceB);
+		const broadcast = vi.fn();
+		const beforeCommit = vi.fn();
+		await expect(
+			selectSourceWithOwnership(harness.ctx, sourceA, "clear", {
+				getSources: async () => [sourceA],
+				persist: vi.fn(),
+				clearPersisted: () => {
+					throw new Error("disk full");
+				},
+				broadcast,
+				beforeCommit,
+			}),
+		).rejects.toThrow("disk full");
+		expect(harness.selected.source).toMatchObject({ id: sourceB.id });
+		expect(beforeCommit).not.toHaveBeenCalled();
+		expect(broadcast).not.toHaveBeenCalled();
+	});
+
+	it("preserves durable state for a temporary selection", async () => {
+		const harness = createContext();
+		harness.seedCache(sourceA);
+		const persist = vi.fn();
+		const clearPersisted = vi.fn();
+		const result = await selectSourceWithOwnership(harness.ctx, sourceA, "preserve", {
+			getSources: async () => [sourceA],
+			persist,
+			clearPersisted,
+			broadcast: vi.fn(),
+		});
+		expect(result).toMatchObject({ id: sourceA.id });
+		expect(persist).not.toHaveBeenCalled();
+		expect(clearPersisted).not.toHaveBeenCalled();
+	});
+
+	it("persists a normal selection before committing and broadcasting it", async () => {
+		const harness = createContext();
+		harness.seedCache(sourceA);
+		const order: string[] = [];
+		await selectSourceWithOwnership(harness.ctx, sourceA, "persist", {
+			getSources: async () => [sourceA],
+			persist: () => order.push("persist"),
+			clearPersisted: vi.fn(),
+			beforeCommit: () => order.push("commit"),
+			broadcast: () => order.push("broadcast"),
+		});
+		expect(order).toEqual(["persist", "commit", "broadcast"]);
+		expect(harness.selected.source).toMatchObject({ id: sourceA.id });
 	});
 
 	it("does not commit or broadcast if trusted region validation fails", async () => {
@@ -71,11 +123,11 @@ describe("selectSourceWithOwnership", () => {
 		harness.seedCache(sourceA);
 		const broadcast = vi.fn();
 		await expect(
-			selectSourceWithOwnership(harness.ctx, sourceA, undefined, {
+			selectSourceWithOwnership(harness.ctx, sourceA, "preserve", {
 				getSources: async () => [sourceA],
 				persist: vi.fn(),
+				clearPersisted: vi.fn(),
 				broadcast,
-				shouldPersist: () => false,
 				decorate: () => {
 					throw new Error("Display changed");
 				},
@@ -91,32 +143,22 @@ describe("selectSourceWithOwnership", () => {
 		const persist = vi.fn();
 		const broadcast = vi.fn();
 
-		const pendingA = selectSourceWithOwnership(
-			harness.ctx,
-			sourceA,
-			{ persist: true },
-			{
-				getSources: () =>
-					new Promise<Live[]>((resolve) => {
-						resolveA = resolve;
-					}),
-				persist,
-				broadcast,
-				shouldPersist: () => true,
-			},
-		);
+		const pendingA = selectSourceWithOwnership(harness.ctx, sourceA, "persist", {
+			getSources: () =>
+				new Promise<Live[]>((resolve) => {
+					resolveA = resolve;
+				}),
+			persist,
+			clearPersisted: vi.fn(),
+			broadcast,
+		});
 
-		await selectSourceWithOwnership(
-			harness.ctx,
-			sourceB,
-			{ persist: true },
-			{
-				getSources: async () => [sourceA, sourceB],
-				persist,
-				broadcast,
-				shouldPersist: () => true,
-			},
-		);
+		await selectSourceWithOwnership(harness.ctx, sourceB, "persist", {
+			getSources: async () => [sourceA, sourceB],
+			persist,
+			clearPersisted: vi.fn(),
+			broadcast,
+		});
 		expect(harness.selected.source).toMatchObject({ id: "screen:b" });
 		expect(persist).toHaveBeenCalledTimes(1);
 		expect(persist.mock.calls[0]?.[0]).toMatchObject({ id: "screen:b" });
