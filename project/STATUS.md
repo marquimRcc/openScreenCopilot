@@ -224,7 +224,7 @@ branch feat/windows-region-foundation.
 Escritor ativo: IA implementadora Antigravity, sob supervisão técnica Codex (chat original
 confirmado notLoaded; nenhum trabalho paralelo).
 
-Checkpoint funcional atual: SessionLifecycle isolado Rust std puro (2e13475c) com estados Opening/Active/Draining/Closed, discontinuity atômica, guarda fail-closed observacional contra fechamento por clone externo antes de activate/advance/discontinuity (sem atomicidade cross-mutex), remoção do accessor pool() público sem uso e drain coordenado ao TransportBudget (152 unitários [12 session_lifecycle] + 8 core_pipeline + 8 resample_spike, fmt e clippy -D warnings aprovados); guarda pré-spawn síncrona fail-closed de fonte, região e geometria/DPI em startupWindows (windowsCaptureStartupValidation.ts, 13 testes focados aprovados); OwnedInputChunk/orçamento misto sobre propriedades
+Checkpoint funcional atual: SessionLifecycle isolado Rust std puro (2e13475c) com estados Opening/Active/Draining/Closed, discontinuity atômica, guarda fail-closed observacional contra fechamento por clone externo antes de activate/advance/discontinuity (sem atomicidade cross-mutex), remoção do accessor pool() público sem uso e drain coordenado ao TransportBudget (152 unitários [12 session_lifecycle] + 8 core_pipeline + 8 resample_spike, fmt e clippy -D warnings aprovados); supervisão determinística de processo worker isolada por geração monotônica e exit observado em workerProcessSupervisor.ts (11 testes unitários focados aprovados, ambos tsc e lint OK); guarda pré-spawn síncrona fail-closed de fonte, região e geometria/DPI em startupWindows (windowsCaptureStartupValidation.ts, 13 testes focados aprovados); OwnedInputChunk/orçamento misto sobre propriedades
 windowac546706/códigosdiagnóstico60060ecd/factorydecoders160a3107/Debugtimelinee1a57d0c,
 errosproviderdb273eba/UTF8exhaustivo81f72884/sondaMF50d4bf06,
 downmixf32le/OwnedMonoFrame isolados sobre admissãoRust406af964,
@@ -612,6 +612,15 @@ contratos isolados de speech-core (04) sem depender de captura ativa.
    às dependências/aceites vigentes (01/02), sem declarar 04 globalmente concluída além
    deste checkpoint isolado. Fila original, instâncias de controle e integração host
    seguem pendentes; notificação Rust isolada feita, host não conectado.
+   Supervisão determinística de processo worker isolada implementada em TypeScript
+   (`electron/stt/workerProcessSupervisor.ts`): ownership de um processo por geração monotônica,
+   coalescência de chamadas `stop()` concorrentes na mesma Promise, escalada TERM (prazo injetável)
+   -> KILL (prazo injetável) sem tratar emissão de sinal como recibo de saída; timeout converte para
+   estado incerto (`uncertain`) e retém ownership bloqueando `attach` de substituto; limpeza de
+   processo condicionada à observação real do evento `'exit'` da geração exata (eventos tardios de
+   gerações anteriores ignorados). Sem conectar a `whisperServer.ts` nem lançar processos reais nesta
+   rodada; sem PCM live/provider/IPC. 11 testes unitários focados aprovados (`workerProcessSupervisor.test.ts`),
+   ambos `tsc` e lint limpos.
    Não prometer teto RSS, drain de worker ou recuperação por FutureDrop.
    Requisitos de transições/gaps/normalização/drain/reconexão estão no final de
    AUDIO-FRAME-DRAFT; tabela não é implementação nem teste de memória30min.

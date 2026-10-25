@@ -183,6 +183,11 @@ para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), Exp
 TransportBudget; lifecycle.sequence é âncora da sessão e não governa first_sequence das
 fontes independentes. Próximo avanço real requer orquestração no host (05) sob os aceites
 vigentes; 04 permanece em checkpoint isolado.
+Contrato isolado WorkerProcessSupervisor implementado em TypeScript (electron/stt/workerProcessSupervisor.ts)
+para supervisão determinística de encerramento e ownership por geração monotônica de processos helpers,
+com coalescência de stop, prazos injetáveis TERM->KILL, estado incerto bloqueante em caso de timeout
+e recibo emitido exclusivamente sob evento exit observado (11 testes unitários aprovados, sem alterar
+o runtime legado nesta rodada).
 
 Preparação isolada pode avançar; integração com captura aguarda aceites01/02 e contratos de relógio/lifecycle;03 adiada.
 
