@@ -214,3 +214,26 @@ contabilizado porbytes/leases;validação/admissão de áudio continuam separada
 Não abre reader nem limita fila/sliceoriginal por mágica;host ainda precisa
 storageleitura/sufixos/chunks/control/sessões/deadlines/headroompara todascópias.
 Semauth/RSS/PCMlive,semusar reservasraw para inventarcréditos de áudio.
+
+## Ciclo de vida da sessão e drain isolado (SessionLifecycle)
+
+[session_lifecycle.rs](../crates/speech-core/src/session_lifecycle.rs) implementa
+a máquina de estados finita em Rust std puro (`Opening` → `Active` → `Draining` → `Closed`)
+derivada da tabela de transições acima (commit `2e13475c`).
+`discontinuity` é evento atômico (`record_discontinuity`), avançando `epoch` de forma
+checked (+1) e redefinindo `sequence`, permanecendo em `Active`.
+`TransportBudget` atua como fonte única de verdade de admissão e drain: `begin_drain`
+fecha a admissão no pool exato, e `poll_drain` transita para `Closed` somente após
+a observação explícita de zero `leases` e zero `managed_decoders` no snapshot.
+Não alega drain de threads, workers ou processos do SO.
+Sem host/TS/IPC/PCM live/provider/engine. 149 testes unitários + 8 pipeline + 8 resample
+aprovados, `cargo fmt --check` e `cargo clippy --all-targets -- -D warnings`.
+
+Conclusão arquitetural de revisão: não criar camadas intermediárias (`session_ingress`
+ou `session_decoder`) que duplicariam `AudioDecoderV0` (dono único da continuidade de
+amostras, sequência e verificação de cabeçalhos por fonte), `ExpectedStream` e
+`TransportBudget`. `lifecycle.sequence` atua como âncora de sessão e não governa
+`first_sequence` de `System` e `Microphone`, que progridem de forma independente.
+Próximos passos reais de integração dependem de orquestração no host (etapa 05) e
+permanecem condicionados aos aceites de 01/02; este módulo permanece como checkpoint
+isolado da etapa 04.

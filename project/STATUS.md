@@ -224,7 +224,7 @@ branch feat/windows-region-foundation.
 Escritor ativo: IA implementadora Antigravity, sob supervisão técnica Codex (chat original
 confirmado notLoaded; nenhum trabalho paralelo).
 
-Checkpoint funcional atual: guarda pré-spawn síncrona fail-closed de fonte, região e geometria/DPI em startupWindows (windowsCaptureStartupValidation.ts, 13 testes focados aprovados); OwnedInputChunk/orçamento misto sobre propriedades
+Checkpoint funcional atual: SessionLifecycle isolado Rust std puro (2e13475c) com estados Opening/Active/Draining/Closed, discontinuity atômica e drain coordenado ao TransportBudget (149 unitários + 8 core_pipeline + 8 resample_spike, fmt e clippy -D warnings aprovados); guarda pré-spawn síncrona fail-closed de fonte, região e geometria/DPI em startupWindows (windowsCaptureStartupValidation.ts, 13 testes focados aprovados); OwnedInputChunk/orçamento misto sobre propriedades
 windowac546706/códigosdiagnóstico60060ecd/factorydecoders160a3107/Debugtimelinee1a57d0c,
 errosproviderdb273eba/UTF8exhaustivo81f72884/sondaMF50d4bf06,
 downmixf32le/OwnedMonoFrame isolados sobre admissãoRust406af964,
@@ -591,15 +591,28 @@ O próximo trabalho seguro e independente deve avançar nos itens não dependent
 ativo dentro de 02 (como validações de DPI misto, borda física ou persistência) ou nos
 contratos isolados de speech-core (04) sem depender de captura ativa.
 
-1. Trabalho independente04:lifecycle/supervisão/replay e ligação host/TS futura
-   do orçamento Rust; reader/ownership/cópiaMono/factorydecoders isolados já feitos.
-   OwnedInputChunk limita cópiaopcional,mas filaoriginal/instânciascontrol/sessões
-   e integraçãohost ainda pendentes;
-   notificaçãoRust isolada feita,host não conectado.
-   Não prometer tetoRSS,drain de worker ou recuperação por FutureDrop.
+1. Trabalho independente04: SessionLifecycle isolado implementado em Rust std puro
+   (2e13475c, crates/speech-core/src/session_lifecycle.rs) com estados Opening, Active,
+   Draining e Closed; discontinuity como evento atômico (record_discontinuity com
+   checked_add somente de epoch e redefinição de sequence para o valor fornecido); TransportBudget como fonte de verdade de
+   admissão e drain (begin_drain fecha admissão; Closed atingido apenas quando leases e
+   managed_decoders zeram por observação explícita). Sem host/TS/IPC/PCM live/provider/engine.
+   Testes: 149 unitários + 8 core_pipeline + 8 resample_spike aprovados, fmt --check e
+   clippy -D warnings sem resíduos.
+   Conclusão de revisão arquitetural: não criar módulos intermediários como session_ingress
+   ou session_decoder, pois duplicariam responsabilidades de AudioDecoderV0 (dono único
+   da continuidade, verificação de cabeçalhos e avanço de sequência/amostras por fonte),
+   ExpectedStream e TransportBudget. A sequence do SessionLifecycle atua como âncora de
+   sessão e fica stale frente ao avanço independente de System e Microphone, não devendo
+   governar first_sequence de ambas.
+   Próximo avanço real requer orquestração no host/etapa05 e permanece condicionado
+   às dependências/aceites vigentes (01/02), sem declarar 04 globalmente concluída além
+   deste checkpoint isolado. Fila original, instâncias de controle e integração host
+   seguem pendentes; notificação Rust isolada feita, host não conectado.
+   Não prometer teto RSS, drain de worker ou recuperação por FutureDrop.
    Requisitos de transições/gaps/normalização/drain/reconexão estão no final de
    AUDIO-FRAME-DRAFT; tabela não é implementação nem teste de memória30min.
-   Não criar pipe/API/PCMlive nem confundir binding/accepted com auth/durabilidade.
+   Não criar pipe/API/PCM live nem confundir binding/accepted com auth/durabilidade.
 2. Quando tela disponível, retomar GUI01/02 com fixture/perfil próprios/cobertura
    autorizada, respeitando rejeições; completar confirmação/tomada/resultado/áudio.
 3. Compressão03 adiada para backlog após07/08/09 por decisão humana16/10;
