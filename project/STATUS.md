@@ -224,7 +224,7 @@ branch feat/windows-region-foundation.
 Escritor ativo: IA implementadora Antigravity, sob supervisão técnica Codex (chat original
 confirmado notLoaded; nenhum trabalho paralelo).
 
-Checkpoint funcional atual: SessionLifecycle isolado Rust std puro (2e13475c) com estados Opening/Active/Draining/Closed, discontinuity atômica e drain coordenado ao TransportBudget (149 unitários + 8 core_pipeline + 8 resample_spike, fmt e clippy -D warnings aprovados); guarda pré-spawn síncrona fail-closed de fonte, região e geometria/DPI em startupWindows (windowsCaptureStartupValidation.ts, 13 testes focados aprovados); OwnedInputChunk/orçamento misto sobre propriedades
+Checkpoint funcional atual: SessionLifecycle isolado Rust std puro (2e13475c) com estados Opening/Active/Draining/Closed, discontinuity atômica, guarda fail-closed observacional contra fechamento por clone externo antes de activate/advance/discontinuity (sem atomicidade cross-mutex), remoção do accessor pool() público sem uso e drain coordenado ao TransportBudget (152 unitários [12 session_lifecycle] + 8 core_pipeline + 8 resample_spike, fmt e clippy -D warnings aprovados); guarda pré-spawn síncrona fail-closed de fonte, região e geometria/DPI em startupWindows (windowsCaptureStartupValidation.ts, 13 testes focados aprovados); OwnedInputChunk/orçamento misto sobre propriedades
 windowac546706/códigosdiagnóstico60060ecd/factorydecoders160a3107/Debugtimelinee1a57d0c,
 errosproviderdb273eba/UTF8exhaustivo81f72884/sondaMF50d4bf06,
 downmixf32le/OwnedMonoFrame isolados sobre admissãoRust406af964,
@@ -594,11 +594,14 @@ contratos isolados de speech-core (04) sem depender de captura ativa.
 1. Trabalho independente04: SessionLifecycle isolado implementado em Rust std puro
    (2e13475c, crates/speech-core/src/session_lifecycle.rs) com estados Opening, Active,
    Draining e Closed; discontinuity como evento atômico (record_discontinuity com
-   checked_add somente de epoch e redefinição de sequence para o valor fornecido); TransportBudget como fonte de verdade de
+   checked_add somente de epoch e redefinição de sequence para o valor fornecido); guarda fail-closed
+   observacional contra fechamento do pool por clone externo antes de activate, advance_sequence e
+   record_discontinuity (sem mutação de estado/contadores e sem alegar atomicidade cross-mutex);
+   remoção do accessor pool() público sem uso; TransportBudget como fonte de verdade de
    admissão e drain (begin_drain fecha admissão; Closed atingido apenas quando leases e
    managed_decoders zeram por observação explícita). Sem host/TS/IPC/PCM live/provider/engine.
-   Testes: 149 unitários + 8 core_pipeline + 8 resample_spike aprovados, fmt --check e
-   clippy -D warnings sem resíduos.
+   Testes: 152 unitários (12 session_lifecycle) + 8 core_pipeline + 8 resample_spike aprovados,
+   fmt --check e clippy -D warnings sem resíduos.
    Conclusão de revisão arquitetural: não criar módulos intermediários como session_ingress
    ou session_decoder, pois duplicariam responsabilidades de AudioDecoderV0 (dono único
    da continuidade, verificação de cabeçalhos e avanço de sequência/amostras por fonte),

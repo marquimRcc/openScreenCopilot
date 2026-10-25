@@ -4,6 +4,12 @@
 //! instead, uses the pool's coherent snapshot and closed-admission state as the
 //! source of truth for buffer and managed-decoder drain observation.
 //!
+//! Checks against the underlying pool's admission state are observational (sampling
+//! the pool's coherent snapshot before state transition or mutation) and fail closed
+//! without mutating lifecycle state or counters if an external pool clone has closed
+//! admission. This does not claim cross-mutex atomicity or introduce a secondary lock;
+//! `begin_drain` remains the only local coordinated path.
+//!
 //! Does not claim worker, thread, or process drain. No async, FFI, or IPC.
 
 use crate::transport_budget::{BudgetError, BudgetSnapshot, TransportBudget};
@@ -143,11 +149,6 @@ impl SessionLifecycle {
         self.sequence
     }
 
-    /// Reference to the underlying transport budget pool.
-    pub fn pool(&self) -> &TransportBudget {
-        &self.pool
-    }
-
     pub fn is_opening(&self) -> bool {
         self.state == SessionState::Opening
     }
@@ -164,12 +165,34 @@ impl SessionLifecycle {
         self.state == SessionState::Closed
     }
 
+    /// Observationally checks that the underlying transport budget has not closed admission.
+    ///
+    /// This check samples the coherent [`BudgetSnapshot`] of the pool immediately prior to
+    /// state transition or counter mutation. If an external [`TransportBudget`] clone has
+    /// closed admission, this fails closed (`LifecycleError::Closed`) without mutating lifecycle
+    /// state, epoch, or sequence.
+    ///
+    /// Note: This is an observational check against the pool's coherent snapshot; it does not
+    /// introduce a secondary lock or claim cross-mutex atomicity between `SessionLifecycle`
+    /// and `TransportBudget`. `begin_drain` remains the only local coordinated path.
+    fn check_pool_open(&self) -> Result<(), LifecycleError> {
+        let snap = self.pool.snapshot().map_err(LifecycleError::Budget)?;
+        if snap.admission_closed {
+            Err(LifecycleError::Closed)
+        } else {
+            Ok(())
+        }
+    }
+
     /// Transitions from `Opening` to `Active`.
     ///
-    /// Fails without mutation if not in `Opening` state.
+    /// Fails closed without mutation if:
+    /// - Current state is not `Opening`.
+    /// - Underlying transport pool admission is already closed (observationally sampled).
     pub fn activate(&mut self) -> Result<(), LifecycleError> {
         match self.state {
             SessionState::Opening => {
+                self.check_pool_open()?;
                 self.state = SessionState::Active;
                 Ok(())
             }
@@ -190,6 +213,7 @@ impl SessionLifecycle {
     ///
     /// Fails closed without mutation if:
     /// - State is not `Active`.
+    /// - Underlying transport pool admission is already closed (observationally sampled).
     /// - `epoch` would overflow `u64::MAX`.
     pub fn record_discontinuity(
         &mut self,
@@ -206,6 +230,8 @@ impl SessionLifecycle {
             });
         }
 
+        self.check_pool_open()?;
+
         let next_epoch = self
             .epoch
             .checked_add(1)
@@ -221,7 +247,10 @@ impl SessionLifecycle {
 
     /// Returns the current sequence and advances it by checked addition of 1.
     ///
-    /// Fails without mutation if not in `Active` state or if sequence would overflow.
+    /// Fails closed without mutation if:
+    /// - State is not `Active`.
+    /// - Underlying transport pool admission is already closed (observationally sampled).
+    /// - Sequence counter would overflow `u64::MAX`.
     pub fn advance_sequence(&mut self) -> Result<u64, LifecycleError> {
         if self.state != SessionState::Active {
             return Err(if self.state == SessionState::Closed {
@@ -233,6 +262,8 @@ impl SessionLifecycle {
                 }
             });
         }
+
+        self.check_pool_open()?;
 
         let current = self.sequence;
         let next = current
@@ -617,5 +648,106 @@ mod tests {
         assert!(!debug.contains("nonce"));
         assert!(!debug.contains("1, 2, 3"));
         assert!(debug.contains("Opening"));
+    }
+
+    #[test]
+    fn external_pool_close_before_activate_fails_closed_without_mutation() {
+        let pool = test_pool();
+        let external_clone = pool.clone();
+        let mut lifecycle = SessionLifecycle::open(pool).unwrap();
+        assert_eq!(lifecycle.state(), SessionState::Opening);
+        assert_eq!(lifecycle.epoch(), 0);
+        assert_eq!(lifecycle.sequence(), 0);
+
+        // External clone closes the pool while lifecycle is still Opening
+        external_clone.close().unwrap();
+
+        // Attempt to activate fails with Closed
+        let err = lifecycle.activate().unwrap_err();
+        assert_eq!(err, LifecycleError::Closed);
+
+        // Proves absence of mutation
+        assert_eq!(lifecycle.state(), SessionState::Opening);
+        assert!(lifecycle.is_opening());
+        assert!(!lifecycle.is_active());
+        assert_eq!(lifecycle.epoch(), 0);
+        assert_eq!(lifecycle.sequence(), 0);
+
+        // Repeated attempts continue to fail without mutation
+        assert_eq!(lifecycle.activate().unwrap_err(), LifecycleError::Closed);
+        assert_eq!(lifecycle.state(), SessionState::Opening);
+
+        // begin_drain coordinates drain on already-closed pool to Closed
+        let status = lifecycle.begin_drain().unwrap();
+        assert_eq!(status, DrainStatus::Closed);
+        assert_eq!(lifecycle.state(), SessionState::Closed);
+        assert!(lifecycle.is_closed());
+    }
+
+    #[test]
+    fn external_pool_close_while_active_blocks_advance_sequence_without_mutation() {
+        let pool = test_pool();
+        let external_clone = pool.clone();
+        let mut lifecycle = SessionLifecycle::open(pool).unwrap();
+        lifecycle.activate().unwrap();
+        assert_eq!(lifecycle.state(), SessionState::Active);
+        assert_eq!(lifecycle.sequence(), 0);
+
+        // Advance sequence once normally
+        assert_eq!(lifecycle.advance_sequence().unwrap(), 0);
+        assert_eq!(lifecycle.sequence(), 1);
+
+        // External clone closes the pool while lifecycle is Active
+        external_clone.close().unwrap();
+
+        // Attempt to advance sequence fails with Closed
+        let err = lifecycle.advance_sequence().unwrap_err();
+        assert_eq!(err, LifecycleError::Closed);
+
+        // Sequence must NOT be mutated
+        assert_eq!(lifecycle.sequence(), 1);
+        assert_eq!(lifecycle.epoch(), 0);
+        assert_eq!(lifecycle.state(), SessionState::Active);
+
+        // Repeated attempts continue to fail without mutation
+        assert_eq!(
+            lifecycle.advance_sequence().unwrap_err(),
+            LifecycleError::Closed
+        );
+        assert_eq!(lifecycle.sequence(), 1);
+    }
+
+    #[test]
+    fn external_pool_close_while_active_blocks_discontinuity_without_mutation() {
+        let pool = test_pool();
+        let external_clone = pool.clone();
+        let mut lifecycle = SessionLifecycle::open(pool).unwrap();
+        lifecycle.activate().unwrap();
+        assert_eq!(lifecycle.epoch(), 0);
+        assert_eq!(lifecycle.sequence(), 0);
+
+        // Advance sequence once
+        assert_eq!(lifecycle.advance_sequence().unwrap(), 0);
+        assert_eq!(lifecycle.sequence(), 1);
+
+        // External clone closes the pool while lifecycle is Active
+        external_clone.close().unwrap();
+
+        // Attempt to record discontinuity fails with Closed
+        let err = lifecycle.record_discontinuity(42).unwrap_err();
+        assert_eq!(err, LifecycleError::Closed);
+
+        // Neither epoch nor sequence must be mutated
+        assert_eq!(lifecycle.epoch(), 0);
+        assert_eq!(lifecycle.sequence(), 1);
+        assert_eq!(lifecycle.state(), SessionState::Active);
+
+        // Repeated attempts continue to fail without mutation
+        assert_eq!(
+            lifecycle.record_discontinuity(99).unwrap_err(),
+            LifecycleError::Closed
+        );
+        assert_eq!(lifecycle.epoch(), 0);
+        assert_eq!(lifecycle.sequence(), 1);
     }
 }

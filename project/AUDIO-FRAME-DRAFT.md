@@ -222,12 +222,17 @@ a máquina de estados finita em Rust std puro (`Opening` → `Active` → `Drain
 derivada da tabela de transições acima (commit `2e13475c`).
 `discontinuity` é evento atômico (`record_discontinuity`), avançando `epoch` de forma
 checked (+1) e redefinindo `sequence`, permanecendo em `Active`.
+Guarda fail-closed observacional contra fechamento do pool por clone externo antes de
+`activate`, `advance_sequence` e `record_discontinuity` (recusa com `Closed` sem mutar
+estado ou contadores; checagem é amostrada via snapshot e não introduz trava nem alega
+atomicidade cross-mutex; `begin_drain` permanece o único caminho local coordenado).
+O accessor `pool()` público sem uso foi removido para evitar bypass do ciclo de vida.
 `TransportBudget` atua como fonte única de verdade de admissão e drain: `begin_drain`
 fecha a admissão no pool exato, e `poll_drain` transita para `Closed` somente após
 a observação explícita de zero `leases` e zero `managed_decoders` no snapshot.
 Não alega drain de threads, workers ou processos do SO.
-Sem host/TS/IPC/PCM live/provider/engine. 149 testes unitários + 8 pipeline + 8 resample
-aprovados, `cargo fmt --check` e `cargo clippy --all-targets -- -D warnings`.
+Sem host/TS/IPC/PCM live/provider/engine. 152 testes unitários (12 de `session_lifecycle`) +
+8 pipeline + 8 resample aprovados, `cargo fmt --check` e `cargo clippy --all-targets -- -D warnings`.
 
 Conclusão arquitetural de revisão: não criar camadas intermediárias (`session_ingress`
 ou `session_decoder`) que duplicariam `AudioDecoderV0` (dono único da continuidade de
