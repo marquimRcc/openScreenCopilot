@@ -160,6 +160,7 @@ import {
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
 import { resolveWindowsAudioOutputForRecording } from "../recording/windowsAudioOutputs";
+import { WindowsCaptureProcessOwnership } from "../recording/windowsCaptureProcessOwnership";
 import { WindowsCaptureStartGate } from "../recording/windowsCaptureStartGate";
 import {
 	assertWindowsCapturePreSpawnValid,
@@ -795,6 +796,8 @@ let cursorRecordingSession: CursorRecordingSession | null = null;
 let pendingCursorRecordingData: CursorRecordingData | null = null;
 let nativeWindowsCaptureProcess: ChildProcessWithoutNullStreams | null = null;
 const nativeWindowsStartGate = new WindowsCaptureStartGate();
+const nativeWindowsProcessOwnership =
+	new WindowsCaptureProcessOwnership<ChildProcessWithoutNullStreams>();
 const windowsRegionIndicator = new WindowsRegionIndicator(createRegionIndicatorWindow);
 let nativeWindowsCaptureOutput = "";
 let nativeWindowsCaptureTargetPath: string | null = null;
@@ -3155,6 +3158,7 @@ export function registerIpcHandlers(
 			}
 			if (
 				nativeWindowsCaptureProcess ||
+				nativeWindowsProcessOwnership.hasOwner() ||
 				(currentWindowsCaptureTake && currentWindowsCaptureTake.stopState !== "stopped")
 			)
 				return { success: false, error: "Native Windows capture is already running." };
@@ -3189,6 +3193,7 @@ export function registerIpcHandlers(
 				}
 				if (
 					nativeWindowsCaptureProcess ||
+					nativeWindowsProcessOwnership.hasOwner() ||
 					(currentWindowsCaptureTake && currentWindowsCaptureTake.stopState !== "stopped")
 				) {
 					return { success: false, error: "Native Windows capture is already running." };
@@ -3401,6 +3406,9 @@ export function registerIpcHandlers(
 				) {
 					throw new Error("Windows capture caller invalidated during preparation.");
 				}
+				if (nativeWindowsProcessOwnership.hasOwner()) {
+					throw new Error("A previous Windows capture helper has not closed yet.");
+				}
 				windowsCaptureTakeGeneration += 1;
 				const takeGeneration = windowsCaptureTakeGeneration;
 				const ownerWebContents = event.sender;
@@ -3415,6 +3423,10 @@ export function registerIpcHandlers(
 					windowsHide: true,
 				});
 				nativeWindowsCaptureProcess = proc;
+				nativeWindowsProcessOwnership.attach(proc);
+				if (!nativeWindowsProcessOwnership.owns(proc)) {
+					throw new Error("Native Windows capture helper closed during startup.");
+				}
 				meterCapture.bind(proc);
 				proc.once("exit", () => windowsRegionIndicator.clear(proc));
 				nativeWindowsCaptureDrainCleanup = attachNativeWindowsCaptureOutputDrain(proc);
@@ -3543,17 +3555,30 @@ export function registerIpcHandlers(
 					nativeWindowsCaptureTargetPath,
 					nativeWindowsCaptureWebcamTargetPath,
 				];
+				let exited = !failedProc;
 				detachNativeWindowsCaptureOutputDrain();
-				resetNativeWindowsCaptureState();
 				// Awaited, not just killed: a helper still alive holds its mp4 open, and
 				// the empty one it created could not be removed below.
 				if (failedProc) {
-					await terminateNativeWindowsCapture(failedProc).catch(() => false);
+					exited = await terminateNativeWindowsCapture(failedProc).catch(() => false);
 				}
-				for (const outputPath of failedOutputPaths) {
-					if (outputPath) {
-						await removeEmptyCaptureOutput(outputPath);
+				const ownershipRetained =
+					failedProc !== null && nativeWindowsProcessOwnership.owns(failedProc);
+				if (exited || ownershipRetained) {
+					// A surviving helper may leave the logical take state only because the
+					// independent owner still blocks every replacement until exact close.
+					resetNativeWindowsCaptureState();
+					for (const outputPath of failedOutputPaths) {
+						if (outputPath) {
+							await removeEmptyCaptureOutput(outputPath);
+						}
 					}
+				} else {
+					// Listener registration failed and termination was not confirmed. Keep
+					// the process reference itself as the final fail-closed start gate.
+					console.error("[native-wgc] helper ownership is uncertain; restart is blocked", {
+						pid: failedProc?.pid,
+					});
 				}
 				await stopCursorRecording();
 				return { success: false, error: String(error) };

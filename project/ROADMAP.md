@@ -72,6 +72,8 @@ e validada isoladamente02U. Transporte/controller validado isoladamente02V;
 Persistência da fonte agora distingue persistir/preservar/limpar: confirmar região
 limpa fail-closed o descritor durável de tela inteira antes da publicação em memória,
 enquanto seleções temporárias CLI/MCP preservam a preferência existente.
+Ownership de processo WGC também fica separado do estado lógico da tomada e só libera
+novo spawn após `close` observado da geração exata, inclusive após timeout/kill incerto.
 Aceite GUI/áudio audível segue pendente. Evidências no STATUS.
 QA real pela rota Ctrl+N → Record identificou que o seletor inline do editor
 não oferecia retângulo. Windows agora encaminha ao seletor dedicado existente,
