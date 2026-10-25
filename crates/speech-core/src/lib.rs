@@ -9,6 +9,7 @@ pub mod input_chunk;
 pub mod mono_frame;
 pub mod provider;
 pub mod provider_admission;
+pub mod session_lifecycle;
 pub mod speech_windows;
 pub mod timeline_registry;
 pub mod transport_budget;
