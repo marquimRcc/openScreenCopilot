@@ -215,7 +215,7 @@ Ensaio do harness privado de source close em startup e legado (2026-10-24, ~22:5
 - **Caso A (8 tentativas sequenciais):** Delays após `encoder-selection` em `[0, 1, 2, 4, 8, 12, 16, 24]` ms, cada uma com nova janela opaca (`about:blank`), HWND 64-bit BigInt (`591728`, `657264`, `722800`, `788336`, `853872`, `919408`, `984944`, `1050480`), UUID/diretório próprios e `OPENSCREEN_WGC_TEST_STALL_READBACK_MS=5000` (registrado: ocorre após obtenção da textura e não revalida sourceClosed antes da submissão; não é garantia). Helper PIDs: 25100, 27156, 8512, 5512, 33892, 31736, 28124, 25248.
 - **Resultado do Caso A:** Todas as 8 tentativas (8/8) foram rejeitadas na inicialização gráfica pelo Windows com `ERROR: Failed to initialize WGC window session` antes da emissão de `encoder-selection` ou `recording-started` (exitCode 1, timedOut false, durações 180–235 ms). Classificação sem falso positivo: **8/8 INIT_REJECT; Caso A INCONCLUSIVO**.
 - **Caso B (Legado e auto-encerramento pós-início):** Janela exclusiva HWND `1116016` (`0x110770`), helper PID 17840, `OPENSCREEN_WGC_LEGACY_FRAME_CALLBACK=1`, sem stall. O helper também retornou `ERROR: Failed to initialize WGC window session` (exitCode 1, timedOut false, duração 216 ms) antes de `recording-started`. Classificação: **INIT_REJECT / OTHER; a condição de fechamento de janela fonte pós-início não pôde ser exercitada**.
-- **Isolamento, Limpeza e Ciclo de Vida:** Sem timeout global ou de tentativa (`timedOut: false`, duração total 4.231 ms); `cleanupCompleted: true`; conferência confirmou zero processos residuais de Electron ou helper e zero janelas abertas; árvore git permaneceu limpa.
+- **Isolamento, Limpeza e Ciclo de Vida:** Sem timeout global ou de tentativa (`timedOut: false`, duração total 4231 ms / 4,231 s); `cleanupCompleted: true`; conferência confirmou zero processos residuais de Electron ou helper e zero janelas abertas; árvore git permaneceu limpa.
 - **Harness privado:** Corrigido com navegação local estável (`about:blank`), timeout idempotente e supressão explícita de auto-quit em `window-all-closed`, gravando recibo determinístico no `finally`. Permanece em `.cache/wgc-private-source-close-harness.cjs` ignorado no Git e NÃO deve ser commitado.
 - **Classificação:** **Evidência INCONCLUSIVA POR LIMITAÇÃO DO AMBIENTE, NÃO falha de produto**. Não há bug funcional confirmado e nova repetição neste mesmo ambiente não agrega evidência; a próxima validação exige ambiente em que a API Windows Graphics Capture consiga inicializar sessões de janela. Preservar a prioridade vigente de estabilização da gravação Windows (01/02) e avançar para os próximos trabalhos independentes seguros do roadmap. Recibo privado consolidado em `.cache/wgc-source-close-harness-receipt.json` e run em `.cache/wgc-source-close-run-5920ed60-b925-416c-8f5f-74b489599cd3/`.
 
@@ -573,6 +573,15 @@ Não prova NV12/FPS/encode nem mudaH264produção;detalhes/refs no spike.
 
 A pergunta sobre convivência STTmanual/Copilot NÃO bloqueia revisão/testes isolados
 e contratos independentes; não ficar ocioso em wakes por essa pendência específica.
+Regressão nova providerfake:primeiro pollPending,depois cancel+close+panic em poll
+posterior preserva active1/closed/uncertain e recusa novo job sem entrarengine.
+Não é workerreal/crashabrupto/drain; comportamento runtime não alterado.
+
+Revisãoestática STTherdado emSPEECH-CORE-INVENTORY:singleton/cache/processo/fila
+Promise/cancelentrechunks/timeoutHTTP/exitnãoequivalem gateRustglobal/drain.
+Nenhumhelper/modelo/rede iniciado. Adapterconcreto exige coordenaçãoexclusive,
+admissãobounded e exitobservado;prioridade/preempção humana ainda pendente.
+
 Como o ensaio de source close em startup/legado (run 5920ed60 em 2026-10-24) foi
 inconclusivo por limitação do ambiente gráfico (WGC INIT_REJECT) sem bug funcional
 confirmado, repetições no mesmo host não agregam evidência; nova validação deste item
@@ -581,9 +590,6 @@ prevalece: concluir e homologar gravação Windows (01/02) antes de ASR integrad
 O próximo trabalho seguro e independente deve avançar nos itens não dependentes de WGC
 ativo dentro de 02 (como validações de DPI misto, borda física ou persistência) ou nos
 contratos isolados de speech-core (04) sem depender de captura ativa.
-Promise/cancelentrechunks/timeoutHTTP/exitnãoequivalem gateRustglobal/drain.
-Nenhumhelper/modelo/rede iniciado. Adapterconcreto exige coordenaçãoexclusive,
-admissãobounded e exitobservado;prioridade/preempção humana ainda pendente.
 
 1. Trabalho independente04:lifecycle/supervisão/replay e ligação host/TS futura
    do orçamento Rust; reader/ownership/cópiaMono/factorydecoders isolados já feitos.
