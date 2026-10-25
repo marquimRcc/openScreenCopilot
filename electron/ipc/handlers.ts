@@ -175,6 +175,7 @@ import {
 	type TrustedWindowsRegion,
 	WindowsRegionPicker,
 } from "../recording/windowsRegionPicker";
+import { canSelectWindowsRegion } from "../recording/windowsRegionSelectionAdmission";
 import {
 	describeMacPickerSource,
 	describeRecordingSource,
@@ -2256,8 +2257,11 @@ export function registerIpcHandlers(
 			process.platform !== "win32" ||
 			!owner ||
 			owner.webContents !== event.sender ||
-			appRecording ||
-			nativeWindowsCaptureProcess
+			!canSelectWindowsRegion({
+				appRecording,
+				processReferenced: !!nativeWindowsCaptureProcess,
+				processOwned: nativeWindowsProcessOwnership.hasOwner(),
+			})
 		) {
 			throw new Error("Region selection is not available.");
 		}
@@ -2282,7 +2286,13 @@ export function registerIpcHandlers(
 		try {
 			const region = await regionPicker.pick(source.id, display, owner);
 			if (!region || generation !== selectSourceGeneration.value) return { selected: false };
-			if (appRecording || nativeWindowsCaptureProcess)
+			if (
+				!canSelectWindowsRegion({
+					appRecording,
+					processReferenced: !!nativeWindowsCaptureProcess,
+					processOwned: nativeWindowsProcessOwnership.hasOwner(),
+				})
+			)
 				throw new Error("Recording already started.");
 			const next = await selectSource(
 				{ id: source.id, name: source.name, display_id: source.display_id },
