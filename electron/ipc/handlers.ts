@@ -160,6 +160,7 @@ import {
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
 import { resolveWindowsAudioOutputForRecording } from "../recording/windowsAudioOutputs";
+import { isWindowsCaptureBusy } from "../recording/windowsCaptureBusy";
 import { WindowsCaptureProcessOwnership } from "../recording/windowsCaptureProcessOwnership";
 import { WindowsCaptureStartGate } from "../recording/windowsCaptureStartGate";
 import {
@@ -2671,7 +2672,10 @@ export function registerIpcHandlers(
 	});
 	const recordingBusy = () =>
 		appRecording ||
-		!!nativeWindowsCaptureProcess ||
+		isWindowsCaptureBusy({
+			processReferenced: !!nativeWindowsCaptureProcess,
+			processOwned: nativeWindowsProcessOwnership.hasOwner(),
+		}) ||
 		!!nativeMacCaptureProcess ||
 		!!linuxNativeCaptureSession ||
 		(editorHasUnsavedChanges?.() ?? false);
@@ -2721,7 +2725,10 @@ export function registerIpcHandlers(
 		isAllowed: isPathAllowed,
 		isRecording: () =>
 			appRecording ||
-			!!nativeWindowsCaptureProcess ||
+			isWindowsCaptureBusy({
+				processReferenced: !!nativeWindowsCaptureProcess,
+				processOwned: nativeWindowsProcessOwnership.hasOwner(),
+			}) ||
 			!!nativeMacCaptureProcess ||
 			!!linuxNativeCaptureSession ||
 			savedRecordingCopies.isBusy() ||
