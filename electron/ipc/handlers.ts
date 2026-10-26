@@ -5803,7 +5803,10 @@ export function registerIpcHandlers(
 				!selectedSource?.captureRegion &&
 				(!audioRequested || (recordingPrefs.get().windowsSystemAudioDeviceId ?? null) === null) &&
 				!appRecording &&
-				!nativeWindowsCaptureProcess &&
+				!isWindowsCaptureBusy({
+					processReferenced: !!nativeWindowsCaptureProcess,
+					processOwned: nativeWindowsProcessOwnership.hasOwner(),
+				}) &&
 				!nativeWindowsStartGate.isBusy() &&
 				isWindowsAudioOutputFrameOwner(getMainWindow(), window!.webContents, frame);
 			if (!window || !allowed()) throw new Error("Invalid Windows capture owner or state");
