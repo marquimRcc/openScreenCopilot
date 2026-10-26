@@ -150,6 +150,10 @@ export interface WhisperServerManagerOptions {
 	readonly scheduleTimer?: ScheduleTimerFn;
 }
 
+interface WhisperServerStartAttempt {
+	cancelled: boolean;
+}
+
 export class WhisperServerManager {
 	private process: WhisperChild | null = null;
 	private shuttingDown = false;
@@ -160,6 +164,7 @@ export class WhisperServerManager {
 	private startedAtMs: number | null = null;
 	private inFlight: Promise<unknown> = Promise.resolve();
 	private starting: Promise<{ port: number; backend: SttBackend }> | null = null;
+	private currentStartAttempt: WhisperServerStartAttempt | null = null;
 
 	private readonly supervisor: WorkerProcessSupervisor<AttachedWhisperChild>;
 
@@ -267,7 +272,10 @@ export class WhisperServerManager {
 	 */
 	async start(options: WhisperServerStartOptions): Promise<{ port: number; backend: SttBackend }> {
 		if (this.starting) return this.starting;
-		this.starting = this.startImpl(options).finally(() => {
+		const attempt: WhisperServerStartAttempt = { cancelled: false };
+		this.currentStartAttempt = attempt;
+		this.starting = this.startImpl(options, attempt).finally(() => {
+			if (this.currentStartAttempt === attempt) this.currentStartAttempt = null;
 			this.starting = null;
 		});
 		return this.starting;
@@ -275,7 +283,9 @@ export class WhisperServerManager {
 
 	private async startImpl(
 		options: WhisperServerStartOptions,
+		attempt: WhisperServerStartAttempt,
 	): Promise<{ port: number; backend: SttBackend }> {
+		this.assertCurrentStartAttempt(attempt);
 		if (this.shuttingDown) {
 			throw new Error("whisper-stt-server manager is shutting down");
 		}
@@ -285,7 +295,8 @@ export class WhisperServerManager {
 			);
 		}
 		if (this.supervisor.state === "stopping") {
-			await this.stop();
+			await this.stopOwnedProcess();
+			this.assertCurrentStartAttempt(attempt);
 		}
 		if (this.process && this.port && this.supervisor.state === "attached") {
 			return {
@@ -297,6 +308,7 @@ export class WhisperServerManager {
 		const resolved = options.binaryPath
 			? { path: options.binaryPath, backend: options.backend ?? "whispercpp-cpu" }
 			: await resolveBinaryPath();
+		this.assertCurrentStartAttempt(attempt);
 		const binaryPath = resolved.path;
 		if (!binaryPath) {
 			const message =
@@ -315,11 +327,13 @@ export class WhisperServerManager {
 			this.recordError(message);
 			throw new Error(message);
 		}
+		this.assertCurrentStartAttempt(attempt);
 		if (!existsSync(options.modelPath)) {
 			throw new Error(`Whisper GGML model not found at ${options.modelPath}`);
 		}
 
 		const launch = async (forceCpu: boolean): Promise<{ port: number; backend: SttBackend }> => {
+			this.assertCurrentStartAttempt(attempt);
 			if (this.shuttingDown) {
 				throw new Error("whisper-stt-server manager is shutting down");
 			}
@@ -329,10 +343,12 @@ export class WhisperServerManager {
 				);
 			}
 			if (this.supervisor.state === "stopping") {
-				await this.stop();
+				await this.stopOwnedProcess();
+				this.assertCurrentStartAttempt(attempt);
 			}
 
 			const port = await WhisperServerManager.pickFreePort();
+			this.assertCurrentStartAttempt(attempt);
 			if (this.shuttingDown) {
 				throw new Error("whisper-stt-server manager is shutting down");
 			}
@@ -350,6 +366,7 @@ export class WhisperServerManager {
 				args.push("--vad-model", options.vadModelPath);
 			}
 			if (forceCpu) args.push("--cpu");
+			this.assertCurrentStartAttempt(attempt);
 			const child = spawn(binaryPath, args, { stdio: ["ignore", "pipe", "pipe"] });
 			const activeBackend: SttBackend = forceCpu ? "whispercpp-cpu" : resolved.backend;
 
@@ -440,7 +457,7 @@ export class WhisperServerManager {
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
 				const alreadyLogged = exitLogged;
-				await this.stop();
+				await this.stopOwnedProcess();
 				this.recordError(message, { log: !alreadyLogged });
 				throw new Error(message);
 			}
@@ -463,6 +480,7 @@ export class WhisperServerManager {
 			if (!gpuStartupFailed || (this.supervisor.state as SupervisorState) === "uncertain") {
 				throw err;
 			}
+			this.assertCurrentStartAttempt(attempt);
 			process.stderr.write(
 				"[whisper-stt-server] GPU startup failed; retrying with CPU inference\n",
 			);
@@ -472,6 +490,18 @@ export class WhisperServerManager {
 
 	/** Send SIGTERM and wait for the helper to exit. Resolves even if it was already down. */
 	async stop(): Promise<void> {
+		if (this.currentStartAttempt) this.currentStartAttempt.cancelled = true;
+		await this.stopOwnedProcess();
+	}
+
+	private assertCurrentStartAttempt(attempt: WhisperServerStartAttempt): void {
+		if (attempt.cancelled || this.currentStartAttempt !== attempt) {
+			throw new Error("whisper-stt-server startup cancelled");
+		}
+	}
+
+	/** Stop only the owned helper without cancelling the start attempt performing cleanup. */
+	private async stopOwnedProcess(): Promise<void> {
 		if (this.supervisor.state === "idle" || this.supervisor.state === "exited") {
 			this.process = null;
 			this.port = null;

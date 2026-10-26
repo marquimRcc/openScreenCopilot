@@ -1003,6 +1003,108 @@ describe("WhisperServerManager", () => {
 			expect(mgr.status.running).toBe(false);
 		});
 
+		it("cancels a pending start before spawn and allows a later independent start", async () => {
+			const { spawn } = await import("node:child_process");
+			let releasePort: ((port: number) => void) | undefined;
+			const pendingPort = new Promise<number>((resolve) => {
+				releasePort = resolve;
+			});
+			const managerClass = WhisperServerManager as unknown as {
+				pickFreePort: () => Promise<number>;
+			};
+			const pickFreePort = vi
+				.spyOn(managerClass, "pickFreePort")
+				.mockImplementationOnce(() => pendingPort)
+				.mockResolvedValueOnce(45_322);
+			const child = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2010,
+				kill: vi.fn(() => {
+					queueMicrotask(() => child.emit("exit", 0));
+					return true;
+				}),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => child as never);
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("ok", { status: 200 })));
+
+			try {
+				const mgr = new WhisperServerManager();
+				const options = {
+					modelPath: modelFile,
+					binaryPath: binaryFile,
+					backend: "whispercpp-cpu" as const,
+				};
+				const firstStart = mgr.start(options);
+				const firstRejection = expect(firstStart).rejects.toThrow(/startup cancelled/);
+				await vi.waitFor(() => expect(pickFreePort).toHaveBeenCalledOnce());
+
+				await mgr.stop();
+				releasePort?.(45_321);
+				await firstRejection;
+
+				expect(spawn).not.toHaveBeenCalled();
+				expect(mgr.status.running).toBe(false);
+				expect(mgr.status.pid).toBeNull();
+
+				await expect(mgr.start(options)).resolves.toEqual({
+					port: 45_322,
+					backend: "whispercpp-cpu",
+				});
+				expect(spawn).toHaveBeenCalledOnce();
+				expect(mgr.status.pid).toBe(2010);
+				await mgr.stop();
+			} finally {
+				pickFreePort.mockRestore();
+			}
+		});
+
+		it("does not respawn on CPU when stop cancels an attached GPU startup", async () => {
+			const { spawn } = await import("node:child_process");
+			const managerClass = WhisperServerManager as unknown as {
+				pickFreePort: () => Promise<number>;
+			};
+			const pickFreePort = vi.spyOn(managerClass, "pickFreePort").mockResolvedValue(45_323);
+			const gpuChild = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2011,
+				kill: vi.fn(() => {
+					queueMicrotask(() => gpuChild.emit("exit", 0));
+					return true;
+				}),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => gpuChild as never);
+			vi.stubGlobal(
+				"fetch",
+				vi.fn().mockImplementation(() => new Promise<Response>(() => undefined)),
+			);
+
+			try {
+				const mgr = new WhisperServerManager();
+				const startPromise = mgr.start({
+					modelPath: modelFile,
+					binaryPath: binaryFile,
+					backend: "whispercpp-metal",
+				});
+				const startRejection = expect(startPromise).rejects.toThrow(/startup cancelled/);
+				await vi.waitFor(() => expect(mgr.status.pid).toBe(2011));
+				gpuChild.stderr.emit(
+					"data",
+					Buffer.from("ggml_metal_buffer_init: failed to allocate GPU buffer\n"),
+				);
+
+				await mgr.stop();
+				await startRejection;
+
+				expect(spawn).toHaveBeenCalledOnce();
+				expect(mgr.status.running).toBe(false);
+				expect(mgr.status.pid).toBeNull();
+			} finally {
+				pickFreePort.mockRestore();
+			}
+		});
+
 		it("escalates from SIGTERM to SIGKILL on deadline and cleans up on exit", async () => {
 			const scheduler = createMockScheduler();
 			const { spawn } = await import("node:child_process");
