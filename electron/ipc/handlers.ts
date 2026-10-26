@@ -118,6 +118,10 @@ import {
 } from "../native-bridge/screen/macPickerSession";
 import { CompositorViewService } from "../native-bridge/services/compositorViewService";
 import { getMacPermissions, showPermissionsWindow } from "../permissions";
+import {
+	BoundedRetainedText,
+	WINDOWS_HELPER_OUTPUT_MAX_CODE_UNITS,
+} from "../recording/boundedRetainedText";
 import { scoreDeviceNameMatch } from "../recording/deviceNameMatching";
 import { recordingStorageProblem } from "../recording/diskSpaceCheck";
 import {
@@ -802,7 +806,7 @@ const nativeWindowsStartGate = new WindowsCaptureStartGate();
 const nativeWindowsProcessOwnership =
 	new WindowsCaptureProcessOwnership<ChildProcessWithoutNullStreams>();
 const windowsRegionIndicator = new WindowsRegionIndicator(createRegionIndicatorWindow);
-let nativeWindowsCaptureOutput = "";
+const nativeWindowsCaptureOutput = new BoundedRetainedText();
 let nativeWindowsCaptureTargetPath: string | null = null;
 let nativeWindowsCaptureWebcamTargetPath: string | null = null;
 let nativeWindowsCaptureRecordingId: number | null = null;
@@ -1562,10 +1566,14 @@ function waitForNativeWindowsCaptureStart(proc: ChildProcessWithoutNullStreams) 
 		}, 12000);
 
 		// Observes only. `attachNativeWindowsCaptureOutputDrain` is the single
-		// writer of `nativeWindowsCaptureOutput` and is registered first, so the
-		// chunk that triggers this call is already in the buffer.
-		const onOutput = () => {
-			if (nativeWindowsCaptureOutput.includes("Recording started")) {
+		// writer of `nativeWindowsCaptureOutput` and is registered first. Inspect
+		// this event too so a giant chunk cannot hide the marker in the omitted
+		// middle of the bounded transcript.
+		const onOutput = (chunk: Buffer) => {
+			if (
+				chunk.toString().includes("Recording started") ||
+				nativeWindowsCaptureOutput.value().includes("Recording started")
+			) {
 				cleanup();
 				resolve();
 			}
@@ -1578,7 +1586,7 @@ function waitForNativeWindowsCaptureStart(proc: ChildProcessWithoutNullStreams) 
 			cleanup();
 			reject(
 				new Error(
-					nativeWindowsCaptureOutput.trim() ||
+					nativeWindowsCaptureOutput.value().trim() ||
 						`Native Windows capture exited before recording started (code=${code ?? "unknown"})`,
 				),
 			);
@@ -1610,7 +1618,7 @@ function waitForNativeWindowsCaptureStart(proc: ChildProcessWithoutNullStreams) 
  */
 function attachNativeWindowsCaptureOutputDrain(proc: ChildProcessWithoutNullStreams) {
 	const drain = (chunk: Buffer) => {
-		nativeWindowsCaptureOutput += chunk.toString();
+		nativeWindowsCaptureOutput.append(chunk.toString());
 	};
 	const cleanup = () => {
 		proc.stdout.off("data", drain);
@@ -2029,7 +2037,7 @@ export async function exportDiagnosticFile(payload: {
 		projectState: payload.projectState,
 		recentLogs: payload.logs,
 		helperOutput: {
-			windows: tail(nativeWindowsCaptureOutput, HELPER_OUTPUT_MAX_BYTES),
+			windows: tail(nativeWindowsCaptureOutput.value(), WINDOWS_HELPER_OUTPUT_MAX_CODE_UNITS),
 			mac: tail(nativeMacCaptureOutput, HELPER_OUTPUT_MAX_BYTES),
 		},
 		mainProcessLogs: mainLogBuffer.snapshot(),
@@ -3372,7 +3380,7 @@ export function registerIpcHandlers(
 				});
 
 				await fs.mkdir(RECORDINGS_DIR, { recursive: true });
-				nativeWindowsCaptureOutput = "";
+				nativeWindowsCaptureOutput.reset();
 				nativeWindowsCaptureTargetPath = outputPath;
 				nativeWindowsCaptureWebcamTargetPath = request.webcam.enabled ? webcamOutputPath : null;
 				nativeWindowsCaptureRecordingId = recordingId;
@@ -3510,8 +3518,10 @@ export function registerIpcHandlers(
 					cursorCaptureMode === "editable-overlay"
 						? Math.max(0, captureStartedAtMs - cursorStartTimeMs)
 						: 0;
-				const webcamFormat = readWebcamFormat(nativeWindowsCaptureOutput);
-				const encoderSelection = readNativeWindowsEncoderSelection(nativeWindowsCaptureOutput);
+				const webcamFormat = readWebcamFormat(nativeWindowsCaptureOutput.value());
+				const encoderSelection = readNativeWindowsEncoderSelection(
+					nativeWindowsCaptureOutput.value(),
+				);
 				// Captured now because stop may have no helper left to ask. A helper
 				// killed mid-recording is exactly the case where this matters most.
 				nativeWindowsCaptureContainer = encoderSelection?.container ?? null;
@@ -3522,7 +3532,7 @@ export function registerIpcHandlers(
 					encoderSelection,
 					// Logged only: menus missing from a window take on Windows before 11
 					// 24H2 are a platform limit, not something to put in front of the user.
-					secondaryWindowsApplied: readSecondaryWindowsApplied(nativeWindowsCaptureOutput),
+					secondaryWindowsApplied: readSecondaryWindowsApplied(nativeWindowsCaptureOutput.value()),
 				});
 
 				const source = selectedSource || { name: "Screen" };
@@ -3539,12 +3549,13 @@ export function registerIpcHandlers(
 				// line could not be parsed", which would put a red toast on a recording
 				// whose camera is working perfectly.
 				const webcamUnavailable =
-					request.webcam.enabled && readWebcamUnavailable(nativeWindowsCaptureOutput);
+					request.webcam.enabled && readWebcamUnavailable(nativeWindowsCaptureOutput.value());
 				// Same shape as the camera notice: the helper records the Windows
 				// default input rather than failing, so this take is usable but is
 				// almost certainly the wrong microphone.
 				const microphoneDefaulted =
-					request.audio.microphone.enabled && readMicrophoneDefaulted(nativeWindowsCaptureOutput);
+					request.audio.microphone.enabled &&
+					readMicrophoneDefaulted(nativeWindowsCaptureOutput.value());
 				if (microphoneDefaulted) {
 					console.warn("[native-wgc] recording the default input; the microphone was not named", {
 						deviceId: request.audio.microphone.deviceId,
@@ -4029,7 +4040,7 @@ export function registerIpcHandlers(
 					const stopPromise = waitForNativeWindowsCaptureStop({
 						proc,
 						targetPath: preferredPath,
-						readOutput: () => nativeWindowsCaptureOutput,
+						readOutput: () => nativeWindowsCaptureOutput.value(),
 					});
 					if (!sendNativeWindowsStopCommand(proc)) {
 						console.warn("[native-wgc] stop command channel was already closed");

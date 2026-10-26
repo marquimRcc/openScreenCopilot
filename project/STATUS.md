@@ -272,6 +272,10 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.
   Contrato isolado/testado, sem alterar protocolo de stop, helper nativo ou declarar
   homologação de captura real.
+- Texto retido de stdout/stderr do helper WGC é limitado a 64×1024 unidades UTF-16, com
+  prefixo de metadados e sufixo de diagnóstico preservados; o stream continua
+  drenado por toda a vida do helper. Contrato isolado, sem alegação sobre bytes/RSS
+  nem nova homologação GUI.
 - Seleção de região limpa de forma fail-closed a fonte inteira persistida antes de
   publicar a nova seleção em memória; reiniciar não pode ampliar silenciosamente o
   retângulo para tela inteira. Seleções temporárias CLI/MCP continuam sem alterar a
