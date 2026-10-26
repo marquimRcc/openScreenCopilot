@@ -2494,7 +2494,10 @@ export function registerIpcHandlers(
 			isWindowsAudioOutputOwner(getMainWindow(), event) &&
 			windowsMeterCaptureGuard.canPreview() &&
 			!appRecording &&
-			!nativeWindowsCaptureProcess &&
+			!isWindowsCaptureBusy({
+				processReferenced: !!nativeWindowsCaptureProcess,
+				processOwned: nativeWindowsProcessOwnership.hasOwner(),
+			}) &&
 			!nativeWindowsStartGate.isBusy(),
 	);
 
@@ -2842,7 +2845,10 @@ export function registerIpcHandlers(
 		canPreview: () =>
 			windowsMeterCaptureGuard.canPreview() &&
 			!appRecording &&
-			!nativeWindowsCaptureProcess &&
+			!isWindowsCaptureBusy({
+				processReferenced: !!nativeWindowsCaptureProcess,
+				processOwned: nativeWindowsProcessOwnership.hasOwner(),
+			}) &&
 			!nativeWindowsStartGate.isBusy(),
 		prefs: () => recordingPrefs.get(),
 		meter: windowsOutputMeter,

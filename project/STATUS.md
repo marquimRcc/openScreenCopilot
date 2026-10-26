@@ -269,8 +269,9 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   removida stop/cancel/reset/exit. DPI misto/borda física ainda sem aceite.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
   reset lógico, timeout/kill não confirmado e evento tardio de geração antiga não
-  autorizam novo spawn nem captura Chromium concorrente. Contrato isolado/testado,
-  sem alterar protocolo de stop, helper nativo ou declarar homologação de captura real.
+  autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.
+  Contrato isolado/testado, sem alterar protocolo de stop, helper nativo ou declarar
+  homologação de captura real.
 - Seleção de região limpa de forma fail-closed a fonte inteira persistida antes de
   publicar a nova seleção em memória; reiniciar não pode ampliar silenciosamente o
   retângulo para tela inteira. Seleções temporárias CLI/MCP continuam sem alterar a
