@@ -768,4 +768,21 @@ mod tests {
         assert_eq!(lifecycle.epoch(), 7);
         assert_eq!(lifecycle.sequence(), 11);
     }
+
+    #[test]
+    fn revision_overflow_cannot_claim_drain_transition_or_mutate_lifecycle() {
+        let pool = test_pool();
+        let mut lifecycle = SessionLifecycle::new(pool.clone(), 7, 11).unwrap();
+        lifecycle.activate().unwrap();
+        pool.exhaust_revision_for_test();
+
+        assert_eq!(
+            lifecycle.begin_drain(),
+            Err(LifecycleError::Budget(BudgetError::Invariant))
+        );
+        assert_eq!(lifecycle.state(), SessionState::Active);
+        assert_eq!(lifecycle.epoch(), 7);
+        assert_eq!(lifecycle.sequence(), 11);
+        assert_eq!(pool.snapshot(), Err(BudgetError::Invariant));
+    }
 }

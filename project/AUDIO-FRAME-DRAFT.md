@@ -231,7 +231,7 @@ O accessor `pool()` público sem uso foi removido para evitar bypass do ciclo de
 fecha a admissão no pool exato, e `poll_drain` transita para `Closed` somente após
 a observação explícita de zero `leases` e zero `managed_decoders` no snapshot.
 Não alega drain de threads, workers ou processos do SO.
-Sem host/TS/IPC/PCM live/provider/engine. 152 testes unitários (12 de `session_lifecycle`) +
+Sem host/TS/IPC/PCM live/provider/engine. 155 testes unitários (14 de `session_lifecycle`) +
 8 pipeline + 8 resample aprovados, `cargo fmt --check` e `cargo clippy --all-targets -- -D warnings`.
 
 Conclusão arquitetural de revisão: não criar camadas intermediárias (`session_ingress`

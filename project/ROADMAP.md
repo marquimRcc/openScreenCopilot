@@ -181,8 +181,8 @@ Draining e Closed; discontinuity como evento atômico (avanço checked de epoch 
 de sequência); guarda fail-closed observacional contra fechamento do pool por clone externo antes
 de activate, advance e discontinuity (sem mutação e sem atomicidade cross-mutex); remoção
 do accessor pool() público sem uso; e drain coordenado com TransportBudget (Closed apenas
-quando leases e managed_decoders zeram por observação explícita). 152 testes unitários
-(12 session_lifecycle) + 8 core_pipeline + 8 resample_spike aprovados, fmt e clippy -D warnings.
+quando leases e managed_decoders zeram por observação explícita). 155 testes unitários
+(14 session_lifecycle) + 8 core_pipeline + 8 resample_spike aprovados, fmt e clippy -D warnings.
 Sem host/TS/IPC/PCM live/provider/engine. Conclusão técnica: session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e
 TransportBudget; lifecycle.sequence é âncora da sessão e não governa first_sequence das

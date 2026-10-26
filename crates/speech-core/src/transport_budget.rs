@@ -324,9 +324,14 @@ impl TransportBudget {
         }
         state.closed = true;
         let wakes = state.changed();
+        let result = if state.broken {
+            Err(BudgetError::Invariant)
+        } else {
+            Ok(())
+        };
         drop(state);
         change::wake_all(wakes);
-        Ok(())
+        result
     }
     /// Closes admission and returns the resulting accounting observation under
     /// the same lock. Waiters wake only after the lock is released and only on
@@ -342,10 +347,10 @@ impl TransportBudget {
             state.closed = true;
             state.changed()
         };
-        let snapshot = snapshot_of(&state);
+        let snapshot = (!state.broken).then(|| snapshot_of(&state));
         drop(state);
         change::wake_all(wakes);
-        Ok(snapshot)
+        snapshot.ok_or(BudgetError::Invariant)
     }
     #[cfg(test)]
     pub(crate) fn poison_for_test(&self) {
@@ -355,6 +360,10 @@ impl TransportBudget {
             panic!("synthetic poison");
         })
         .join();
+    }
+    #[cfg(test)]
+    pub(crate) fn exhaust_revision_for_test(&self) {
+        self.state.lock().unwrap().revision = u64::MAX;
     }
     /// Pure accounting. Caller must derive truthful costs from owned buffers;
     /// this method does not allocate/authorize audio or authenticate a nonce.
@@ -558,6 +567,61 @@ mod tests {
         assert!(empty.admission_closed);
         assert_eq!(empty.usage, Usage::default());
         assert_eq!(empty.managed_decoders, 0);
+    }
+    #[test]
+    fn close_variants_report_revision_overflow_without_publishing_a_snapshot() {
+        use std::future::Future;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::task::{Context, Poll, Wake, Waker};
+
+        struct Counter(AtomicUsize);
+        impl Wake for Counter {
+            fn wake(self: Arc<Self>) {
+                self.0.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+
+        for close_with_snapshot in [false, true] {
+            let pool = pool();
+            let observed = pool.observe_change().unwrap();
+            let mut waiter = pool.wait_for_change(&observed, Source::System).unwrap();
+            let counter = Arc::new(Counter(AtomicUsize::new(0)));
+            let waker = Waker::from(Arc::clone(&counter));
+            assert_eq!(
+                std::pin::Pin::new(&mut waiter).poll(&mut Context::from_waker(&waker)),
+                Poll::Pending
+            );
+            pool.exhaust_revision_for_test();
+
+            let result = if close_with_snapshot {
+                pool.close_and_snapshot().map(|_| ())
+            } else {
+                pool.close()
+            };
+
+            assert_eq!(result, Err(BudgetError::Invariant));
+            assert_eq!(counter.0.load(Ordering::SeqCst), 1);
+            assert_eq!(
+                std::pin::Pin::new(&mut waiter).poll(&mut Context::from_waker(&waker)),
+                Poll::Ready(Err(BudgetError::Invariant))
+            );
+            let state = pool.state.lock().unwrap();
+            assert!(state.closed);
+            assert!(state.broken);
+            drop(state);
+            assert_eq!(pool.snapshot(), Err(BudgetError::Invariant));
+            assert!(matches!(
+                pool.try_reserve(
+                    NONCE,
+                    Source::System,
+                    Cost {
+                        bytes: 1,
+                        frames: 1,
+                    },
+                ),
+                Err(BudgetError::Invariant)
+            ));
+        }
     }
     #[test]
     fn snapshots_never_mix_raw_byte_usage_with_audio_duration_under_concurrent_changes() {
