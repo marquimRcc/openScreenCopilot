@@ -11,6 +11,7 @@ class FakeProcess extends EventEmitter implements WorkerProcessLike {
 	readonly killCalls: Array<NodeJS.Signals | undefined> = [];
 	killReturnValue = true;
 	killThrowError: Error | null = null;
+	onKill: ((signal: NodeJS.Signals | undefined) => void) | null = null;
 
 	constructor(readonly pid: number) {
 		super();
@@ -21,6 +22,7 @@ class FakeProcess extends EventEmitter implements WorkerProcessLike {
 		if (this.killThrowError) {
 			throw this.killThrowError;
 		}
+		this.onKill?.(signal);
 		return this.killReturnValue;
 	}
 
@@ -222,6 +224,34 @@ describe("WorkerProcessSupervisor", () => {
 		expect(supervisor.lastReceipt).toEqual(receipt);
 	});
 
+	it("does not schedule a TERM deadline after kill observes exit synchronously", async () => {
+		const scheduler = createMockScheduler();
+		const proc = new FakeProcess(203);
+		const supervisor = new WorkerProcessSupervisor({
+			termTimeoutMs: 3000,
+			killTimeoutMs: 2000,
+			scheduleTimer: scheduler.scheduleTimer,
+		});
+		proc.onKill = (signal) => {
+			if (signal === "SIGTERM") proc.simulateExit(0, "SIGTERM");
+		};
+
+		supervisor.attach(proc);
+		const receipt = await supervisor.stop();
+
+		expect(receipt).toEqual({
+			generation: 1,
+			pid: 203,
+			exitCode: 0,
+			signal: "SIGTERM",
+			forced: false,
+		});
+		expect(supervisor.state).toBe("exited");
+		expect(scheduler.timers).toHaveLength(0);
+		expect(scheduler.activeTimers).toHaveLength(0);
+		expect(proc.listenerCount("exit")).toBe(0);
+	});
+
 	it("escalates to SIGKILL when SIGTERM deadline expires and cleans up on exit", async () => {
 		const scheduler = createMockScheduler();
 		const proc = new FakeProcess(303);
@@ -264,6 +294,38 @@ describe("WorkerProcessSupervisor", () => {
 		expect(scheduler.activeTimers.length).toBe(0);
 		expect(proc.listenerCount("exit")).toBe(0);
 		expect(supervisor.lastReceipt).toEqual(receipt);
+	});
+
+	it("does not schedule a KILL deadline after escalation observes exit synchronously", async () => {
+		const scheduler = createMockScheduler();
+		const proc = new FakeProcess(304);
+		const supervisor = new WorkerProcessSupervisor({
+			termTimeoutMs: 3000,
+			killTimeoutMs: 2000,
+			scheduleTimer: scheduler.scheduleTimer,
+		});
+		proc.onKill = (signal) => {
+			if (signal === "SIGKILL") proc.simulateExit(null, "SIGKILL");
+		};
+
+		supervisor.attach(proc);
+		const stopPromise = supervisor.stop();
+		expect(scheduler.activeTimers).toHaveLength(1);
+
+		scheduler.activeTimers[0].fire();
+		const receipt = await stopPromise;
+
+		expect(receipt).toEqual({
+			generation: 1,
+			pid: 304,
+			exitCode: null,
+			signal: "SIGKILL",
+			forced: true,
+		});
+		expect(supervisor.state).toBe("exited");
+		expect(scheduler.timers).toHaveLength(1);
+		expect(scheduler.activeTimers).toHaveLength(0);
+		expect(proc.listenerCount("exit")).toBe(0);
 	});
 
 	it("cleans up timer and preserves listener in uncertain state, then cleans listener on late exit", async () => {

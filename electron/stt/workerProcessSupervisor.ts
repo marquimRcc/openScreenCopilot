@@ -172,6 +172,9 @@ export class WorkerProcessSupervisor<P extends WorkerProcessLike = WorkerProcess
 		} catch {
 			// kill returning false or throwing is not proof of exit
 		}
+		if (this._state !== "stopping" || this._generation !== gen) {
+			return this._stopPromise;
+		}
 
 		this._cancelTimer = this.scheduleTimer(this.termTimeoutMs, () => {
 			if (this._state !== "stopping" || this._generation !== gen) return;
@@ -181,6 +184,7 @@ export class WorkerProcessSupervisor<P extends WorkerProcessLike = WorkerProcess
 			} catch {
 				// kill returning false or throwing is not proof of exit
 			}
+			if (this._state !== "stopping" || this._generation !== gen) return;
 
 			this._cancelTimer = this.scheduleTimer(this.killTimeoutMs, () => {
 				this._cancelTimer = null; // Normalize: timer callback fired
