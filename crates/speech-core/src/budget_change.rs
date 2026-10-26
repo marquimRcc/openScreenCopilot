@@ -312,8 +312,10 @@ mod tests {
         let mut wait = pool.wait_for_change(&observed, Source::System).unwrap();
         let count = counter();
         assert_eq!(poll(&mut wait, &count), Poll::Pending);
-        pool.close().unwrap();
-        pool.close().unwrap();
+        let closed = pool.close_and_snapshot().unwrap();
+        assert!(closed.admission_closed);
+        assert_eq!(closed.usage.bytes, 100);
+        assert_eq!(pool.close_and_snapshot().unwrap(), closed);
         assert_eq!(count.0.load(Ordering::SeqCst), 1);
         assert_eq!(pool.usage().unwrap().bytes, 100);
         assert_eq!(

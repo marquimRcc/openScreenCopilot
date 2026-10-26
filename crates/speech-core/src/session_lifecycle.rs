@@ -286,8 +286,10 @@ impl SessionLifecycle {
             SessionState::Closed => Ok(DrainStatus::Closed),
             SessionState::Draining => self.poll_drain(),
             SessionState::Opening | SessionState::Active => {
-                self.pool.close().map_err(LifecycleError::Budget)?;
-                let snap = self.pool.snapshot().map_err(LifecycleError::Budget)?;
+                let snap = self
+                    .pool
+                    .close_and_snapshot()
+                    .map_err(LifecycleError::Budget)?;
                 self.evaluate_snapshot(&snap)
             }
         }
@@ -749,5 +751,21 @@ mod tests {
         );
         assert_eq!(lifecycle.epoch(), 0);
         assert_eq!(lifecycle.sequence(), 1);
+    }
+
+    #[test]
+    fn poisoned_pool_cannot_claim_drain_transition_or_mutate_lifecycle() {
+        let pool = test_pool();
+        let mut lifecycle = SessionLifecycle::new(pool.clone(), 7, 11).unwrap();
+        lifecycle.activate().unwrap();
+        pool.poison_for_test();
+
+        assert_eq!(
+            lifecycle.begin_drain(),
+            Err(LifecycleError::Budget(BudgetError::Poisoned))
+        );
+        assert_eq!(lifecycle.state(), SessionState::Active);
+        assert_eq!(lifecycle.epoch(), 7);
+        assert_eq!(lifecycle.sequence(), 11);
     }
 }

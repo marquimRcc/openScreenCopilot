@@ -92,6 +92,24 @@ struct State {
     waiters: [Option<change::WaitSlot>; 2],
     decoders: [bool; 2],
 }
+fn snapshot_of(state: &State) -> BudgetSnapshot {
+    BudgetSnapshot {
+        usage: Usage {
+            bytes: state.bytes,
+            frames: state.frames,
+            leases: state.leases,
+            sources: state
+                .sources
+                .iter()
+                .filter(|source| source.leases != 0)
+                .count(),
+        },
+        audio_ns: state.audio_ns,
+        source_audio_ns: [state.sources[0].audio_ns, state.sources[1].audio_ns],
+        managed_decoders: state.decoders.iter().filter(|&&used| used).count(),
+        admission_closed: state.closed,
+    }
+}
 fn index(source: Source) -> usize {
     match source {
         Source::System => 0,
@@ -168,22 +186,7 @@ impl TransportBudget {
         if state.broken {
             return Err(BudgetError::Invariant);
         }
-        Ok(BudgetSnapshot {
-            usage: Usage {
-                bytes: state.bytes,
-                frames: state.frames,
-                leases: state.leases,
-                sources: state
-                    .sources
-                    .iter()
-                    .filter(|source| source.leases != 0)
-                    .count(),
-            },
-            audio_ns: state.audio_ns,
-            source_audio_ns: [state.sources[0].audio_ns, state.sources[1].audio_ns],
-            managed_decoders: state.decoders.iter().filter(|&&used| used).count(),
-            admission_closed: state.closed,
-        })
+        Ok(snapshot_of(&state))
     }
     pub fn new(nonce: [u8; 16], limits: BudgetLimits) -> Result<Self, BudgetError> {
         if nonce.iter().all(|&v| v == 0) {
@@ -324,6 +327,34 @@ impl TransportBudget {
         drop(state);
         change::wake_all(wakes);
         Ok(())
+    }
+    /// Closes admission and returns the resulting accounting observation under
+    /// the same lock. Waiters wake only after the lock is released and only on
+    /// the first open-to-closed transition.
+    pub fn close_and_snapshot(&self) -> Result<BudgetSnapshot, BudgetError> {
+        let mut state = self.state.lock().map_err(|_| BudgetError::Poisoned)?;
+        if state.broken {
+            return Err(BudgetError::Invariant);
+        }
+        let wakes = if state.closed {
+            [None, None]
+        } else {
+            state.closed = true;
+            state.changed()
+        };
+        let snapshot = snapshot_of(&state);
+        drop(state);
+        change::wake_all(wakes);
+        Ok(snapshot)
+    }
+    #[cfg(test)]
+    pub(crate) fn poison_for_test(&self) {
+        let state = Arc::clone(&self.state);
+        let _ = std::thread::spawn(move || {
+            let _guard = state.lock().unwrap();
+            panic!("synthetic poison");
+        })
+        .join();
     }
     /// Pure accounting. Caller must derive truthful costs from owned buffers;
     /// this method does not allocate/authorize audio or authenticate a nonce.
@@ -516,12 +547,12 @@ mod tests {
         assert_eq!(snapshot.usage.frames, 0);
         assert_eq!(snapshot.audio_ns, 0);
         assert!(!snapshot.admission_closed);
-        pool.close().unwrap();
+        let after_close = pool.close_and_snapshot().unwrap();
         assert!(!snapshot.admission_closed); // value observation, not live capability
-        let after_close = pool.snapshot().unwrap();
         assert!(after_close.admission_closed);
         assert_eq!(after_close.usage, snapshot.usage);
         assert_eq!(after_close.managed_decoders, 1);
+        assert_eq!(pool.close_and_snapshot().unwrap(), after_close);
         drop((raw, permit));
         let empty = pool.snapshot().unwrap();
         assert!(empty.admission_closed);
@@ -1207,6 +1238,8 @@ mod tests {
         }
         drop(lease);
         assert_eq!(pool.usage(), Err(BudgetError::Invariant));
+        assert_eq!(pool.close_and_snapshot(), Err(BudgetError::Invariant));
+        assert!(!pool.state.lock().unwrap().closed);
         assert_eq!(
             pool.try_reserve(
                 NONCE,
@@ -1228,6 +1261,7 @@ mod tests {
         .join()
         .is_err());
         assert_eq!(pool.usage(), Err(BudgetError::Poisoned));
+        assert_eq!(pool.close_and_snapshot(), Err(BudgetError::Poisoned));
     }
 
     #[test]
