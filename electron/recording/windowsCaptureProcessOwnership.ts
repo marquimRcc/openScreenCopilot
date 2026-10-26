@@ -16,6 +16,9 @@ export class WindowsCaptureProcessOwnership<P extends CloseObservedProcess> {
 	hasOwner(): boolean {
 		return this.current !== null;
 	}
+	currentProcess(): P | null {
+		return this.current?.process ?? null;
+	}
 
 	owns(process: P): boolean {
 		return this.current?.process === process;

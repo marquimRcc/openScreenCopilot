@@ -17,12 +17,15 @@ describe("WindowsCaptureProcessOwnership", () => {
 		expect(ownership.attach(first)).toBe(1);
 		expect(ownership.hasOwner()).toBe(true);
 		expect(ownership.owns(first)).toBe(true);
+		expect(ownership.currentProcess()).toBe(first);
 		expect(() => ownership.attach(second)).toThrow(/still owned/);
 
 		first.close();
 		expect(ownership.hasOwner()).toBe(false);
+		expect(ownership.currentProcess()).toBeNull();
 		expect(ownership.attach(second)).toBe(2);
 		expect(ownership.owns(second)).toBe(true);
+		expect(ownership.currentProcess()).toBe(second);
 	});
 
 	it("does not release ownership for kill intent or unrelated events", () => {
@@ -48,8 +51,10 @@ describe("WindowsCaptureProcessOwnership", () => {
 
 		first.replayClose();
 		expect(ownership.owns(second)).toBe(true);
+		expect(ownership.currentProcess()).toBe(second);
 		second.fireClose();
 		expect(ownership.hasOwner()).toBe(false);
+		expect(ownership.currentProcess()).toBeNull();
 	});
 
 	it("handles a synchronous close during listener registration", () => {

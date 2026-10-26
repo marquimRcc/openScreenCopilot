@@ -162,6 +162,7 @@ import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
 import { resolveWindowsAudioOutputForRecording } from "../recording/windowsAudioOutputs";
 import { isWindowsCaptureBusy } from "../recording/windowsCaptureBusy";
 import { WindowsCaptureProcessOwnership } from "../recording/windowsCaptureProcessOwnership";
+import { terminateOwnerOnlyWindowsCaptureForQuit } from "../recording/windowsCaptureQuit";
 import { WindowsCaptureStartGate } from "../recording/windowsCaptureStartGate";
 import {
 	assertWindowsCapturePreSpawnValid,
@@ -5809,11 +5810,21 @@ export function registerIpcHandlers(
 			return windowsMeterCaptureGuard.beginBrowser(window.webContents, allowed);
 		},
 		pauseRecordingDerivatives: () => {
+			const ownerOnlyWindowsCapture = terminateOwnerOnlyWindowsCaptureForQuit({
+				referencedProcess: nativeWindowsCaptureProcess,
+				ownedProcess: nativeWindowsProcessOwnership.currentProcess(),
+				terminate: terminateNativeWindowsCapture,
+			});
 			const meter = windowsMeterCaptureGuard.pauseForQuit();
 			const copies = savedRecordingCopies.pauseAndDrain();
 			const gifs = savedRecordingGifs.pauseAndDrain();
 			return {
-				settled: Promise.all([copies.settled, gifs.settled, meter.settled]).then(() => undefined),
+				settled: Promise.all([
+					copies.settled,
+					gifs.settled,
+					meter.settled,
+					ownerOnlyWindowsCapture,
+				]).then(() => undefined),
 				resume: () => {
 					meter.resume();
 					copies.resume();
