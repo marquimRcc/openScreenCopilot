@@ -118,6 +118,29 @@ describe("selectSourceWithOwnership", () => {
 		expect(harness.selected.source).toMatchObject({ id: sourceA.id });
 	});
 
+	it("keeps the previous selection intact when normal persistence fails", async () => {
+		const harness = createContext();
+		harness.seedCache(sourceA);
+		harness.ctx.setSelected(sourceB, sourceB);
+		const beforeCommit = vi.fn();
+		const broadcast = vi.fn();
+
+		await expect(
+			selectSourceWithOwnership(harness.ctx, sourceA, "persist", {
+				getSources: async () => [sourceA],
+				persist: () => {
+					throw new Error("disk full");
+				},
+				clearPersisted: vi.fn(),
+				beforeCommit,
+				broadcast,
+			}),
+		).rejects.toThrow("disk full");
+		expect(harness.selected).toEqual({ source: sourceB, live: sourceB });
+		expect(beforeCommit).not.toHaveBeenCalled();
+		expect(broadcast).not.toHaveBeenCalled();
+	});
+
 	it("does not commit or broadcast if trusted region validation fails", async () => {
 		const harness = createContext();
 		harness.seedCache(sourceA);

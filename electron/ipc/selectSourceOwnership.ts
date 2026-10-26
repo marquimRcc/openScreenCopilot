@@ -80,11 +80,7 @@ export async function selectSourceWithOwnership<
 		// If the durable write fails, leave the previous live selection untouched.
 		deps.clearPersisted();
 	} else if (persistence === "persist") {
-		try {
-			deps.persist(next);
-		} catch (error) {
-			console.warn("Failed to persist the selected recording source:", error);
-		}
+		deps.persist(next);
 	}
 	deps.beforeCommit?.(next);
 	ctx.setSelected(next, live);
