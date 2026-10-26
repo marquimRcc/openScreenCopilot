@@ -957,6 +957,7 @@ describe("WhisperServerManager", () => {
 			expect(mgr.status.running).toBe(true);
 			expect(mgr.status.pid).toBe(2001);
 			expect(mgr.status.port).toBeTypeOf("number");
+			expect(mgr.status.backend).toBe("whispercpp-cpu");
 			expect(mgr.status.startedAtMs).toBeTypeOf("number");
 
 			// Begin stop
@@ -967,6 +968,7 @@ describe("WhisperServerManager", () => {
 			expect(mgr.status.running).toBe(true);
 			expect(mgr.status.pid).toBe(2001);
 			expect(mgr.status.port).toBeTypeOf("number");
+			expect(mgr.status.backend).toBe("whispercpp-cpu");
 
 			// Simulate exit observation
 			child.emit("exit", 0);
@@ -976,6 +978,7 @@ describe("WhisperServerManager", () => {
 			expect(mgr.status.running).toBe(false);
 			expect(mgr.status.pid).toBeNull();
 			expect(mgr.status.port).toBeNull();
+			expect(mgr.status.backend).toBeNull();
 			expect(mgr.status.startedAtMs).toBeNull();
 		});
 
@@ -1145,12 +1148,24 @@ describe("WhisperServerManager", () => {
 		it("preserves ownership and fields on uncertain timeout and blocks new start until late exit", async () => {
 			const scheduler = createMockScheduler();
 			const { spawn } = await import("node:child_process");
+			const staleExitListeners: Array<
+				(code: number | null, signal: NodeJS.Signals | null) => void
+			> = [];
 			const child1 = Object.assign(new EventEmitter(), {
 				stdout: new EventEmitter(),
 				stderr: new EventEmitter(),
 				pid: 2004,
 				kill: vi.fn(),
 			});
+			const child1Once = child1.once.bind(child1);
+			child1.once = ((event: string, listener: (...args: unknown[]) => void) => {
+				if (event === "exit") {
+					staleExitListeners.push(
+						listener as (code: number | null, signal: NodeJS.Signals | null) => void,
+					);
+				}
+				return child1Once(event, listener);
+			}) as typeof child1.once;
 			vi.mocked(spawn).mockImplementationOnce(() => child1 as never);
 			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("ok", { status: 200 })));
 
@@ -1173,6 +1188,7 @@ describe("WhisperServerManager", () => {
 			expect(mgr.status.running).toBe(true);
 			expect(mgr.status.pid).toBe(2004);
 			expect(mgr.status.port).toBeTypeOf("number");
+			expect(mgr.status.backend).toBe("whispercpp-cpu");
 
 			// New start attempt is refused
 			await expect(
@@ -1185,6 +1201,7 @@ describe("WhisperServerManager", () => {
 			expect(mgr.status.running).toBe(false);
 			expect(mgr.status.pid).toBeNull();
 			expect(mgr.status.port).toBeNull();
+			expect(mgr.status.backend).toBeNull();
 
 			// Now new start is allowed
 			const child2 = Object.assign(new EventEmitter(), {
@@ -1197,11 +1214,19 @@ describe("WhisperServerManager", () => {
 			const startRes = await mgr.start({
 				modelPath: modelFile,
 				binaryPath: binaryFile,
-				backend: "whispercpp-cpu",
+				backend: "whispercpp-metal",
 			});
 			expect(startRes.port).toBeTypeOf("number");
 			expect(mgr.status.pid).toBe(2005);
 			expect(mgr.status.running).toBe(true);
+			expect(mgr.status.backend).toBe("whispercpp-metal");
+
+			// Out-of-band delivery of every captured generation-1 exit callback must
+			// not clear generation 2's current backend or ownership fields.
+			for (const staleExit of staleExitListeners) staleExit(137, "SIGKILL");
+			expect(mgr.status.pid).toBe(2005);
+			expect(mgr.status.running).toBe(true);
+			expect(mgr.status.backend).toBe("whispercpp-metal");
 		});
 
 		it("fails closed on GPU fallback if stopping GPU helper becomes uncertain", async () => {
@@ -1328,6 +1353,7 @@ describe("WhisperServerManager", () => {
 			expect(mgr.status.running).toBe(false);
 			expect(mgr.status.pid).toBeNull();
 			expect(mgr.status.port).toBeNull();
+			expect(mgr.status.backend).toBeNull();
 			expect(mgr.status.lastError).toMatch(/exited with code 2/);
 
 			// stop() afterwards is safe no-op

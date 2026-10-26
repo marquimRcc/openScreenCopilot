@@ -414,6 +414,7 @@ export class WhisperServerManager {
 					const expectedStop = this.stopping;
 					this.process = null;
 					this.port = null;
+					this.backend = null;
 					this.startedAtMs = null;
 					if (!expectedStop) {
 						const reason =
@@ -505,6 +506,7 @@ export class WhisperServerManager {
 		if (this.supervisor.state === "idle" || this.supervisor.state === "exited") {
 			this.process = null;
 			this.port = null;
+			this.backend = null;
 			this.startedAtMs = null;
 			return;
 		}
@@ -517,6 +519,7 @@ export class WhisperServerManager {
 			if ((this.supervisor.state as SupervisorState) === "exited") {
 				this.process = null;
 				this.port = null;
+				this.backend = null;
 				this.startedAtMs = null;
 			}
 		}
