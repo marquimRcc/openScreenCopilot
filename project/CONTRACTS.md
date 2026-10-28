@@ -26,7 +26,9 @@ são negociação v1 congelada. Fixture compartilhada Rust/TS cobre ready/comple
 o parser TS main-only valida campos exatos/identidade/u64/capacidades, mas não
 spawna nem autentica processo. Correlação stateful recusa ready/completed fora de
 ordem, replay ou outra sessão e exige seq exata de hello/shutdown. Detalhes nos
-READMEs dos dois crates.
+READMEs dos dois crates. Decoder TS isolado de linhas aplica o mesmo teto por
+mensagem, UTF-8 fatal, LF/CRLF e contrapressão de uma mensagem com buffer fixo;
+ainda não lê stdout, inicia ou supervisiona processo.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.

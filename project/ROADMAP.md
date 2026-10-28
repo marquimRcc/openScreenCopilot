@@ -202,9 +202,9 @@ unitários. Sidecar v0 executável abre somente stdin/stdout NDJSON e implementa
 handshake estrito hello/ready/shutdown/completed com schema, identidade limitada e
 sequência monotônica; anuncia `providerAvailable:false`. Fixture ready/completed é
 serializada em Rust e validada por parser TS main-only estrito. Cinco testes Rust,
-5 TS (incluindo correlação stateful) e smoke real do processo passam, além de
+10 TS (5 de protocolo/correlação e 5 de framing limitado) e smoke real do processo passam, além de
 debug/release/clippy/fmt no CI isolado.
-Ainda sem host/TS, pipe PCM, ACL/supervisão, VAD semântico, provider ou engine.
+Ainda sem host de processo, pipe PCM, ACL/supervisão, VAD semântico, provider ou engine.
 Conclusão técnica:
 session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e

@@ -238,6 +238,8 @@ hello/ready/shutdown/completed, schema estrito, IDs ASCII limitados e seq u64 de
 monotônica; anuncia providerAvailable=false. Fixture ready/completed compartilhada
 tem5testesRust+5TS(correlação/replay/ordem)+ambostsc+smoke processo exit0; sem PCM,
 modelo/engine/ASR/ACL/supervisão host, e nonce não autentica processo.
+Framing TS isolado adiciona5testes de LF/CRLF, splits, UTF-8 fatal, teto fixo,
+EOF e contrapressão de uma mensagem; ainda não inicia nem lê stdout de processo.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.
