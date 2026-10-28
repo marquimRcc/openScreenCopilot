@@ -233,6 +233,10 @@ epoch/header→range sobre
 notificação limitada Rust4f19a3f8/duração84a3dd79,
 hardening1e991554 do orçamento3737afc1/decoder79f2d8c8;
 5ede5b01 documenta requisitos host futuros, sem runtime novo.
+Sidecar v0 executável agora faz somente handshake NDJSON fail-closed em stdin/stdout:
+hello/ready/shutdown/completed, schema estrito, IDs ASCII limitados e seq u64 decimal
+monotônica; anuncia providerAvailable=false.4testes+smoke processo exit0; sem PCM,
+modelo/engine/ASR/ACL/supervisão host, e nonce não autentica processo.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.
@@ -250,7 +254,7 @@ PR2 de01 continua dependente dos aceites; não promover distribuição por teste
 |01 Windows/identidade|Código/pacote isolados, timestamps corrigidos; GUI curta/longa 30min sintética (dist) e execução empacotada curta (win-unpacked 30s) aprovadas; pacote 30min com áudio/títulos reais/DPI misto pendentes|
 |02 região/dispositivos/resultado|Implementados (guarda pré-spawn, região, loopback sintético 30min, source close ativo + pausado e minimizar/restaurar validados); borda física/mic audível/DPI misto/fluxo completo pendente|
 |03 compressão|Inventário/sondas MF apenas; AV1 não grava, comparação30min não feita|
-|04 speech-core|Preparação isolada com testes abaixo; sem VAD/engine/provider concreto/sidecar ativo|
+|04 speech-core|Core isolado inclui WAV/normalização/gate/janelas/dedup; sidecar v0 executa só handshake fail-closed e anuncia sem provider; sem PCM live/engine/ASR|
 |05 ASRlive|Não integrado; depende02/04 (03 adiada ao backlog)/relógio/journal/créditos|
 |06 recuperação|Não implementada; depende05|
 |07 pacote Windows homologado|Pendente; nenhum release aprovado|

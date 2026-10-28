@@ -1,0 +1,15 @@
+[package]
+name = "openscreen-speech-sidecar"
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Fail-closed draft speech sidecar handshake; no provider engine"
+
+[dependencies]
+openscreen-speech-core = { path = "../speech-core" }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.150"
+
+[workspace]
+resolver = "2"

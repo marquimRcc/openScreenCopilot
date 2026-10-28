@@ -119,6 +119,16 @@ jobs:
         run: cargo clippy --offline --locked --manifest-path crates/speech-core/Cargo.toml --all-targets -- -D warnings
       - name: Check isolated core formatting
         run: cargo fmt --manifest-path crates/speech-core/Cargo.toml -- --check
+      - name: Fetch locked sidecar dependencies
+        run: cargo fetch --locked --manifest-path crates/speech-sidecar/Cargo.toml
+      - name: Test draft sidecar (debug)
+        run: cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml
+      - name: Test draft sidecar (release)
+        run: cargo test --release --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml
+      - name: Lint draft sidecar
+        run: cargo clippy --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml --all-targets -- -D warnings
+      - name: Check draft sidecar formatting
+        run: cargo fmt --manifest-path crates/speech-sidecar/Cargo.toml -- --check
 
   build:
     name: Build

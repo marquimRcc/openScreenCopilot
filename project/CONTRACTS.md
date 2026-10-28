@@ -1,6 +1,7 @@
 # Contratos propostos v0
 
-Proposta para o primeiro spike; **não existe uma API implementada** nesta inicialização.
+Proposta para o primeiro spike; existe somente um handshake executável v0 estrito
+`hello -> ready -> shutdown -> completed`, ainda sem provider/PCM/engine.
 Congelar v1 somente após um teste ponta a ponta Electron -> sidecar -> exportação.
 
 Detalhamento ainda v0 do relógio/amostras/pausas e fixtures iniciais em
@@ -15,10 +16,13 @@ liga parser/adapter à captura; ver limites emAUDIO-FRAME-DRAFT.
 
 ## Transporte e isolamento
 
-Preparação isolada Rust control_lines.rs agora enquadra UTF-8/LF/CRLF com limite
-porlinha e contrapressão de1mensagem. NÃO validaJSON/schema/identidade nem abre
-stdin/pipe/socket/IPC;caps são provisórios,nãonegociação v1. Detalhes/limites em
-README do speech-core. JSON/handshake/ACL/timeout/supervisão seguempendentes.
+Preparação isolada Rust control_lines.rs enquadra UTF-8/LF/CRLF com limite por linha
+e contrapressão de1mensagem. O executável `crates/speech-sidecar` abre somente
+stdin/stdout, valida JSON/schema/version/identidade ASCII limitada/seq u64 decimal
+monotônica e falha fechado. Aceita apenas um hello e shutdown correspondente,
+anuncia `providerAvailable:false` e não abre pipe/socket/PCM/modelo. Nonce não é
+autenticação; ACL, timeout e supervisão pelo host seguem pendentes. Caps e v0 não
+são negociação v1 congelada. Detalhes nos READMEs dos dois crates.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.

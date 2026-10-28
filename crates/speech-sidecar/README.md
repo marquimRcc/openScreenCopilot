@@ -1,0 +1,20 @@
+# speech-sidecar draft handshake
+
+Local stdin/stdout NDJSON executable for protocol hardening only. It uses the
+bounded `speech-core` line decoder and accepts exactly one strict `hello`, followed
+by a matching, monotonically sequenced `shutdown`. It emits `ready` with
+`providerAvailable:false`, then `completed`, flushing each line. Malformed framing,
+JSON/schema/version, identity, replay, mismatched nonce, EOF before shutdown and
+unexpected messages terminate fail-closed on stderr with exit code2.
+
+This does not load a model, accept PCM, open a binary pipe/socket, grant path access,
+authenticate another process, journal results or implement ASR. Session/nonce are
+bounded ASCII correlation fields; they do not replace OS ACLs. Stdout contains only
+protocol messages and stderr diagnostics omit supplied identity values. Draft
+version0 is not frozen v1 and advertises no provider.
+
+```text
+cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml
+cargo clippy --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml --all-targets -- -D warnings
+cargo fmt --manifest-path crates/speech-sidecar/Cargo.toml -- --check
+```

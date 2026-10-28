@@ -198,7 +198,12 @@ Ingestão WAV limitada também existe no core: PCM16/float32 little-endian, 1–
 saída normalizada16kHz. O host deve autorizar o caminho; bytes codificados, PCM
 interleaved, mono e saída podem coexistir, portanto não é streaming/arquivo longo nem
 limite RSS. Com 3 testes WAV, 4 de sobreposição e 5 do gate de atividade são 171
-unitários. Sem host/TS/IPC/PCM live/VAD semântico/provider/engine. Conclusão técnica:
+unitários. Sidecar v0 executável abre somente stdin/stdout NDJSON e implementa
+handshake estrito hello/ready/shutdown/completed com schema, identidade limitada e
+sequência monotônica; anuncia `providerAvailable:false`. Quatro testes unitários e
+smoke real do processo passam, além de debug/release/clippy/fmt no CI isolado.
+Ainda sem host/TS, pipe PCM, ACL/supervisão, VAD semântico, provider ou engine.
+Conclusão técnica:
 session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e
 TransportBudget; lifecycle.sequence é âncora da sessão e não governa first_sequence das
