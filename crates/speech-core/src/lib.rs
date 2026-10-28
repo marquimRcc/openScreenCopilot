@@ -5,6 +5,7 @@ pub mod audio_decoder_v0;
 pub mod audio_frame_v0;
 pub mod control_lines;
 pub mod downmix;
+pub mod energy_activity;
 pub mod input_chunk;
 pub mod mono_frame;
 pub mod normalizer;

@@ -179,6 +179,24 @@ I/O, both encodings, explicit stereo averaging, exact output size, Debug redacti
 malformed/unsupported/non-finite input, capacity and cancellation. No capture,
 streaming decoder, VAD, model, sidecar, journal or host integration is implied.
 
+## Deterministic energy activity gate
+
+`energy_activity.rs` analyzes exact mono16k frames of80–1,600 samples using RMS,
+separate finite start/stop thresholds and1–100-frame start/stop debounce. It owns
+no PCM, allocates nothing, emits one decision per accepted frame and resets all
+continuity/debounce state explicitly at a gap, pause, source or epoch change.
+Invalid size/non-finite PCM and u64 frame-counter exhaustion are fail-closed and
+leave state unchanged. Five tests cover hysteresis, debounce reset, exact frame
+indices, discontinuity, configuration bounds and exhausted counters.
+
+This is real deterministic signal analysis, not semantic speech classification:
+steady noise, music or clicks can trigger it, and quiet speech can remain below a
+poorly chosen threshold. It is not Silero, adaptive noise-floor estimation, model
+inference, endpoint tuning, a capture clock or proof of live VAD quality. Future
+host integration must provide calibrated configuration, exact frame partitioning,
+source/epoch identity and journaled gaps before using its transitions as speech
+window boundaries.
+
 ## Isolated provider boundary (no engine)
 
 `provider.rs` adapts only the meeting-copilot provider trait/common types, preserving

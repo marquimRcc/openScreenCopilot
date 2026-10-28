@@ -173,7 +173,10 @@ mas voz natural/diversa e épocas live continuam pendentes. Interface provider/t
 do vendor adaptados para Rust std, com PCM emprestado/guardas/cancel aguardado;
 nenhum engine/provider concreto, Tauri, sidecar ou ASR novo integrado.
 Planejador original limitado de janelas16k também existe isolado, guiado por
-fronteiras fornecidas; não é Silero/VAD ou bufferPCM. Deduplicação conservadora
+fronteiras fornecidas; não é Silero/VAD ou bufferPCM. Gate de atividade RMS real
+e determinístico existe isolado para frames mono16k (5–100ms), com histerese,
+debounce limitado e reset explícito; não é classificador semântico/Silero, adaptação
+de ruído ou validação live. Deduplicação conservadora
 isolada compara somente tokens exatos no sufixo/prefixo (máximo256, texto<=65.536
 bytes), preserva o sufixo UTF-8 original e, em dúvida, não remove texto; não é
 matching fuzzy, política parcial/final, timestamp nem autorização entre fontes/épocas.
@@ -194,8 +197,9 @@ Ingestão WAV limitada também existe no core: PCM16/float32 little-endian, 1–
 16/44,1/48kHz, arquivo máximo16MiB, RIFF/formatos validados, política mono explícita e
 saída normalizada16kHz. O host deve autorizar o caminho; bytes codificados, PCM
 interleaved, mono e saída podem coexistir, portanto não é streaming/arquivo longo nem
-limite RSS. Com 3 testes WAV e 4 de sobreposição são 166 unitários. Sem host/TS/IPC/PCM live/VAD/
-provider/engine. Conclusão técnica: session_ingress e session_decoder não implementados
+limite RSS. Com 3 testes WAV, 4 de sobreposição e 5 do gate de atividade são 171
+unitários. Sem host/TS/IPC/PCM live/VAD semântico/provider/engine. Conclusão técnica:
+session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e
 TransportBudget; lifecycle.sequence é âncora da sessão e não governa first_sequence das
 fontes independentes. Próximo avanço real requer orquestração no host (05) sob os aceites
