@@ -202,7 +202,7 @@ unitários. Sidecar v0 executável abre somente stdin/stdout NDJSON e implementa
 handshake estrito hello/ready/shutdown/completed com schema, identidade limitada e
 sequência monotônica; anuncia `providerAvailable:false`. Fixture ready/completed é
 serializada em Rust e validada por parser TS main-only estrito. Cinco testes Rust,
-10 TS (5 de protocolo/correlação e 5 de framing limitado) e smoke real do processo passam, além de
+12 TS (7 de protocolo/codec/correlação e 5 de framing limitado) e smoke real do processo passam, além de
 debug/release/clippy/fmt no CI isolado.
 Ainda sem host de processo, pipe PCM, ACL/supervisão, VAD semântico, provider ou engine.
 Conclusão técnica:

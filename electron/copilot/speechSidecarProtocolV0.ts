@@ -4,6 +4,12 @@ export const SPEECH_SIDECAR_V0_MAX_LINE_BYTES = 1_048_576;
 const U64_MAX = (1n << 64n) - 1n;
 const ID = /^[A-Za-z0-9_-]{1,128}$/;
 
+export interface SpeechSidecarV0HostIdentity {
+	readonly sessionId: string;
+	readonly nonce: string;
+	readonly seq: string;
+}
+
 export type SpeechSidecarV0Message =
 	| Readonly<{
 			type: "ready";
@@ -47,6 +53,24 @@ function sequence(value: unknown): string {
 	if (typeof value !== "string" || !/^(0|[1-9][0-9]*)$/.test(value)) fail("sequence");
 	if (BigInt(value) > U64_MAX) fail("sequence");
 	return value;
+}
+
+function hostIdentity(value: SpeechSidecarV0HostIdentity): SpeechSidecarV0HostIdentity {
+	if (!ID.test(value.sessionId) || !ID.test(value.nonce)) fail("identity");
+	return { sessionId: value.sessionId, nonce: value.nonce, seq: sequence(value.seq) };
+}
+
+function encodeHostMessage(type: "hello" | "shutdown", value: SpeechSidecarV0HostIdentity): string {
+	const identity = hostIdentity(value);
+	return `${JSON.stringify({ type, version: 0, ...identity })}\n`;
+}
+
+export function encodeSpeechSidecarV0Hello(value: SpeechSidecarV0HostIdentity): string {
+	return encodeHostMessage("hello", value);
+}
+
+export function encodeSpeechSidecarV0Shutdown(value: SpeechSidecarV0HostIdentity): string {
+	return encodeHostMessage("shutdown", value);
 }
 
 export function parseSpeechSidecarV0Line(line: string): SpeechSidecarV0Message {

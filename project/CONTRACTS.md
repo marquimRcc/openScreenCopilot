@@ -28,7 +28,8 @@ spawna nem autentica processo. Correlação stateful recusa ready/completed fora
 ordem, replay ou outra sessão e exige seq exata de hello/shutdown. Detalhes nos
 READMEs dos dois crates. Decoder TS isolado de linhas aplica o mesmo teto por
 mensagem, UTF-8 fatal, LF/CRLF e contrapressão de uma mensagem com buffer fixo;
-ainda não lê stdout, inicia ou supervisiona processo.
+encoder TS valida identidade ASCII limitada e u64 canônico antes de emitir
+hello/shutdown exatos. Ainda não lê stdout, inicia ou supervisiona processo.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.

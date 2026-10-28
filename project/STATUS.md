@@ -236,7 +236,7 @@ hardening1e991554 do orçamento3737afc1/decoder79f2d8c8;
 Sidecar v0 executável agora faz somente handshake NDJSON fail-closed em stdin/stdout:
 hello/ready/shutdown/completed, schema estrito, IDs ASCII limitados e seq u64 decimal
 monotônica; anuncia providerAvailable=false. Fixture ready/completed compartilhada
-tem5testesRust+5TS(correlação/replay/ordem)+ambostsc+smoke processo exit0; sem PCM,
+tem5testesRust+7TS(codec/correlação/replay/ordem)+ambostsc+smoke processo exit0; sem PCM,
 modelo/engine/ASR/ACL/supervisão host, e nonce não autentica processo.
 Framing TS isolado adiciona5testes de LF/CRLF, splits, UTF-8 fatal, teto fixo,
 EOF e contrapressão de uma mensagem; ainda não inicia nem lê stdout de processo.

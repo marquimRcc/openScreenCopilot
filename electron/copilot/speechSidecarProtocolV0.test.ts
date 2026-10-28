@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+	encodeSpeechSidecarV0Hello,
+	encodeSpeechSidecarV0Shutdown,
 	parseSpeechSidecarV0Line,
 	SpeechSidecarV0Error,
 	SpeechSidecarV0Session,
@@ -14,6 +16,36 @@ const fixture = JSON.parse(
 ) as { ready: object; completed: object };
 
 describe("speech sidecar protocol v0 parser", () => {
+	it("encodes the exact bounded host hello and shutdown wire messages", () => {
+		expect(
+			encodeSpeechSidecarV0Hello({
+				sessionId: "fixture_session",
+				nonce: "fixture_nonce",
+				seq: "0",
+			}),
+		).toBe(
+			'{"type":"hello","version":0,"sessionId":"fixture_session","nonce":"fixture_nonce","seq":"0"}\n',
+		);
+		expect(
+			encodeSpeechSidecarV0Shutdown({
+				sessionId: "fixture_session",
+				nonce: "fixture_nonce",
+				seq: "18446744073709551615",
+			}),
+		).toContain('"type":"shutdown"');
+	});
+
+	it("rejects unsafe host identity and sequence before serialization", () => {
+		for (const value of [
+			{ sessionId: "../private", nonce: "nonce", seq: "0" },
+			{ sessionId: "session", nonce: "", seq: "0" },
+			{ sessionId: "session", nonce: "nonce", seq: "00" },
+			{ sessionId: "session", nonce: "nonce", seq: "18446744073709551616" },
+		]) {
+			expect(() => encodeSpeechSidecarV0Hello(value)).toThrow(SpeechSidecarV0Error);
+		}
+	});
+
 	it("parses and freezes the shared Rust messages", () => {
 		for (const message of [fixture.ready, fixture.completed]) {
 			const parsed = parseSpeechSidecarV0Line(JSON.stringify(message));
