@@ -227,6 +227,19 @@ overlap ownership, gaps/epochs, discard and u64 extremes. A five-minute COUNTER
 simulation retains no segment list/PCM; it is not a five-minute ASR or memory
 benchmark of a real pipeline. Tuning max/overlap for natural speech remains open.
 
+`transcript_overlap.rs` now provides that separate conservative text primitive.
+It compares the longest exact suffix/prefix of Unicode-whitespace-delimited tokens
+and returns a UTF-8 byte boundary into the current provider text, preserving its
+original novel suffix. It uses fixed storage for at most256 overlap tokens and
+accepts only texts within the provider's65,536-byte result cap. Matching is
+case- and punctuation-sensitive by design: uncertainty returns the whole current
+text instead of deleting possibly novel words. Complete overlap returns an empty
+novel suffix. Four tests cover longest/full/no match, pt-BR UTF-8, Unicode
+whitespace, the inclusive token bound and redacted diagnostics. The decision has
+no timestamps or source identity and is not fuzzy ASR reconciliation, semantic
+normalization, persistence, partial/final policy or permission to merge across a
+gap/epoch/source; the future host must enforce those boundaries.
+
 ## Experimental binary descriptor v0 (not a transport)
 
 `audio_frame_v0.rs` validates a fixed80-byte header before payload sizing: schema,

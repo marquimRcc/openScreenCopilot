@@ -13,6 +13,7 @@ pub mod provider_admission;
 pub mod session_lifecycle;
 pub mod speech_windows;
 pub mod timeline_registry;
+pub mod transcript_overlap;
 pub mod transport_budget;
 pub mod wave_file;
 

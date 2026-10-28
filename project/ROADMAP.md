@@ -173,7 +173,10 @@ mas voz natural/diversa e épocas live continuam pendentes. Interface provider/t
 do vendor adaptados para Rust std, com PCM emprestado/guardas/cancel aguardado;
 nenhum engine/provider concreto, Tauri, sidecar ou ASR novo integrado.
 Planejador original limitado de janelas16k também existe isolado, guiado por
-fronteiras fornecidas; não é Silero/VAD, bufferPCM ou deduplicação de texto.
+fronteiras fornecidas; não é Silero/VAD ou bufferPCM. Deduplicação conservadora
+isolada compara somente tokens exatos no sufixo/prefixo (máximo256, texto<=65.536
+bytes), preserva o sufixo UTF-8 original e, em dúvida, não remove texto; não é
+matching fuzzy, política parcial/final, timestamp nem autorização entre fontes/épocas.
 Descritor binário v0 experimental com parsersRust/TS e fixtures compartilhadas em
 [AUDIO-FRAME-DRAFT.md](AUDIO-FRAME-DRAFT.md), sem transporte/IPC/captura/runtime.
 Contrato SessionLifecycle implementado em Rust std puro (commit 2e13475c) com estados Opening, Active,
@@ -191,7 +194,7 @@ Ingestão WAV limitada também existe no core: PCM16/float32 little-endian, 1–
 16/44,1/48kHz, arquivo máximo16MiB, RIFF/formatos validados, política mono explícita e
 saída normalizada16kHz. O host deve autorizar o caminho; bytes codificados, PCM
 interleaved, mono e saída podem coexistir, portanto não é streaming/arquivo longo nem
-limite RSS. Com 3 testes adicionais são 162 unitários. Sem host/TS/IPC/PCM live/VAD/
+limite RSS. Com 3 testes WAV e 4 de sobreposição são 166 unitários. Sem host/TS/IPC/PCM live/VAD/
 provider/engine. Conclusão técnica: session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e
 TransportBudget; lifecycle.sequence é âncora da sessão e não governa first_sequence das
@@ -211,7 +214,8 @@ Preparação isolada pode avançar; integração com captura aguarda aceites01/0
 - Remover AppHandle do core por interface de eventos/cancelamento.
 - Definir protocolo v1 e fixtures compartilhadas com TypeScript.
 - Testar PCM de arquivo antes de usar captura ao vivo.
-- Limitar segmentos longos e deduplicar sobreposições.
+- Limitar segmentos longos e integrar a deduplicação conservadora no host com
+  envelopes de fonte/época e política explícita de parciais/finais.
 
 Aceite: executar sidecar sem Tauri/Electron e produzir segmentos finais de uma
 amostra pt-BR conhecida, com memória limitada e cancelamento/reconexão testados.
