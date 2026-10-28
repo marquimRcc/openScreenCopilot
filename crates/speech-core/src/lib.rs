@@ -7,6 +7,7 @@ pub mod control_lines;
 pub mod downmix;
 pub mod input_chunk;
 pub mod mono_frame;
+pub mod normalizer;
 pub mod provider;
 pub mod provider_admission;
 pub mod session_lifecycle;

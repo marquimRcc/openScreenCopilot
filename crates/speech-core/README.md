@@ -1,18 +1,19 @@
 # speech-core foundation (draft)
 
 Sample-to-media timeline arithmetic, a bounded draft metadata registry,
-interleaved-to-mono downmix, a provider INTERFACE and a metadata window planner are implemented. No audio capture,
-production resampling, loudness normalization, VAD, concrete model/provider, inference,
+interleaved-to-mono downmix, bounded whole-buffer resampling, a provider INTERFACE and a metadata window planner are implemented. No audio capture,
+loudness normalization, VAD, concrete model/provider, inference,
 sidecar, journal or UI integration.
 The original timeline code uses the repository MIT license. Downmix/provider boundary are adapted from
 meeting-copilot (Zackriya Solutions); its MIT notice is preserved in
 [LICENSE-MEETING-COPILOT](LICENSE-MEETING-COPILOT). Vendor remains immutable.
 
-The library uses std only. serde_json is a pinned test dependency for the exact same
+The library uses std plus pinned rubato 0.15 with default features disabled for the
+bounded whole-buffer normalizer. serde_json is a pinned test dependency for the exact same
 JSON fixture exercised by electron/copilot/sourceTimeline.test.ts. Cargo.lock is
 local to this isolated workspace; the compositor's workspace/lock are unchanged.
 No crate-owned build.rs, hardware API, model downloads or environment changes are required.
-The test-only resampling spike below adds num-traits' compiler-feature build probe.
+Rubato adds num-traits' compiler-feature build probe; its MIT notice is preserved.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-core/Cargo.toml
@@ -90,13 +91,25 @@ all inputs while indefinitely waiting for output that cannot fit. Charges includ
 a header-sized allowance but not allocator/metadata overhead, therefore NOT RSS.
 No capture/normalizer runtime or model was connected by this boundary.
 
-## File-only resampling experiment (not a library API)
+## Bounded file-buffer normalizer and earlier experiment
 
-`tests/resample_spike.rs` uses pinned rubato0.15.0 as a **dev-dependency** with
-default features disabled. No FFT, realfft, complex, logging or live capture is
-enabled. Cargo.lock adds rubato/num-integer/num-traits/autocfg from the existing
-offline cache. MIT notices are in [LICENSE-RESAMPLING-SPIKE](LICENSE-RESAMPLING-SPIKE).
-The library's normal dependency tree still contains only this crate/std.
+`normalizer.rs` promotes the characterized candidate to a public, cancelable
+whole-buffer API for already-downmixed mono audio. It accepts 16/44.1/48 kHz and
+returns exactly 16 kHz with `floor(input*16000/rate)` samples. Native 16 kHz input
+is copied rather than aliased. The public inclusive ceiling is 1,048,576 input
+samples; callers may choose a smaller positive limit. Input and output coexist,
+so this is not streaming, constant-memory or suitable for an unchunked long file.
+Cancellation is checked before allocation, between filter blocks and before commit;
+partial output never escapes. Debug omits PCM values. Four unit tests cover counts,
+filter reset, cancel during processing, validation, impulse alignment and alias rejection.
+
+The earlier `tests/resample_spike.rs` remains as independent characterization and
+fault-injection coverage for the same pinned configuration.
+
+Rubato0.15.0 has default features disabled. No FFT, realfft, complex, logging or
+live capture is enabled. Cargo.lock adds rubato/num-integer/num-traits/autocfg from
+the existing offline cache. MIT notices are in
+[LICENSE-RESAMPLING-SPIKE](LICENSE-RESAMPLING-SPIKE).
 
 The experiment accepts a complete mono file buffer, only44.1/48kHz, at most
 1,048,576 input floats. It emits exactly floor(total_input*16000/input_rate), an
