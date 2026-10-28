@@ -37,6 +37,9 @@ and terminating on malformed or premature stdout. Spawn/path/ACL remain absent.
 The dormant launcher now canonicalizes a caller-authorized absolute executable,
 spawns it without a shell or arguments and starts only this handshake. It is not
 wired into application startup; stderr is currently discarded rather than logged.
+An opt-in Vitest integration test (`OPENSCREEN_SPEECH_SIDECAR_V0=<absolute binary>`)
+executes the real TypeScript -> Rust -> TypeScript handshake and requires a clean,
+observed process exit. It is skipped when no explicitly built binary is supplied.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml

@@ -83,6 +83,9 @@ result-*
 # Build cache for the native STT server (FetchContent clones + CMake build).
 /.cache/
 
+# Isolated Rust crate build outputs when CARGO_TARGET_DIR is not overridden.
+/crates/*/target/
+
 # Vite's dependency cache, moved out of node_modules so concurrent dev servers
 # (main checkout + worktrees, which share node_modules via a junction) stop
 # re-optimising into each other's cache. See `cacheDir` in vite.config.ts.

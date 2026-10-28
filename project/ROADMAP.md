@@ -210,6 +210,8 @@ Binding host isolado tem3testes com processo fake e supervisor por geração; ai
 há3testes adicionais do launcher dormente (path canônico, shell off e falhas antes
 de ownership). Sem integração no startup, path empacotado, pipe PCM, ACL, VAD
 semântico, provider ou engine.
+Um teste de integração Vitest opt-in também conclui handshake real TS→binárioRust,
+shutdown e exit0 observado; fica skip sem path absoluto fornecido explicitamente.
 Conclusão técnica:
 session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e
