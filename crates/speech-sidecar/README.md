@@ -31,6 +31,9 @@ without retaining a message queue, and fails closed on ordering, parsing or EOF.
 `SpeechSidecarHostControllerV0` owns exact outbound writes and deterministic
 handshake/shutdown deadlines with a typed abort receipt. It still owns no process,
 path or OS permission.
+`SpeechSidecarProcessBindingV0` can bind that controller to one already-created
+process and the shared generation supervisor, retaining an observed exit receipt
+and terminating on malformed or premature stdout. Spawn/path/ACL remain absent.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml

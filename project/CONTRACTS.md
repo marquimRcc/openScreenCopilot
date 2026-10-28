@@ -32,6 +32,9 @@ encoder TS valida identidade ASCII limitada e u64 canônico antes de emitir
 hello/shutdown exatos. Driver de stream TS compõe framing e correlação sem fila,
 falhando fechado em protocolo/ordem/EOF. Controlador isolado acrescenta deadlines
 de handshake/shutdown e abort tipado. Ainda não inicia ou supervisiona processo.
+Binding isolado pode anexar um processo já criado ao supervisor por geração,
+preserva recibo de saída observada e encerra em stdout inválido/prematuro; spawn,
+caminho autorizado e ACL continuam pendentes.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.

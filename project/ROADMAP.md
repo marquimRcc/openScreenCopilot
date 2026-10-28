@@ -206,7 +206,8 @@ serializada em Rust e validada por parser TS main-only estrito. Cinco testes Rus
 e 4 de controlador/deadlines)
 e smoke real do processo passam, além de
 debug/release/clippy/fmt no CI isolado.
-Ainda sem host de processo, pipe PCM, ACL/supervisão, VAD semântico, provider ou engine.
+Binding host isolado tem3testes com processo fake e supervisor por geração; ainda
+sem spawn/path autorizado, pipe PCM, ACL, VAD semântico, provider ou engine.
 Conclusão técnica:
 session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e
