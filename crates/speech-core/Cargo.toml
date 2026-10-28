@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 license = "MIT"
 publish = false
-description = "Isolated draft timeline metadata and mono downmix; no ASR runtime"
+description = "Isolated bounded speech preprocessing foundations; no ASR runtime"
 
 [dependencies]
 # Bounded file-buffer normalization only. No FFT backend, logging, hardware or runtime capture.

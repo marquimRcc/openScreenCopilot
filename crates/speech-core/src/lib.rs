@@ -14,6 +14,7 @@ pub mod session_lifecycle;
 pub mod speech_windows;
 pub mod timeline_registry;
 pub mod transport_budget;
+pub mod wave_file;
 
 #[derive(Clone, Copy)]
 pub struct SourceSpan<'a> {

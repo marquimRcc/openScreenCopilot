@@ -1,7 +1,8 @@
 # speech-core foundation (draft)
 
 Sample-to-media timeline arithmetic, a bounded draft metadata registry,
-interleaved-to-mono downmix, bounded whole-buffer resampling, a provider INTERFACE and a metadata window planner are implemented. No audio capture,
+interleaved-to-mono downmix, bounded WAV ingestion and whole-buffer resampling,
+a provider INTERFACE and a metadata window planner are implemented. No audio capture,
 loudness normalization, VAD, concrete model/provider, inference,
 sidecar, journal or UI integration.
 The original timeline code uses the repository MIT license. Downmix/provider boundary are adapted from
@@ -156,6 +157,27 @@ frame; they are NOT the declared46/42 OUTPUT-frame availability delay. These are
 empirical characterization bounds, not an exact live timestamp/wire convention,
 voice-quality certificate or hardware-clock measurement. An initial3ppm DC
 assumption failed; the measurement distinguishes gain ripple from phase shift.
+
+## Bounded WAV file ingestion
+
+`wave_file.rs` is the first production PCM-file path into the isolated core. It
+accepts an in-memory RIFF/WAVE payload or a path that the host has already authorized,
+then validates, decodes, applies a caller-selected mono policy and invokes the
+normalizer above. Accepted input is little-endian PCM16 or IEEE float32, 1-32
+channels, at 16/44.1/48 kHz. RIFF length, unique `fmt`/`data`, byte rate, block
+alignment, padding, finite floats, frame limits and the inclusive 16 MiB file cap
+are checked before successful return. The path API grants no path permission and
+does not interpret untrusted UI input.
+
+This remains a bounded whole-file implementation: encoded bytes, decoded
+interleaved samples, downmixed mono and normalized output can coexist. The 16 MiB
+byte ceiling and 1,048,576-scalar/downmix and normalizer ceilings are prototype
+guards, not an RSS guarantee or a long-recording format. Cancellation is checked
+before and after I/O and through downmix/normalization; it does not interrupt a
+blocking filesystem read already in progress. Three tests cover real temporary-file
+I/O, both encodings, explicit stereo averaging, exact output size, Debug redaction,
+malformed/unsupported/non-finite input, capacity and cancellation. No capture,
+streaming decoder, VAD, model, sidecar, journal or host integration is implied.
 
 ## Isolated provider boundary (no engine)
 

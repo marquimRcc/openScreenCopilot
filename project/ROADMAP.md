@@ -187,7 +187,12 @@ amostras, cancelamento entre blocos e descarte integral em falha/cancelamento. U
 rubato0.15 pinado sem features padrão; entrada e saída completas coexistem em memória,
 portanto não é streaming nem arquivo longo. 159 testes unitários (14 session_lifecycle +
 4 normalizer) + 8 core_pipeline + 8 resample_spike aprovados, fmt e clippy -D warnings.
-Sem host/TS/IPC/PCM live/provider/engine. Conclusão técnica: session_ingress e session_decoder não implementados
+Ingestão WAV limitada também existe no core: PCM16/float32 little-endian, 1–32 canais,
+16/44,1/48kHz, arquivo máximo16MiB, RIFF/formatos validados, política mono explícita e
+saída normalizada16kHz. O host deve autorizar o caminho; bytes codificados, PCM
+interleaved, mono e saída podem coexistir, portanto não é streaming/arquivo longo nem
+limite RSS. Com 3 testes adicionais são 162 unitários. Sem host/TS/IPC/PCM live/VAD/
+provider/engine. Conclusão técnica: session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e
 TransportBudget; lifecycle.sequence é âncora da sessão e não governa first_sequence das
 fontes independentes. Próximo avanço real requer orquestração no host (05) sob os aceites
