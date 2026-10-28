@@ -18,6 +18,9 @@ and parsed by the isolated main-only TypeScript parser
 `electron/copilot/speechSidecarProtocolV0.ts`. The parser enforces exact fields,
 version, identity, canonical u64 sequence strings and advertised limits, and
 refuses `providerAvailable:true`. It does not spawn or trust a process.
+`SpeechSidecarV0Session` additionally correlates ready/completed to one expected
+session and exact hello/shutdown sequences, rejecting replay and out-of-order or
+cross-session replies; it still does not supervise process lifetime.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml

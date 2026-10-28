@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseSpeechSidecarV0Line, SpeechSidecarV0Error } from "./speechSidecarProtocolV0";
+import {
+	parseSpeechSidecarV0Line,
+	SpeechSidecarV0Error,
+	SpeechSidecarV0Session,
+} from "./speechSidecarProtocolV0";
 
 const fixture = JSON.parse(
 	readFileSync(
@@ -39,5 +43,27 @@ describe("speech sidecar protocol v0 parser", () => {
 		expect(() => parseSpeechSidecarV0Line(JSON.stringify(ready))).toThrow(
 			"speech-sidecar-v0:schema",
 		);
+	});
+
+	it("correlates ready and completed to one ordered host session", () => {
+		const ready = parseSpeechSidecarV0Line(JSON.stringify(fixture.ready));
+		const completed = parseSpeechSidecarV0Line(JSON.stringify(fixture.completed));
+		const session = new SpeechSidecarV0Session("fixture_session", "0");
+		session.accept(ready);
+		expect(session.state).toBe("ready");
+		session.expectShutdown("1");
+		session.accept(completed);
+		expect(session.state).toBe("completed");
+		expect(() => session.accept(completed)).toThrow("speech-sidecar-v0:sequence");
+	});
+
+	it("rejects out-of-order, replayed and cross-session replies", () => {
+		const completed = parseSpeechSidecarV0Line(JSON.stringify(fixture.completed));
+		const session = new SpeechSidecarV0Session("fixture_session", "0");
+		expect(() => session.accept(completed)).toThrow("speech-sidecar-v0:sequence");
+		const other = parseSpeechSidecarV0Line(
+			JSON.stringify({ ...fixture.ready, sessionId: "other_session" }),
+		);
+		expect(() => session.accept(other)).toThrow("speech-sidecar-v0:identity");
 	});
 });

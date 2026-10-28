@@ -24,7 +24,9 @@ anuncia `providerAvailable:false` e não abre pipe/socket/PCM/modelo. Nonce não
 autenticação; ACL, timeout e supervisão pelo host seguem pendentes. Caps e v0 não
 são negociação v1 congelada. Fixture compartilhada Rust/TS cobre ready/completed;
 o parser TS main-only valida campos exatos/identidade/u64/capacidades, mas não
-spawna nem autentica processo. Detalhes nos READMEs dos dois crates.
+spawna nem autentica processo. Correlação stateful recusa ready/completed fora de
+ordem, replay ou outra sessão e exige seq exata de hello/shutdown. Detalhes nos
+READMEs dos dois crates.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.

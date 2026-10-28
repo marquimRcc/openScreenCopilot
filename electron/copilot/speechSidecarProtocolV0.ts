@@ -87,3 +87,49 @@ export function parseSpeechSidecarV0Line(line: string): SpeechSidecarV0Message {
 		}),
 	});
 }
+
+export class SpeechSidecarV0Session {
+	readonly sessionId: string;
+	readonly helloSeq: string;
+	#state: "awaiting-ready" | "ready" | "awaiting-completed" | "completed" = "awaiting-ready";
+	#shutdownSeq: string | undefined;
+
+	constructor(sessionId: string, helloSeq: string) {
+		if (!ID.test(sessionId)) fail("identity");
+		this.sessionId = sessionId;
+		this.helloSeq = sequence(helloSeq);
+	}
+
+	get state(): "awaiting-ready" | "ready" | "awaiting-completed" | "completed" {
+		return this.#state;
+	}
+
+	accept(message: SpeechSidecarV0Message): void {
+		if (
+			this.#state === "awaiting-ready" &&
+			message.type === "ready" &&
+			message.sessionId === this.sessionId &&
+			message.seq === this.helloSeq
+		) {
+			this.#state = "ready";
+			return;
+		}
+		if (
+			this.#state === "awaiting-completed" &&
+			message.type === "completed" &&
+			message.sessionId === this.sessionId &&
+			message.seq === this.#shutdownSeq
+		) {
+			this.#state = "completed";
+			return;
+		}
+		fail(message.sessionId === this.sessionId ? "sequence" : "identity");
+	}
+
+	expectShutdown(seq: string): void {
+		const parsed = sequence(seq);
+		if (this.#state !== "ready" || BigInt(parsed) <= BigInt(this.helloSeq)) fail("sequence");
+		this.#shutdownSeq = parsed;
+		this.#state = "awaiting-completed";
+	}
+}
