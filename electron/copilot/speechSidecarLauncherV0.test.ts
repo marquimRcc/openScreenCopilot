@@ -39,7 +39,7 @@ describe("speech sidecar launcher v0", () => {
 		expect(spawn).toHaveBeenCalledWith(canonical, [], {
 			shell: false,
 			windowsHide: true,
-			stdio: ["pipe", "pipe", "ignore"],
+			stdio: ["pipe", "pipe", "pipe"],
 		});
 		expect(proc.stdin.write.mock.calls[0][0]).toContain('"type":"hello"');
 		expect(binding.state).toBe("awaiting-ready");

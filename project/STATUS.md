@@ -246,6 +246,8 @@ Controlador host isolado acrescenta4testes de writes exatos, deadlines de
 handshake/shutdown, erro tipado e abort; ainda sem spawn/path/ACL/processo real.
 Binding de processo já criado acrescenta3testes de ownership por geração, recibo
 de exit e TERM em protocolo/stdout prematuro; spawn/path/ACL continuam pendentes.
+Binding agora totaliza4testes e limita stderr diagnóstico a4KiB, separado do
+protocolo stdout; launcher usa três pipes sem fila de log ilimitada.
 Launcher dormente acrescenta3testes: valida identidade/path canônico antes de
 spawn sem shell/args; não integrado ao startup, sem path empacotado/ACL/PCM.
 Integração opt-in hostTS→sidecarRust→hostTS passou com ready/shutdown/completed,

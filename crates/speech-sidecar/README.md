@@ -36,7 +36,8 @@ process and the shared generation supervisor, retaining an observed exit receipt
 and terminating on malformed or premature stdout. Spawn/path/ACL remain absent.
 The dormant launcher now canonicalizes a caller-authorized absolute executable,
 spawns it without a shell or arguments and starts only this handshake. It is not
-wired into application startup; stderr is currently discarded rather than logged.
+wired into application startup. Stderr diagnostics are drained into a fixed 4KiB
+host buffer (never an unbounded log queue) and remain separate from stdout framing.
 An opt-in Vitest integration test (`OPENSCREEN_SPEECH_SIDECAR_V0=<absolute binary>`)
 executes the real TypeScript -> Rust -> TypeScript handshake and requires a clean,
 observed process exit. It is skipped when no explicitly built binary is supplied.

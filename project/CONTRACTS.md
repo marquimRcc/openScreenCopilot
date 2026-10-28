@@ -35,6 +35,8 @@ de handshake/shutdown e abort tipado. Ainda não inicia ou supervisiona processo
 Binding isolado pode anexar um processo já criado ao supervisor por geração,
 preserva recibo de saída observada e encerra em stdout inválido/prematuro; spawn,
 caminho autorizado e ACL continuam pendentes.
+Stderr é drenado separadamente para buffer diagnóstico fixo de4KiB; nunca entra
+no framing stdout nem cresce sem limite.
 Launcher dormente recebe caminho absoluto autorizado pelo main, canonicaliza e
 spawna sem shell/argumentos; não está ligado ao startup e ainda não define ACL.
 Teste de integração opt-in confirmou handshake e saída real TS→Rust→TS; não é

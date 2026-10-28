@@ -18,6 +18,7 @@ const encode = (value: object) => new TextEncoder().encode(`${JSON.stringify(val
 class FakeProcess extends EventEmitter implements SpeechSidecarProcessV0 {
 	readonly pid = 42;
 	readonly stdout = new EventEmitter() as EventEmitter & SpeechSidecarReadableV0;
+	readonly stderr = new EventEmitter() as EventEmitter & SpeechSidecarReadableV0;
 	readonly stdin = { write: vi.fn((_line: string) => true) };
 	readonly kill = vi.fn((_signal?: NodeJS.Signals) => true);
 }
@@ -51,10 +52,20 @@ describe("speech sidecar process binding v0", () => {
 	it("terminates the owned process on malformed protocol", () => {
 		const { proc, binding: host } = binding();
 		host.start();
+		proc.stderr.emit("data", new TextEncoder().encode("invalid-json\n"));
 		proc.stdout.emit("data", new TextEncoder().encode("not-json\n"));
 		expect(host.state).toBe("failed");
 		expect(proc.kill).toHaveBeenCalledWith("SIGTERM");
 		expect(host.failure).toBeDefined();
+		expect(host.diagnostic).toBe("invalid-json");
+	});
+
+	it("bounds stderr diagnostics without affecting protocol state", () => {
+		const { proc, binding: host } = binding();
+		host.start();
+		proc.stderr.emit("data", new Uint8Array(8_192).fill(97));
+		expect(new TextEncoder().encode(host.diagnostic)).toHaveLength(4_096);
+		expect(host.state).toBe("awaiting-ready");
 	});
 
 	it("fails closed when stdout or the process ends prematurely", () => {

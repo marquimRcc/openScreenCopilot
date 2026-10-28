@@ -63,7 +63,7 @@ export function launchSpeechSidecarV0(
 		proc = (options.spawn ?? defaultSpawn)(executablePath, [], {
 			shell: false,
 			windowsHide: true,
-			stdio: ["pipe", "pipe", "ignore"],
+			stdio: ["pipe", "pipe", "pipe"],
 		});
 	} catch {
 		throw new SpeechSidecarLaunchV0Error("spawn");
