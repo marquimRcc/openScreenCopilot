@@ -216,6 +216,8 @@ Resolver de recurso tem3testes para slots dev/package win/mac/linux e ausência
 fail-closed; build/staging do binário em cada plataforma continua pendente.
 Script de staging tem2testes e executou build release offline/locked no Windows,
 copiando somente o executável; ainda não participa dos builds oficiais.
+Factory dormente tem2testes e compõe resolver/launcher, retornando indisponível sem
+spawn quando o recurso falta; ainda não referenciada pelo startup.
 Conclusão técnica:
 session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e

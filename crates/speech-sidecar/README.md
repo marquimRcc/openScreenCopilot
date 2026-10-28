@@ -47,6 +47,9 @@ when absent; it never searches PATH.
 `npm run build:speech-sidecar` performs a locked offline release build into the
 private cache and stages only the host executable into that slot. Official package
 chains do not invoke it yet.
+`createSpeechSidecarServiceV0` composes resolver and launcher but returns `null`
+without spawning when the exact resource is absent. It remains unreferenced by
+application startup and therefore cannot activate transcription.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml
