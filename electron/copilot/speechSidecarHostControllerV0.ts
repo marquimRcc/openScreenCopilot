@@ -1,4 +1,5 @@
 import type { SpeechSidecarV0Message } from "./speechSidecarProtocolV0";
+import { nextSpeechSidecarV0Sequence } from "./speechSidecarProtocolV0";
 import {
 	SpeechSidecarStreamSessionV0,
 	type SpeechSidecarStreamV0Identity,
@@ -46,6 +47,7 @@ export class SpeechSidecarHostControllerV0 {
 	readonly #write: (line: string) => void;
 	readonly #abort: (error: SpeechSidecarHostV0Error) => void;
 	readonly #schedule: SpeechSidecarHostScheduleV0;
+	readonly #defaultShutdownSeq: string;
 	#state: SpeechSidecarHostV0State = "created";
 	#failure: SpeechSidecarHostV0Error | undefined;
 	#cancelDeadline: (() => void) | undefined;
@@ -61,6 +63,7 @@ export class SpeechSidecarHostControllerV0 {
 		this.#write = options.write;
 		this.#abort = options.abort;
 		this.#schedule = options.schedule ?? defaultSchedule;
+		this.#defaultShutdownSeq = nextSpeechSidecarV0Sequence(options.identity.helloSeq);
 	}
 
 	get state(): SpeechSidecarHostV0State {
@@ -78,7 +81,7 @@ export class SpeechSidecarHostControllerV0 {
 		this.#writeOrFail(this.#stream.hello());
 	}
 
-	shutdown(seq: string): void {
+	shutdown(seq = this.#defaultShutdownSeq): void {
 		if (this.#state !== "ready") throw new SpeechSidecarHostV0Error("state");
 		this.#state = "awaiting-completed";
 		this.#armDeadline(this.#shutdownTimeoutMs);

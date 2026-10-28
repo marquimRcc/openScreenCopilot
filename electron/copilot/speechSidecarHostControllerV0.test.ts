@@ -42,7 +42,7 @@ describe("speech sidecar host controller v0", () => {
 		expect(write.mock.calls[0][0]).toContain('"type":"hello"');
 		host.receive(encode(fixture.ready));
 		expect(host.state).toBe("ready");
-		host.shutdown("1");
+		host.shutdown();
 		expect(write.mock.calls[1][0]).toContain('"type":"shutdown"');
 		host.receive(encode(fixture.completed));
 		expect(host.state).toBe("completed");

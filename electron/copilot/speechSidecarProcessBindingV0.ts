@@ -97,7 +97,7 @@ export class SpeechSidecarProcessBindingV0<P extends SpeechSidecarProcessV0> {
 		this.#host.start();
 	}
 
-	shutdown(seq: string): void {
+	shutdown(seq?: string): void {
 		this.#host.shutdown(seq);
 	}
 

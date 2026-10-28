@@ -55,6 +55,12 @@ function sequence(value: unknown): string {
 	return value;
 }
 
+export function nextSpeechSidecarV0Sequence(value: string): string {
+	const parsed = BigInt(sequence(value));
+	if (parsed === U64_MAX) fail("sequence");
+	return (parsed + 1n).toString();
+}
+
 function hostIdentity(value: SpeechSidecarV0HostIdentity): SpeechSidecarV0HostIdentity {
 	if (!ID.test(value.sessionId) || !ID.test(value.nonce)) fail("identity");
 	return { sessionId: value.sessionId, nonce: value.nonce, seq: sequence(value.seq) };

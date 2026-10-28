@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	encodeSpeechSidecarV0Hello,
 	encodeSpeechSidecarV0Shutdown,
+	nextSpeechSidecarV0Sequence,
 	parseSpeechSidecarV0Line,
 	SpeechSidecarV0Error,
 	SpeechSidecarV0Session,
@@ -16,6 +17,14 @@ const fixture = JSON.parse(
 ) as { ready: object; completed: object };
 
 describe("speech sidecar protocol v0 parser", () => {
+	it("increments canonical sequences without crossing u64", () => {
+		expect(nextSpeechSidecarV0Sequence("0")).toBe("1");
+		expect(nextSpeechSidecarV0Sequence("18446744073709551614")).toBe("18446744073709551615");
+		expect(() => nextSpeechSidecarV0Sequence("18446744073709551615")).toThrow(
+			"speech-sidecar-v0:sequence",
+		);
+	});
+
 	it("encodes the exact bounded host hello and shutdown wire messages", () => {
 		expect(
 			encodeSpeechSidecarV0Hello({
