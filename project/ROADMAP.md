@@ -200,8 +200,9 @@ interleaved, mono e saída podem coexistir, portanto não é streaming/arquivo l
 limite RSS. Com 3 testes WAV, 4 de sobreposição e 5 do gate de atividade são 171
 unitários. Sidecar v0 executável abre somente stdin/stdout NDJSON e implementa
 handshake estrito hello/ready/shutdown/completed com schema, identidade limitada e
-sequência monotônica; anuncia `providerAvailable:false`. Quatro testes unitários e
-smoke real do processo passam, além de debug/release/clippy/fmt no CI isolado.
+sequência monotônica; anuncia `providerAvailable:false`. Fixture ready/completed é
+serializada em Rust e validada por parser TS main-only estrito. Cinco testes Rust,
+3 TS e smoke real do processo passam, além de debug/release/clippy/fmt no CI isolado.
 Ainda sem host/TS, pipe PCM, ACL/supervisão, VAD semântico, provider ou engine.
 Conclusão técnica:
 session_ingress e session_decoder não implementados

@@ -242,4 +242,29 @@ mod tests {
         assert!(!debug.contains("private_session"));
         assert!(!debug.contains("private_nonce"));
     }
+
+    #[test]
+    fn serialized_messages_match_the_shared_typescript_fixture() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../contracts/copilot/speech-sidecar.v0.fixture.json"
+        ))
+        .unwrap();
+        let mut state = ProtocolState::new();
+        let ready = match state
+            .accept(r#"{"type":"hello","version":0,"sessionId":"fixture_session","nonce":"fixture_nonce","seq":"0"}"#)
+            .unwrap()
+        {
+            ProtocolReply::Message(message) => serde_json::to_value(message).unwrap(),
+            ProtocolReply::Complete(_) => panic!("hello completed"),
+        };
+        assert_eq!(ready, fixture["ready"]);
+        let completed = match state
+            .accept(r#"{"type":"shutdown","version":0,"sessionId":"fixture_session","nonce":"fixture_nonce","seq":"1"}"#)
+            .unwrap()
+        {
+            ProtocolReply::Complete(message) => serde_json::to_value(message).unwrap(),
+            ProtocolReply::Message(_) => panic!("shutdown stayed open"),
+        };
+        assert_eq!(completed, fixture["completed"]);
+    }
 }

@@ -22,7 +22,9 @@ stdin/stdout, valida JSON/schema/version/identidade ASCII limitada/seq u64 decim
 monotônica e falha fechado. Aceita apenas um hello e shutdown correspondente,
 anuncia `providerAvailable:false` e não abre pipe/socket/PCM/modelo. Nonce não é
 autenticação; ACL, timeout e supervisão pelo host seguem pendentes. Caps e v0 não
-são negociação v1 congelada. Detalhes nos READMEs dos dois crates.
+são negociação v1 congelada. Fixture compartilhada Rust/TS cobre ready/completed;
+o parser TS main-only valida campos exatos/identidade/u64/capacidades, mas não
+spawna nem autentica processo. Detalhes nos READMEs dos dois crates.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.

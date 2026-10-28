@@ -235,7 +235,8 @@ hardening1e991554 do orçamento3737afc1/decoder79f2d8c8;
 5ede5b01 documenta requisitos host futuros, sem runtime novo.
 Sidecar v0 executável agora faz somente handshake NDJSON fail-closed em stdin/stdout:
 hello/ready/shutdown/completed, schema estrito, IDs ASCII limitados e seq u64 decimal
-monotônica; anuncia providerAvailable=false.4testes+smoke processo exit0; sem PCM,
+monotônica; anuncia providerAvailable=false. Fixture ready/completed compartilhada
+tem5testesRust+3TS+ambostsc+smoke processo exit0; sem PCM,
 modelo/engine/ASR/ACL/supervisão host, e nonce não autentica processo.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).

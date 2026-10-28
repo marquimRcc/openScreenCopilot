@@ -13,6 +13,12 @@ bounded ASCII correlation fields; they do not replace OS ACLs. Stdout contains o
 protocol messages and stderr diagnostics omit supplied identity values. Draft
 version0 is not frozen v1 and advertises no provider.
 
+`contracts/copilot/speech-sidecar.v0.fixture.json` is serialized by a Rust test
+and parsed by the isolated main-only TypeScript parser
+`electron/copilot/speechSidecarProtocolV0.ts`. The parser enforces exact fields,
+version, identity, canonical u64 sequence strings and advertised limits, and
+refuses `providerAvailable:true`. It does not spawn or trust a process.
+
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml
 cargo clippy --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml --all-targets -- -D warnings
