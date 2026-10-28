@@ -101,6 +101,8 @@ export class SttManager {
 	private modelsBaseDir: string | null = null;
 	private readonly statusSinks = new Set<(event: SttStatusEvent) => void>();
 	private initPromise: Promise<void> | null = null;
+	/** Identity of the only whole-recording transcription admitted by this manager. */
+	private activeTranscription: object | null = null;
 	/** Kept from `prepare()` so a chunk retry can respawn a helper that died mid-run. */
 	private modelPath: string | null = null;
 	private vadModelPath: string | null = null;
@@ -196,8 +198,8 @@ export class SttManager {
 	 * Stop the in-flight transcription at the next chunk boundary.
 	 *
 	 * ponytail: one epoch for the whole manager, not a handle per request. The
-	 * pipeline runs one transcription at a time by construction (the renderer's
-	 * queue serializes, and `WhisperServerManager` single-flights on top), so
+	 * pipeline runs one transcription at a time by construction (this manager's
+	 * admission gate enforces it, and `WhisperServerManager` serializes chunks), so
 	 * "cancel what is running" is the only question anyone can ask. Per-request
 	 * tokens the day two recordings can transcribe at once.
 	 */
@@ -337,6 +339,19 @@ export class SttManager {
 	}
 
 	async transcribe(req: SttTranscribeRequest): Promise<SttTranscribeResponse> {
+		if (this.activeTranscription) {
+			throw new Error("STT transcription is already running");
+		}
+		const token = {};
+		this.activeTranscription = token;
+		try {
+			return await this.transcribeAdmitted(req);
+		} finally {
+			if (this.activeTranscription === token) this.activeTranscription = null;
+		}
+	}
+
+	private async transcribeAdmitted(req: SttTranscribeRequest): Promise<SttTranscribeResponse> {
 		await this.init();
 
 		const epoch = this.cancelEpoch;
