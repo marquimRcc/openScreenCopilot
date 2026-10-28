@@ -35,6 +35,8 @@ de handshake/shutdown e abort tipado. Ainda não inicia ou supervisiona processo
 Binding isolado pode anexar um processo já criado ao supervisor por geração,
 preserva recibo de saída observada e encerra em stdout inválido/prematuro; spawn,
 caminho autorizado e ACL continuam pendentes.
+Launcher dormente recebe caminho absoluto autorizado pelo main, canonicaliza e
+spawna sem shell/argumentos; não está ligado ao startup e ainda não define ACL.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.

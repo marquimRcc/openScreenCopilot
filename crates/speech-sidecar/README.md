@@ -34,6 +34,9 @@ path or OS permission.
 `SpeechSidecarProcessBindingV0` can bind that controller to one already-created
 process and the shared generation supervisor, retaining an observed exit receipt
 and terminating on malformed or premature stdout. Spawn/path/ACL remain absent.
+The dormant launcher now canonicalizes a caller-authorized absolute executable,
+spawns it without a shell or arguments and starts only this handshake. It is not
+wired into application startup; stderr is currently discarded rather than logged.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml

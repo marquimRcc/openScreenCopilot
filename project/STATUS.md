@@ -246,6 +246,8 @@ Controlador host isolado acrescenta4testes de writes exatos, deadlines de
 handshake/shutdown, erro tipado e abort; ainda sem spawn/path/ACL/processo real.
 Binding de processo já criado acrescenta3testes de ownership por geração, recibo
 de exit e TERM em protocolo/stdout prematuro; spawn/path/ACL continuam pendentes.
+Launcher dormente acrescenta3testes: valida identidade/path canônico antes de
+spawn sem shell/args; não integrado ao startup, sem path empacotado/ACL/PCM.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.
