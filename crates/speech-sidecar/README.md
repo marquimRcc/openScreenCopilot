@@ -28,7 +28,9 @@ bounded LF/CRLF and fatal UTF-8 framing, fixed storage and one-message
 backpressure. It is isolated and not connected to a child process yet.
 `SpeechSidecarStreamSessionV0` now composes codec, framing and reply correlation
 without retaining a message queue, and fails closed on ordering, parsing or EOF.
-It still owns no process, timeout, path or OS permission.
+`SpeechSidecarHostControllerV0` owns exact outbound writes and deterministic
+handshake/shutdown deadlines with a typed abort receipt. It still owns no process,
+path or OS permission.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml
