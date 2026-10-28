@@ -29,7 +29,8 @@ ordem, replay ou outra sessão e exige seq exata de hello/shutdown. Detalhes nos
 READMEs dos dois crates. Decoder TS isolado de linhas aplica o mesmo teto por
 mensagem, UTF-8 fatal, LF/CRLF e contrapressão de uma mensagem com buffer fixo;
 encoder TS valida identidade ASCII limitada e u64 canônico antes de emitir
-hello/shutdown exatos. Ainda não lê stdout, inicia ou supervisiona processo.
+hello/shutdown exatos. Driver de stream TS compõe framing e correlação sem fila,
+falhando fechado em protocolo/ordem/EOF. Ainda não inicia ou supervisiona processo.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.
