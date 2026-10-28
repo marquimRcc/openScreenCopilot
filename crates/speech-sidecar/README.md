@@ -52,6 +52,7 @@ without spawning when the exact resource is absent. It remains unreferenced by
 application startup and therefore cannot activate transcription.
 Identity generation uses separate 192-bit random values for the bounded session
 and nonce fields. The nonce remains correlation material, not authentication.
+The dormant service uses that generator by default when its caller omits identity.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml

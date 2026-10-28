@@ -260,6 +260,7 @@ Factory dormente acrescenta2testes de composição resolver/launcher e retorna n
 sem spawn quando ausente; não ligada ao startup/runtime de gravação.
 Identidade host acrescenta2testes e deriva session/nonce distintos de192bits;
 continua sem alegar autenticação ou substituir ACL.
+Factory agora totaliza3testes e usa essa identidade forte por padrão quando omitida.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.

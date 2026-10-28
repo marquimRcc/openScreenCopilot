@@ -2,6 +2,7 @@ import {
 	resolveSpeechSidecarExecutableV0,
 	type SpeechSidecarExecutableV0Options,
 } from "./speechSidecarExecutableV0";
+import { createSpeechSidecarIdentityV0 } from "./speechSidecarIdentityV0";
 import {
 	launchSpeechSidecarV0,
 	type SpeechSidecarLauncherV0Options,
@@ -13,8 +14,9 @@ import {
 
 export interface SpeechSidecarServiceV0Options
 	extends Omit<SpeechSidecarExecutableV0Options, "canonicalize">,
-		Omit<SpeechSidecarLauncherV0Options, "authorizedExecutablePath" | "canonicalize"> {
+		Omit<SpeechSidecarLauncherV0Options, "authorizedExecutablePath" | "canonicalize" | "identity"> {
 	readonly canonicalize: (candidate: string) => string;
+	readonly identity?: SpeechSidecarLauncherV0Options["identity"];
 }
 
 /** Creates the dormant handshake service only when its exact staged resource exists. */
@@ -25,6 +27,7 @@ export function createSpeechSidecarServiceV0(
 	if (executable === null) return null;
 	return launchSpeechSidecarV0({
 		...options,
+		identity: options.identity ?? createSpeechSidecarIdentityV0(),
 		authorizedExecutablePath: executable,
 		canonicalize: (candidate) => candidate,
 	});

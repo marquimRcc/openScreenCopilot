@@ -64,4 +64,18 @@ describe("speech sidecar service v0", () => {
 		expect(spawn.mock.calls[0][0]).toBe(canonical);
 		expect(proc.stdin.write).toHaveBeenCalledOnce();
 	});
+
+	it("generates a strong bounded identity when the caller omits one", () => {
+		const proc = new FakeProcess();
+		createSpeechSidecarServiceV0({
+			...base,
+			identity: undefined,
+			exists: () => true,
+			canonicalize: (candidate) => candidate,
+			spawn: () => proc,
+		});
+		const hello = JSON.parse(proc.stdin.write.mock.calls[0][0]);
+		expect(hello.sessionId).toMatch(/^s_[0-9a-f]{48}$/);
+		expect(hello.nonce).toMatch(/^n_[0-9a-f]{48}$/);
+	});
 });
