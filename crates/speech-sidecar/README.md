@@ -43,6 +43,9 @@ observed process exit. It is skipped when no explicitly built binary is supplied
 The resource resolver recognizes only the exact packaged/development
 `electron/native/bin/<platform>-<arch>` slot, canonicalizes it and returns unavailable
 when absent; it never searches PATH.
+`npm run build:speech-sidecar` performs a locked offline release build into the
+private cache and stages only the host executable into that slot. Official package
+chains do not invoke it yet.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml

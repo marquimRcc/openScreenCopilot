@@ -252,6 +252,8 @@ Integração opt-in hostTS→sidecarRust→hostTS passou com ready/shutdown/comp
 exit0 observado e sem kill; teste fica skip sem binário absoluto explícito.
 Resolver do executável acrescenta3testes de slot dev/package por OS/arch,
 canonicalização e ausência fail-closed sem PATH; staging multiplataforma pendente.
+`build:speech-sidecar` acrescenta2testes e passou build release offline/locked,
+staging no slot win32-x64; não encadeado ao empacotamento oficial.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.
