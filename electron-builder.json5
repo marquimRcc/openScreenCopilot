@@ -189,7 +189,7 @@
       {
         "from": "electron/native/bin",
         "to": "electron/native/bin",
-        "filter": ["darwin-*/*"]
+        "filter": ["darwin-*/*", "!darwin-*/openscreen-speech-sidecar"]
       }
     ],
     "extendInfo": {
@@ -230,7 +230,7 @@
         // The name is `helper-ffmpeg` rather than `ffmpeg` because that shorter
         // name is taken: fetch-ffmpeg.mjs vendors the static ffmpeg executable
         // there, and audioPeaks.ts resolves it by that path.
-        "filter": ["linux-*/**"]
+        "filter": ["linux-*/**", "!linux-*/openscreen-speech-sidecar"]
       }
     ]
   },
@@ -402,7 +402,11 @@
         // in the app spawns. Shipping it added a large binary to every Windows
         // installer, plus an LGPL redistribution obligation, for a file no
         // shipped code opens.
-        "filter": ["win32-*/*", "!win32-*/ffmpeg.exe"]
+        "filter": [
+          "win32-*/*",
+          "!win32-*/ffmpeg.exe",
+          "!win32-*/openscreen-speech-sidecar.exe"
+        ]
       }
     ],
     // The D3D11 compositor addon deliberately does NOT travel through `files` into

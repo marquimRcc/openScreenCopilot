@@ -47,6 +47,9 @@ when absent; it never searches PATH.
 `npm run build:speech-sidecar` performs a locked offline release build into the
 private cache and stages only the host executable into that slot. Official package
 chains do not invoke it yet.
+Electron-builder explicitly excludes this draft binary on all platforms, so a
+local staging run cannot silently place it in an installer before the packaging,
+licensing and privacy gates are approved.
 `createSpeechSidecarServiceV0` composes resolver and launcher but returns `null`
 without spawning when the exact resource is absent. It remains unreferenced by
 application startup and therefore cannot activate transcription.

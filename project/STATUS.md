@@ -256,6 +256,8 @@ Resolver do executável acrescenta3testes de slot dev/package por OS/arch,
 canonicalização e ausência fail-closed sem PATH; staging multiplataforma pendente.
 `build:speech-sidecar` acrescenta2testes e passou build release offline/locked,
 staging no slot win32-x64; não encadeado ao empacotamento oficial.
+Filtros electron-builder excluem explicitamente o sidecar draft em win/mac/linux,
+impedindo inclusão acidental antes dos gates de licença/privacidade/pacote.
 Factory dormente acrescenta2testes de composição resolver/launcher e retorna null
 sem spawn quando ausente; não ligada ao startup/runtime de gravação.
 Identidade host acrescenta2testes e deriva session/nonce distintos de192bits;
