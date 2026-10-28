@@ -33,4 +33,13 @@ describe("fork distribution safety", () => {
 		const main = readFileSync(new URL("../electron/main.ts", import.meta.url), "utf8");
 		expect(main.trimStart().startsWith('import "./initialize-identity";')).toBe(true);
 	});
+	it("keeps the draft speech sidecar out of every installer", () => {
+		for (const excluded of [
+			"!win32-*/openscreen-speech-sidecar.exe",
+			"!darwin-*/openscreen-speech-sidecar",
+			"!linux-*/openscreen-speech-sidecar",
+		]) {
+			expect(config).toContain(`"${excluded}"`);
+		}
+	});
 });
