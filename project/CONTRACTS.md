@@ -39,6 +39,8 @@ Launcher dormente recebe caminho absoluto autorizado pelo main, canonicaliza e
 spawna sem shell/argumentos; não está ligado ao startup e ainda não define ACL.
 Teste de integração opt-in confirmou handshake e saída real TS→Rust→TS; não é
 ativação do sidecar no produto nem prova de provider/PCM/ASR.
+Resolver isolado limita o executável ao slot exato dev/empacotado por plataforma e
+arquitetura, canonicaliza e retorna indisponível quando ausente, sem busca em PATH.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.

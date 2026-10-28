@@ -40,6 +40,9 @@ wired into application startup; stderr is currently discarded rather than logged
 An opt-in Vitest integration test (`OPENSCREEN_SPEECH_SIDECAR_V0=<absolute binary>`)
 executes the real TypeScript -> Rust -> TypeScript handshake and requires a clean,
 observed process exit. It is skipped when no explicitly built binary is supplied.
+The resource resolver recognizes only the exact packaged/development
+`electron/native/bin/<platform>-<arch>` slot, canonicalizes it and returns unavailable
+when absent; it never searches PATH.
 
 ```text
 cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml
