@@ -43,6 +43,8 @@ Teste de integração opt-in confirmou handshake e saída real TS→Rust→TS; n
 ativação do sidecar no produto nem prova de provider/PCM/ASR.
 Resolver isolado limita o executável ao slot exato dev/empacotado por plataforma e
 arquitetura, canonicaliza e retorna indisponível quando ausente, sem busca em PATH.
+Gerador isolado usa valores aleatórios distintos de192bits para session/nonce; nonce
+continua correlação e não substitui ACL/autenticação do SO.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.
