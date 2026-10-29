@@ -49,6 +49,21 @@ describe("speech sidecar WAV probe service v0", () => {
 		expect(run).not.toHaveBeenCalled();
 	});
 
+	it("revalidates executable containment immediately before the real runner", async () => {
+		const exec = vi.fn();
+		let executableChecks = 0;
+		const changed = options(true);
+		changed.executable.canonicalize = (candidate: string) => {
+			if (!candidate.endsWith("openscreen-speech-sidecar.exe")) return candidate;
+			executableChecks += 1;
+			return executableChecks === 1 ? candidate : path.resolve("private", "escaped.exe");
+		};
+		await expect(probeSpeechSidecarWaveResourceV0({ ...changed, exec })).rejects.toThrow(
+			"speech-sidecar-wave-probe-runner-v0:path",
+		);
+		expect(exec).not.toHaveBeenCalled();
+	});
+
 	it("passes the resolved resource and caller-authorized WAV to the bounded runner", async () => {
 		const result = {
 			version: 0 as const,
