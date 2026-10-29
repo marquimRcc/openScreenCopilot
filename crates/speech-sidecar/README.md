@@ -19,6 +19,8 @@ PCM or a transcript. It does not run through the handshake and grants no new pat
 authorization; callers must already trust and canonicalize the supplied path.
 The isolated TypeScript parser accepts only the exact probe schema, supported
 rates and canonical counters within the same 1,048,576-sample ceiling.
+The isolated main-process runner canonicalizes both caller-authorized paths,
+executes without a shell, and caps time/output before parsing the single reply.
 
 `contracts/copilot/speech-sidecar.v0.fixture.json` is serialized by a Rust test
 and parsed by the isolated main-only TypeScript parser
