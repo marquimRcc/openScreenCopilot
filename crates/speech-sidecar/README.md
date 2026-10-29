@@ -17,6 +17,8 @@ The separate diagnostic mode `--probe-wave <host-authorized-path>` exercises the
 bounded core WAV decoder/downmix/16k normalizer and emits only rates/counts, never
 PCM or a transcript. It does not run through the handshake and grants no new path
 authorization; callers must already trust and canonicalize the supplied path.
+The isolated TypeScript parser accepts only the exact probe schema, supported
+rates and canonical counters within the same 1,048,576-sample ceiling.
 
 `contracts/copilot/speech-sidecar.v0.fixture.json` is serialized by a Rust test
 and parsed by the isolated main-only TypeScript parser

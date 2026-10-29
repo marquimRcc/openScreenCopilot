@@ -219,6 +219,8 @@ copiando somente o executável; ainda não participa dos builds oficiais.
 Sidecar ganhou modo diagnóstico separado de WAV autorizado pelo host: normaliza
 arquivo limitado para16k e devolve somente metadados, com1teste Rust. Não produz
 transcrição, não integra provider e não aceita caminho pelo protocolo runtime.
+Parser TS estrito desses metadados tem3testes de schema/rates/counters/teto; ainda
+não há comando Electron que forneça caminhos ao probe.
 Factory dormente tem2testes e compõe resolver/launcher, retornando indisponível sem
 spawn quando o recurso falta; ainda não referenciada pelo startup.
 Conclusão técnica:

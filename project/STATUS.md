@@ -259,6 +259,8 @@ staging no slot win32-x64; não encadeado ao empacotamento oficial.
 Filtros electron-builder excluem explicitamente o sidecar draft em win/mac/linux,
 impedindo inclusão acidental antes dos gates de licença/privacidade/pacote.
 Teste de segurança de distribuição fixa as três exclusões para impedir regressão silenciosa.
+Probe WAV isolado tem1teste Rust e parser de resultado TS tem3testes; normaliza
+arquivo autorizado para16k e expõe só contagens, sem transcript/provider/runtime.
 Factory dormente acrescenta2testes de composição resolver/launcher e retorna null
 sem spawn quando ausente; não ligada ao startup/runtime de gravação.
 Identidade host acrescenta2testes e deriva session/nonce distintos de192bits;
