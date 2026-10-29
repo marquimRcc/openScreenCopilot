@@ -7,8 +7,8 @@ import { runSpeechSidecarWaveProbeV0 } from "./speechSidecarWaveProbeRunnerV0";
 
 const executable = process.env.OPENSCREEN_SPEECH_SIDECAR_V0;
 
-async function writePcm16Wave(sampleRate: number, sampleCount: number): Promise<string> {
-	const dataBytes = sampleCount * 2;
+async function writePcm16Wave(sampleRate: number, samples: Int16Array): Promise<string> {
+	const dataBytes = samples.length * 2;
 	const wave = Buffer.alloc(44 + dataBytes);
 	wave.write("RIFF", 0);
 	wave.writeUInt32LE(36 + dataBytes, 4);
@@ -22,6 +22,9 @@ async function writePcm16Wave(sampleRate: number, sampleCount: number): Promise<
 	wave.writeUInt16LE(16, 34);
 	wave.write("data", 36);
 	wave.writeUInt32LE(dataBytes, 40);
+	for (let index = 0; index < samples.length; index++) {
+		wave.writeInt16LE(samples[index] ?? 0, 44 + index * 2);
+	}
 	const directory = await mkdtemp(path.join(tmpdir(), "openscreen-probe-integration-"));
 	const filename = path.join(directory, "audio.wav");
 	await writeFile(filename, wave);
@@ -61,7 +64,7 @@ describe.runIf(executable)("speech sidecar WAV probe v0 process integration", ()
 	});
 
 	it("crosses the real 48 kHz resampling boundary", async () => {
-		const wave = await writePcm16Wave(48_000, 4_800);
+		const wave = await writePcm16Wave(48_000, new Int16Array(4_800));
 		try {
 			const result = await runSpeechSidecarWaveProbeV0({
 				authorizedExecutablePath: executable!,
@@ -74,6 +77,28 @@ describe.runIf(executable)("speech sidecar WAV probe v0 process integration", ()
 			expect(result.activityFrames).toBe("10");
 			expect(result.activityStarts).toBe("0");
 			expect(result.activityAtEnd).toBe(false);
+		} finally {
+			await cleanupWav(wave);
+		}
+	});
+
+	it("reports real start, stop and unpadded tail accounting", async () => {
+		const samples = new Int16Array(961);
+		samples.fill(8_192, 160, 480);
+		samples[960] = 16_384;
+		const wave = await writePcm16Wave(16_000, samples);
+		try {
+			const result = await runSpeechSidecarWaveProbeV0({
+				authorizedExecutablePath: executable!,
+				authorizedWavePath: wave,
+			});
+			expect(result).toMatchObject({
+				activityFrames: "6",
+				activityStarts: "1",
+				activityStops: "1",
+				activityTailSamples: 1,
+				activityAtEnd: false,
+			});
 		} finally {
 			await cleanupWav(wave);
 		}

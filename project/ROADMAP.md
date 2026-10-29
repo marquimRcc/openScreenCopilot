@@ -225,9 +225,10 @@ Parser TS estrito desses metadados tem4testes de schema/rates/counters/teto e
 consistência das transições/cauda; ainda não há comando Electron público que forneça
 caminhos ao probe.
 Runner main-only isolado tem3testes, canonicaliza binário+WAV autorizados, usa
-shell=false, timeout5s e stdout máximo4KiB. Integração opt-in adicional tem2testes
-com WAVs temporários16k/48k e processo Rust release reais, incluindo o resampler;
-mantém skip sem executável absoluto e ainda não está exposto por IPC/UI.
+shell=false, timeout5s e stdout máximo4KiB. Integração opt-in adicional tem3testes
+com WAVs temporários16k/48k e processo Rust release reais, incluindo resampler e
+transições start/stop/cauda sem padding; mantém skip sem executável absoluto e ainda
+não está exposto por IPC/UI.
 Serviço dormente de probe tem2testes e compõe resolver+runner sem spawn quando o recurso
 não existe; não é referenciado pelo startup nem amplia autorização do caminho WAV.
 Factory dormente tem2testes e compõe resolver/launcher, retornando indisponível sem
