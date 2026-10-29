@@ -57,7 +57,8 @@ describe("speech sidecar service v0", () => {
 		const service = createSpeechSidecarServiceV0({
 			...base,
 			exists: () => true,
-			canonicalize: () => canonical,
+			canonicalize: (candidate) =>
+				candidate.endsWith("openscreen-speech-sidecar.exe") ? canonical : candidate,
 			spawn,
 		});
 		expect(service?.state).toBe("awaiting-ready");
