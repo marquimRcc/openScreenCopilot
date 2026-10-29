@@ -63,14 +63,14 @@ describe.runIf(executable)("speech sidecar WAV probe v0 process integration", ()
 		}
 	});
 
-	it("crosses the real 48 kHz resampling boundary", async () => {
-		const wave = await writePcm16Wave(48_000, new Int16Array(4_800));
+	it.each([44_100, 48_000] as const)("crosses the real %i Hz resampling boundary", async (rate) => {
+		const wave = await writePcm16Wave(rate, new Int16Array(rate / 10));
 		try {
 			const result = await runSpeechSidecarWaveProbeV0({
 				authorizedExecutablePath: executable!,
 				authorizedWavePath: wave,
 			});
-			expect(result.sourceRate).toBe(48_000);
+			expect(result.sourceRate).toBe(rate);
 			expect(result.sampleRate).toBe(16_000);
 			expect(result.samples).toBe("1600");
 			expect(Number(result.availabilityDelayFrames)).toBeGreaterThan(0);

@@ -264,8 +264,8 @@ Probe WAV isolado tem2testes Rust e parser de resultado TS tem4testes; normaliza
 arquivo autorizado para16k, passa somente frames completos de10ms pelo gate RMS
 diagnóstico e expõe só contagens/cauda/estado, sem transcript/provider/runtime.
 Runner TS do probe tem3testes de paths canônicos, shell off, timeout/output limitados
-e falhas estáveis. Integração opt-in adicional tem3testes reais com WAVs temporários
-16k e48k, cruza o resampler e confirma start/stop/cauda sem padding; usa binário Rust
+e falhas estáveis. Integração opt-in adicional tem4casos reais com WAVs temporários
+16k,44,1k e48k, cruza ambos resamplers e confirma start/stop/cauda sem padding; usa binário Rust
 release e limpa os arquivos, fica skip sem path absoluto explícito e continua não
 conectada a IPC/UI/captura.
 Serviço dormente de probe acrescenta2testes: resolve somente o slot de recurso previsto,
