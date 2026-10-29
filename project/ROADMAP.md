@@ -216,6 +216,9 @@ Resolver de recurso tem3testes para slots dev/package win/mac/linux e ausência
 fail-closed; build/staging do binário em cada plataforma continua pendente.
 Script de staging tem2testes e executou build release offline/locked no Windows,
 copiando somente o executável; ainda não participa dos builds oficiais.
+Sidecar ganhou modo diagnóstico separado de WAV autorizado pelo host: normaliza
+arquivo limitado para16k e devolve somente metadados, com1teste Rust. Não produz
+transcrição, não integra provider e não aceita caminho pelo protocolo runtime.
 Factory dormente tem2testes e compõe resolver/launcher, retornando indisponível sem
 spawn quando o recurso falta; ainda não referenciada pelo startup.
 Conclusão técnica:

@@ -266,6 +266,8 @@ continua sem alegar autenticação ou substituir ACL.
 Factory agora totaliza3testes e usa essa identidade forte por padrão quando omitida.
 Shutdown host deriva por padrão o próximo u64 checked; protocolo totaliza8testes e
 recusa overflow antes de escrever no pipe.
+Sidecar soma1teste Rust (6total) para `--probe-wave`: WAV host-autorizado limitado
+normaliza a16k e emite só contagens/taxas; sem PCM stdout, transcript/provider/runtime.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.

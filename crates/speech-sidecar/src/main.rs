@@ -1,9 +1,18 @@
 mod protocol;
+mod wave_probe;
 
 use std::io::{Read, Write};
+use std::path::Path;
 
 use openscreen_speech_core::control_lines::{ControlLineDecoder, MAX_CONTROL_LINE_BYTES};
 use protocol::{ProtocolReply, ProtocolState};
+
+fn run_wave_probe(path: &Path) -> Result<(), &'static str> {
+    let result = wave_probe::probe_wave(path)?;
+    serde_json::to_writer(std::io::stdout().lock(), &result).map_err(|_| "write")?;
+    println!();
+    Ok(())
+}
 
 fn run() -> Result<(), &'static str> {
     let mut decoder = ControlLineDecoder::new(MAX_CONTROL_LINE_BYTES).map_err(|_| "decoder")?;
@@ -45,7 +54,15 @@ fn run() -> Result<(), &'static str> {
 }
 
 fn main() {
-    if let Err(code) = run() {
+    let args: Vec<_> = std::env::args_os().collect();
+    let result = if args.len() == 3 && args[1] == "--probe-wave" {
+        run_wave_probe(Path::new(&args[2]))
+    } else if args.len() == 1 {
+        run()
+    } else {
+        Err("arguments")
+    };
+    if let Err(code) = result {
         eprintln!("speech-sidecar stopped: {code}");
         std::process::exit(2);
     }
