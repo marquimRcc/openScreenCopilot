@@ -225,6 +225,8 @@ Runner main-only isolado tem3testes, canonicaliza binário+WAV autorizados, usa
 shell=false, timeout5s e stdout máximo4KiB. Integração opt-in adicional passou com
 WAV temporário16k e processo Rust release reais, mantendo skip sem executável absoluto;
 ainda não exposto por IPC/UI.
+Serviço dormente de probe tem2testes e compõe resolver+runner sem spawn quando o recurso
+não existe; não é referenciado pelo startup nem amplia autorização do caminho WAV.
 Factory dormente tem2testes e compõe resolver/launcher, retornando indisponível sem
 spawn quando o recurso falta; ainda não referenciada pelo startup.
 Conclusão técnica:

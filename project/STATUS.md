@@ -265,6 +265,9 @@ Runner TS do probe tem3testes de paths canônicos, shell off, timeout/output lim
 e falhas estáveis. Integração opt-in adicional passou com WAV temporário16k real,
 binário Rust release e limpeza do arquivo; fica skip sem path absoluto explícito e
 continua não conectada a IPC/UI/captura.
+Serviço dormente de probe acrescenta2testes: resolve somente o slot de recurso previsto,
+não cria processo quando ausente e encaminha o WAV explicitamente autorizado ao runner;
+também não é referenciado pelo startup/IPC/UI.
 Factory dormente acrescenta2testes de composição resolver/launcher e retorna null
 sem spawn quando ausente; não ligada ao startup/runtime de gravação.
 Identidade host acrescenta2testes e deriva session/nonce distintos de192bits;
