@@ -1,3 +1,4 @@
+import path from "node:path";
 import {
 	resolveSpeechSidecarExecutableV0,
 	type SpeechSidecarExecutableV0Options,
@@ -29,6 +30,11 @@ export function createSpeechSidecarServiceV0(
 		...options,
 		identity: options.identity ?? createSpeechSidecarIdentityV0(),
 		authorizedExecutablePath: executable,
-		canonicalize: (candidate) => candidate,
+		canonicalize: (candidate) => {
+			const recanonical = options.canonicalize(candidate);
+			if (path.dirname(recanonical) !== path.dirname(executable))
+				throw new Error("resource-escape");
+			return recanonical;
+		},
 	});
 }

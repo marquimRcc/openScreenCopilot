@@ -276,8 +276,8 @@ Factory dormente acrescenta2testes de composição resolver/launcher e retorna n
 sem spawn quando ausente; não ligada ao startup/runtime de gravação.
 Identidade host acrescenta2testes e deriva session/nonce distintos de192bits;
 continua sem alegar autenticação ou substituir ACL.
-Factory agora totaliza4testes, recusa escape canônico sem spawn e usa essa identidade
-forte por padrão quando omitida.
+Factory agora totaliza5testes, recusa escape canônico sem spawn, revalida contenção
+imediatamente antes do spawn e usa identidade forte por padrão quando omitida.
 Shutdown host deriva por padrão o próximo u64 checked; protocolo totaliza8testes e
 recusa overflow antes de escrever no pipe.
 Sidecar soma2testes Rust (7total) para `--probe-wave`: WAV host-autorizado limitado

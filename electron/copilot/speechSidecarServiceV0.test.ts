@@ -59,6 +59,24 @@ describe("speech sidecar service v0", () => {
 		expect(spawn).not.toHaveBeenCalled();
 	});
 
+	it("revalidates containment immediately before spawning", () => {
+		const spawn = vi.fn<SpeechSidecarSpawnV0>(() => new FakeProcess());
+		let executableChecks = 0;
+		expect(() =>
+			createSpeechSidecarServiceV0({
+				...base,
+				exists: () => true,
+				canonicalize: (candidate) => {
+					if (!candidate.endsWith("openscreen-speech-sidecar.exe")) return candidate;
+					executableChecks += 1;
+					return executableChecks === 1 ? candidate : path.resolve("private", "escaped.exe");
+				},
+				spawn,
+			}),
+		).toThrow("speech-sidecar-launch-v0:path");
+		expect(spawn).not.toHaveBeenCalled();
+	});
+
 	it("launches only the canonical resource selected by the resolver", () => {
 		const proc = new FakeProcess();
 		const spawn = vi.fn<SpeechSidecarSpawnV0>(() => proc);

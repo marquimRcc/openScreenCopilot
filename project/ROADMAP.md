@@ -231,8 +231,9 @@ transições start/stop/cauda sem padding; mantém skip sem executável absoluto
 não está exposto por IPC/UI.
 Serviço dormente de probe tem3testes e compõe resolver+runner sem spawn quando o recurso
 não existe ou escapa do slot; não é referenciado pelo startup nem amplia autorização do caminho WAV.
-Factory dormente totaliza4testes e compõe resolver/launcher, retornando indisponível sem
-spawn quando o recurso falta/escapa e usando identidade forte; ainda não referenciada pelo startup.
+Factory dormente totaliza5testes e compõe resolver/launcher, retornando indisponível sem
+spawn quando o recurso falta/escapa, revalidando contenção antes do spawn e usando
+identidade forte; ainda não referenciada pelo startup.
 Conclusão técnica:
 session_ingress e session_decoder não implementados
 para evitar duplicação de AudioDecoderV0 (dono da continuidade por fonte), ExpectedStream e
