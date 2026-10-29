@@ -262,7 +262,9 @@ Teste de segurança de distribuição fixa as três exclusões para impedir regr
 Probe WAV isolado tem1teste Rust e parser de resultado TS tem3testes; normaliza
 arquivo autorizado para16k e expõe só contagens, sem transcript/provider/runtime.
 Runner TS do probe tem3testes de paths canônicos, shell off, timeout/output limitados
-e falhas estáveis; não conectado a IPC/UI/captura.
+e falhas estáveis. Integração opt-in adicional passou com WAV temporário16k real,
+binário Rust release e limpeza do arquivo; fica skip sem path absoluto explícito e
+continua não conectada a IPC/UI/captura.
 Factory dormente acrescenta2testes de composição resolver/launcher e retorna null
 sem spawn quando ausente; não ligada ao startup/runtime de gravação.
 Identidade host acrescenta2testes e deriva session/nonce distintos de192bits;

@@ -222,7 +222,9 @@ transcrição, não integra provider e não aceita caminho pelo protocolo runtim
 Parser TS estrito desses metadados tem3testes de schema/rates/counters/teto; ainda
 não há comando Electron que forneça caminhos ao probe.
 Runner main-only isolado tem3testes, canonicaliza binário+WAV autorizados, usa
-shell=false, timeout5s e stdout máximo4KiB; ainda não exposto por IPC/UI.
+shell=false, timeout5s e stdout máximo4KiB. Integração opt-in adicional passou com
+WAV temporário16k e processo Rust release reais, mantendo skip sem executável absoluto;
+ainda não exposto por IPC/UI.
 Factory dormente tem2testes e compõe resolver/launcher, retornando indisponível sem
 spawn quando o recurso falta; ainda não referenciada pelo startup.
 Conclusão técnica:
