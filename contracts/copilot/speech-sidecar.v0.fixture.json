@@ -1,19 +1,19 @@
 {
-  "ready": {
-    "type": "ready",
-    "version": 0,
-    "sessionId": "fixture_session",
-    "seq": "0",
-    "capabilities": {
-      "audioDescriptorVersion": 0,
-      "maxControlLineBytes": 1048576,
-      "providerAvailable": false
-    }
-  },
-  "completed": {
-    "type": "completed",
-    "version": 0,
-    "sessionId": "fixture_session",
-    "seq": "1"
-  }
+	"ready": {
+		"type": "ready",
+		"version": 0,
+		"sessionId": "fixture_session",
+		"seq": "0",
+		"capabilities": {
+			"audioDescriptorVersion": 0,
+			"maxControlLineBytes": 1048576,
+			"providerAvailable": false
+		}
+	},
+	"completed": {
+		"type": "completed",
+		"version": 0,
+		"sessionId": "fixture_session",
+		"seq": "1"
+	}
 }
