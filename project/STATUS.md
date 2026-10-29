@@ -269,14 +269,15 @@ e falhas estáveis. Integração opt-in adicional tem4casos reais com WAVs tempo
 16k,44,1k e48k, cruza ambos resamplers e confirma start/stop/cauda sem padding; usa binário Rust
 release e limpa os arquivos, fica skip sem path absoluto explícito e continua não
 conectada a IPC/UI/captura.
-Serviço dormente de probe acrescenta2testes: resolve somente o slot de recurso previsto,
-não cria processo quando ausente e encaminha o WAV explicitamente autorizado ao runner;
+Serviço dormente de probe totaliza3testes: resolve somente o slot de recurso previsto,
+não cria processo quando ausente/escapa e encaminha o WAV explicitamente autorizado ao runner;
 também não é referenciado pelo startup/IPC/UI.
 Factory dormente acrescenta2testes de composição resolver/launcher e retorna null
 sem spawn quando ausente; não ligada ao startup/runtime de gravação.
 Identidade host acrescenta2testes e deriva session/nonce distintos de192bits;
 continua sem alegar autenticação ou substituir ACL.
-Factory agora totaliza3testes e usa essa identidade forte por padrão quando omitida.
+Factory agora totaliza4testes, recusa escape canônico sem spawn e usa essa identidade
+forte por padrão quando omitida.
 Shutdown host deriva por padrão o próximo u64 checked; protocolo totaliza8testes e
 recusa overflow antes de escrever no pipe.
 Sidecar soma2testes Rust (7total) para `--probe-wave`: WAV host-autorizado limitado

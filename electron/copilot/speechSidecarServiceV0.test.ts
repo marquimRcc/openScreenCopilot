@@ -43,6 +43,22 @@ describe("speech sidecar service v0", () => {
 		expect(spawn).not.toHaveBeenCalled();
 	});
 
+	it("does not spawn when the staged resource canonicalizes outside its slot", () => {
+		const spawn = vi.fn<SpeechSidecarSpawnV0>(() => new FakeProcess());
+		expect(
+			createSpeechSidecarServiceV0({
+				...base,
+				exists: () => true,
+				canonicalize: (candidate) =>
+					candidate.endsWith("openscreen-speech-sidecar.exe")
+						? path.resolve("private", "escaped.exe")
+						: candidate,
+				spawn,
+			}),
+		).toBeNull();
+		expect(spawn).not.toHaveBeenCalled();
+	});
+
 	it("launches only the canonical resource selected by the resolver", () => {
 		const proc = new FakeProcess();
 		const spawn = vi.fn<SpeechSidecarSpawnV0>(() => proc);

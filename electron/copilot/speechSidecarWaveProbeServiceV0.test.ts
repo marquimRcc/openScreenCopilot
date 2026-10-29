@@ -39,6 +39,16 @@ describe("speech sidecar WAV probe service v0", () => {
 		expect(run).not.toHaveBeenCalled();
 	});
 
+	it("does not run when the staged resource canonicalizes outside its slot", async () => {
+		const run = vi.fn<SpeechSidecarWaveProbeRunV0>();
+		const escaped = path.resolve("private", "escaped.exe");
+		const unsafe = options(true);
+		unsafe.executable.canonicalize = (candidate: string) =>
+			candidate.endsWith("openscreen-speech-sidecar.exe") ? escaped : candidate;
+		await expect(probeSpeechSidecarWaveResourceV0({ ...unsafe, run })).resolves.toBeNull();
+		expect(run).not.toHaveBeenCalled();
+	});
+
 	it("passes the resolved resource and caller-authorized WAV to the bounded runner", async () => {
 		const result = {
 			version: 0 as const,
