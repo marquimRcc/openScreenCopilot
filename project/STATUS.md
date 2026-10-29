@@ -262,7 +262,8 @@ impedindo inclusão acidental antes dos gates de licença/privacidade/pacote.
 Teste de segurança de distribuição fixa as três exclusões para impedir regressão silenciosa.
 Probe WAV isolado tem2testes Rust e parser de resultado TS tem4testes; normaliza
 arquivo autorizado para16k, passa somente frames completos de10ms pelo gate RMS
-diagnóstico e expõe só contagens/cauda/estado, sem transcript/provider/runtime.
+diagnóstico e expõe só contagens/cauda/estado. Fixture JSON compartilhada confere
+serialização Rust e parser TS mesmo sem binário opt-in; sem transcript/provider/runtime.
 Runner TS do probe tem3testes de paths canônicos, shell off, timeout/output limitados
 e falhas estáveis. Integração opt-in adicional tem4casos reais com WAVs temporários
 16k,44,1k e48k, cruza ambos resamplers e confirma start/stop/cauda sem padding; usa binário Rust

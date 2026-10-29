@@ -222,8 +222,8 @@ arquivo limitado para16k, mede frames completos de10ms com o gate RMS determiní
 e devolve somente metadados, com2testes Rust. Não produz transcrição, não é VAD
 semântico, não integra provider e não aceita caminho pelo protocolo runtime.
 Parser TS estrito desses metadados tem4testes de schema/rates/counters/teto e
-consistência das transições/cauda; ainda não há comando Electron público que forneça
-caminhos ao probe.
+consistência das transições/cauda; fixture compartilhada fixa Rust↔TS sem depender
+do teste opt-in. Ainda não há comando Electron público que forneça caminhos ao probe.
 Runner main-only isolado tem3testes, canonicaliza binário+WAV autorizados, usa
 shell=false, timeout5s e stdout máximo4KiB. Integração opt-in adicional tem4casos
 com WAVs temporários16k/44,1k/48k e processo Rust release reais, incluindo ambos resamplers e

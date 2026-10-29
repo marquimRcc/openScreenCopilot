@@ -1,24 +1,16 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
 	parseSpeechSidecarWaveProbeV0,
 	SpeechSidecarWaveProbeV0Error,
 } from "./speechSidecarWaveProbeV0";
 
-const valid = {
-	version: 0,
-	kind: "wave.normalized",
-	sourceRate: 48_000,
-	sampleRate: 16_000,
-	samples: "32000",
-	availabilityDelayFrames: "42",
-	activityGate: "energy-rms-diagnostic-v0",
-	activityFrameSamples: 160,
-	activityFrames: "200",
-	activityStarts: "1",
-	activityStops: "0",
-	activityTailSamples: 0,
-	activityAtEnd: true,
-};
+const valid = JSON.parse(
+	readFileSync(
+		new URL("../../contracts/copilot/speech-sidecar-wave-probe.v0.fixture.json", import.meta.url),
+		"utf8",
+	),
+) as Record<string, unknown>;
 
 describe("speech sidecar wave probe v0", () => {
 	it("parses and freezes bounded normalization metadata", () => {
@@ -53,7 +45,7 @@ describe("speech sidecar wave probe v0", () => {
 			{ activityStarts: "2" },
 			{ activityStops: "1" },
 			{ activityTailSamples: 160 },
-			{ activityAtEnd: false },
+			{ activityAtEnd: true },
 		]) {
 			expect(() => parseSpeechSidecarWaveProbeV0(JSON.stringify({ ...valid, ...change }))).toThrow(
 				SpeechSidecarWaveProbeV0Error,

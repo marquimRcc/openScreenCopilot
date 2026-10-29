@@ -23,6 +23,9 @@ authorization; callers must already trust and canonicalize the supplied path.
 The isolated TypeScript parser accepts only the exact probe schema, supported
 rates, internally consistent activity accounting and canonical counters within the
 same 1,048,576-sample ceiling.
+Rust serialization and the TypeScript parser share
+`contracts/copilot/speech-sidecar-wave-probe.v0.fixture.json`, so the default test
+suite detects schema drift without requiring an opt-in executable.
 The isolated main-process runner canonicalizes both caller-authorized paths,
 executes without a shell, and caps time/output before parsing the single reply.
 

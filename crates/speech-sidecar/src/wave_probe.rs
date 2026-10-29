@@ -118,6 +118,11 @@ mod tests {
         assert_eq!(result.activity_frames, "0");
         assert_eq!(result.activity_tail_samples, 1);
         assert!(!result.activity_at_end);
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../contracts/copilot/speech-sidecar-wave-probe.v0.fixture.json"
+        ))
+        .unwrap();
+        assert_eq!(serde_json::to_value(&result).unwrap(), fixture);
     }
 
     #[test]
