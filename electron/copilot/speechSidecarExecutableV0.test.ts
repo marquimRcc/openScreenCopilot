@@ -65,4 +65,20 @@ describe("speech sidecar executable v0", () => {
 			}),
 		).toBeNull();
 	});
+
+	it("rejects a resource symlink that canonicalizes outside its platform slot", () => {
+		const escaped = path.resolve("private", "untrusted", "sidecar.exe");
+		expect(
+			resolveSpeechSidecarExecutableV0({
+				isPackaged: false,
+				resourcesPath: path.resolve("unused"),
+				appPath: root,
+				platform: "win32",
+				arch: "x64",
+				exists: () => true,
+				canonicalize: (candidate) =>
+					candidate.endsWith("openscreen-speech-sidecar.exe") ? escaped : candidate,
+			}),
+		).toBeNull();
+	});
 });

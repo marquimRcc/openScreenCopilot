@@ -22,11 +22,14 @@ export function resolveSpeechSidecarExecutableV0(
 	const root = options.isPackaged ? options.resourcesPath : options.appPath;
 	const candidate = path.join(root, "electron", "native", "bin", tag, filename);
 	if (!path.isAbsolute(candidate) || !options.exists(candidate)) return null;
+	let canonicalDirectory: string;
 	let canonical: string;
 	try {
+		canonicalDirectory = options.canonicalize(path.dirname(candidate));
 		canonical = options.canonicalize(candidate);
 	} catch {
 		return null;
 	}
-	return path.isAbsolute(canonical) ? canonical : null;
+	if (!path.isAbsolute(canonicalDirectory) || !path.isAbsolute(canonical)) return null;
+	return path.dirname(canonical) === canonicalDirectory ? canonical : null;
 }

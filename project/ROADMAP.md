@@ -212,8 +212,9 @@ de ownership). Sem integração no startup, path empacotado, pipe PCM, ACL, VAD
 semântico, provider ou engine.
 Um teste de integração Vitest opt-in também conclui handshake real TS→binárioRust,
 shutdown e exit0 observado; fica skip sem path absoluto fornecido explicitamente.
-Resolver de recurso tem3testes para slots dev/package win/mac/linux e ausência
-fail-closed; build/staging do binário em cada plataforma continua pendente.
+Resolver de recurso tem4testes para slots dev/package win/mac/linux, ausência
+fail-closed e rejeição de symlink que escape do diretório canônico da plataforma;
+build/staging do binário em cada plataforma continua pendente.
 Script de staging tem2testes e executou build release offline/locked no Windows,
 copiando somente o executável; ainda não participa dos builds oficiais.
 Sidecar ganhou modo diagnóstico separado de WAV autorizado pelo host: normaliza
