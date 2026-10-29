@@ -229,9 +229,10 @@ shell=false, timeout5s e stdout máximo4KiB. Integração opt-in adicional tem4c
 com WAVs temporários16k/44,1k/48k e processo Rust release reais, incluindo ambos resamplers e
 transições start/stop/cauda sem padding; mantém skip sem executável absoluto e ainda
 não está exposto por IPC/UI.
-Serviço dormente de probe tem4testes e compõe resolver+runner sem spawn quando o recurso
+Serviço dormente de probe tem5testes e compõe resolver+runner sem spawn quando o recurso
 não existe/escapa, revalidando contenção imediatamente antes do runner; não é referenciado
-pelo startup nem amplia autorização do caminho WAV.
+pelo startup nem amplia autorização do caminho WAV. O caminho default limitado+parser
+é coberto com executor falso e arquivo temporário canônico.
 Factory dormente totaliza5testes e compõe resolver/launcher, retornando indisponível sem
 spawn quando o recurso falta/escapa, revalidando contenção antes do spawn e usando
 identidade forte; ainda não referenciada pelo startup.

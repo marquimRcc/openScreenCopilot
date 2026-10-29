@@ -1,3 +1,5 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -16,6 +18,21 @@ const executable = path.join(
 	"win32-x64",
 	"openscreen-speech-sidecar.exe",
 );
+const probeResult = {
+	version: 0 as const,
+	kind: "wave.normalized" as const,
+	sourceRate: 16_000 as const,
+	sampleRate: 16_000 as const,
+	samples: "1600",
+	availabilityDelayFrames: "0",
+	activityGate: "energy-rms-diagnostic-v0" as const,
+	activityFrameSamples: 160 as const,
+	activityFrames: "10",
+	activityStarts: "0",
+	activityStops: "0",
+	activityTailSamples: 0,
+	activityAtEnd: false,
+};
 
 function options(exists: boolean) {
 	return {
@@ -65,26 +82,37 @@ describe("speech sidecar WAV probe service v0", () => {
 	});
 
 	it("passes the resolved resource and caller-authorized WAV to the bounded runner", async () => {
-		const result = {
-			version: 0 as const,
-			kind: "wave.normalized" as const,
-			sourceRate: 16_000 as const,
-			sampleRate: 16_000 as const,
-			samples: "1600",
-			availabilityDelayFrames: "0",
-			activityGate: "energy-rms-diagnostic-v0" as const,
-			activityFrameSamples: 160 as const,
-			activityFrames: "10",
-			activityStarts: "0",
-			activityStops: "0",
-			activityTailSamples: 0,
-			activityAtEnd: false,
-		};
-		const run = vi.fn<SpeechSidecarWaveProbeRunV0>(async () => result);
-		await expect(probeSpeechSidecarWaveResourceV0({ ...options(true), run })).resolves.toBe(result);
+		const run = vi.fn<SpeechSidecarWaveProbeRunV0>(async () => probeResult);
+		await expect(probeSpeechSidecarWaveResourceV0({ ...options(true), run })).resolves.toBe(
+			probeResult,
+		);
 		expect(run).toHaveBeenCalledWith({
 			authorizedExecutablePath: executable,
 			authorizedWavePath: wave,
 		});
+	});
+
+	it("runs the bounded parser path after successful resource revalidation", async () => {
+		const directory = mkdtempSync(path.join(tmpdir(), "openscreen-probe-service-"));
+		const authorizedWavePath = path.join(directory, "audio.wav");
+		writeFileSync(authorizedWavePath, "fixture");
+		const exec = vi.fn(async () => `${JSON.stringify(probeResult)}\n`);
+		try {
+			await expect(
+				probeSpeechSidecarWaveResourceV0({
+					...options(true),
+					authorizedWavePath,
+					exec,
+				}),
+			).resolves.toEqual(probeResult);
+			expect(exec).toHaveBeenCalledWith(executable, ["--probe-wave", authorizedWavePath], {
+				timeout: 5_000,
+				maxBuffer: 4_096,
+				windowsHide: true,
+				shell: false,
+			});
+		} finally {
+			rmSync(directory, { recursive: true, force: true });
+		}
 	});
 });

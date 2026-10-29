@@ -269,9 +269,10 @@ e falhas estáveis. Integração opt-in adicional tem4casos reais com WAVs tempo
 16k,44,1k e48k, cruza ambos resamplers e confirma start/stop/cauda sem padding; usa binário Rust
 release e limpa os arquivos, fica skip sem path absoluto explícito e continua não
 conectada a IPC/UI/captura.
-Serviço dormente de probe totaliza4testes: resolve somente o slot de recurso previsto,
+Serviço dormente de probe totaliza5testes: resolve somente o slot de recurso previsto,
 não cria processo quando ausente/escapa, revalida contenção antes do runner e encaminha
-o WAV explicitamente autorizado;
+o WAV explicitamente autorizado; o caminho default de execução limitada+parser também
+é exercitado sem processo real;
 também não é referenciado pelo startup/IPC/UI.
 Factory dormente acrescenta2testes de composição resolver/launcher e retorna null
 sem spawn quando ausente; não ligada ao startup/runtime de gravação.
