@@ -1,5 +1,25 @@
 # Plano passo a passo
 
+## Corte da primeira versão — 2026-10-29
+
+A primeira versão utilizável será **somente Windows** e terá como objetivo fechar um
+gravador estável com seleção de tela/janela/região, áudio, pausa/retomada, resultado
+pós-gravação, abertura no editor e exportação. O caminho crítico desta entrega é:
+
+1. concluir a homologação real das etapas 01/02 no Windows;
+2. corrigir apenas defeitos que bloqueiem esse fluxo;
+3. executar regressão, teste prolongado e validação do pacote;
+4. produzir um pacote reproduzível do fork, identificado como preview/teste até o
+   aceite final.
+
+As etapas 03–06, 08 e 09 não bloqueiam essa primeira versão. Isso inclui AV1,
+transcrição ao vivo, provider/engine ASR concreto, recuperação de transcrição,
+Copilot e Linux/RegataOS. A fundação já existente dessas etapas permanece preservada,
+mas novos incrementos nelas só começam depois do fechamento da versão Windows.
+GIF, Compartilhar e redução de ruído também permanecem no backlog.
+
+Esta decisão prevalece sobre as ordens históricas abaixo quando houver conflito.
+
 ## Ordem humana vigente — 2026-10-16
 
 Concluir e homologar gravação Windows (01/02); depois core/sidecar e transcrição

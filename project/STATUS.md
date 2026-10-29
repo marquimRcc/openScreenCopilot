@@ -1,5 +1,21 @@
 # Estado atual — openScreenCopilot
 
+## Decisão vigente — primeira versão Windows (2026-10-29)
+
+O corte atual é somente Windows. A próxima entrega não inclui transcrição ao vivo,
+provider ASR concreto, recuperação de transcrição, Copilot, AV1 nem Linux/RegataOS.
+Esses trabalhos permanecem preservados como backlog e não bloqueiam a versão inicial.
+
+Critério de fechamento: homologar o fluxo real tela/janela/região -> áudio de
+sistema/microfone -> pausa/retomada -> parar -> resultado salvo -> editor/exportação;
+corrigir os bloqueadores encontrados; executar regressão e gravação prolongada; e
+validar um pacote Windows reproduzível do fork. Até esse aceite, o pacote é preview/teste
+e não deve ser anunciado como release homologado.
+
+Próximo trabalho: consolidar a checklist de homologação 01/02, executar o fluxo real no
+Windows e registrar evidências. Não avançar 03–06/08/09 enquanto esse corte estiver ativo.
+Esta seção prevalece sobre prioridades históricas abaixo.
+
 Checkpoint operacional em 2026-10-19. Git e este arquivo são autoritativos.
 O registro anterior foi preservado INTEGRALMENTE em
 [STATUS-HISTORY-2026-10-15.md](STATUS-HISTORY-2026-10-15.md), mesmo blob Git
