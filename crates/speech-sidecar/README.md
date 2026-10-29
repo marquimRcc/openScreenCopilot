@@ -15,10 +15,14 @@ version0 is not frozen v1 and advertises no provider.
 
 The separate diagnostic mode `--probe-wave <host-authorized-path>` exercises the
 bounded core WAV decoder/downmix/16k normalizer and emits only rates/counts, never
-PCM or a transcript. It does not run through the handshake and grants no new path
+PCM or a transcript. Complete 10ms frames also pass through the fixed diagnostic
+RMS energy gate; the reply reports only transition counts, tail length and final
+state. This is signal activity, not semantic VAD or speech recognition. It does not
+pad an incomplete tail, run through the handshake or grant new path
 authorization; callers must already trust and canonicalize the supplied path.
 The isolated TypeScript parser accepts only the exact probe schema, supported
-rates and canonical counters within the same 1,048,576-sample ceiling.
+rates, internally consistent activity accounting and canonical counters within the
+same 1,048,576-sample ceiling.
 The isolated main-process runner canonicalizes both caller-authorized paths,
 executes without a shell, and caps time/output before parsing the single reply.
 

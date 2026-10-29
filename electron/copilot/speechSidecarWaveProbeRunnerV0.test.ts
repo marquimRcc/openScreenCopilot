@@ -15,6 +15,13 @@ const output = JSON.stringify({
 	sampleRate: 16_000,
 	samples: "32000",
 	availabilityDelayFrames: "42",
+	activityGate: "energy-rms-diagnostic-v0",
+	activityFrameSamples: 160,
+	activityFrames: "200",
+	activityStarts: "1",
+	activityStops: "0",
+	activityTailSamples: 0,
+	activityAtEnd: true,
 });
 
 describe("speech sidecar wave probe runner v0", () => {

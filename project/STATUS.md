@@ -260,8 +260,9 @@ staging no slot win32-x64; não encadeado ao empacotamento oficial.
 Filtros electron-builder excluem explicitamente o sidecar draft em win/mac/linux,
 impedindo inclusão acidental antes dos gates de licença/privacidade/pacote.
 Teste de segurança de distribuição fixa as três exclusões para impedir regressão silenciosa.
-Probe WAV isolado tem1teste Rust e parser de resultado TS tem3testes; normaliza
-arquivo autorizado para16k e expõe só contagens, sem transcript/provider/runtime.
+Probe WAV isolado tem2testes Rust e parser de resultado TS tem4testes; normaliza
+arquivo autorizado para16k, passa somente frames completos de10ms pelo gate RMS
+diagnóstico e expõe só contagens/cauda/estado, sem transcript/provider/runtime.
 Runner TS do probe tem3testes de paths canônicos, shell off, timeout/output limitados
 e falhas estáveis. Integração opt-in adicional tem2testes reais com WAVs temporários
 16k e48k, cruza o resampler, usa binário Rust release e limpa os arquivos; fica skip
@@ -276,8 +277,9 @@ continua sem alegar autenticação ou substituir ACL.
 Factory agora totaliza3testes e usa essa identidade forte por padrão quando omitida.
 Shutdown host deriva por padrão o próximo u64 checked; protocolo totaliza8testes e
 recusa overflow antes de escrever no pipe.
-Sidecar soma1teste Rust (6total) para `--probe-wave`: WAV host-autorizado limitado
-normaliza a16k e emite só contagens/taxas; sem PCM stdout, transcript/provider/runtime.
+Sidecar soma2testes Rust (7total) para `--probe-wave`: WAV host-autorizado limitado
+normaliza a16k, mede atividade energética determinística sem padding da cauda e emite
+só metadados; sem PCM stdout, VAD semântico, transcript/provider/runtime.
 Antes:3210ef93 (phase/DC),33094a84 (CI core),5b0dd5ef (janelas),
 5448f744 (provider interface),da483512 (falha/voz),348a0d4f (spike resampler).
 Git atual prevalece; reorganização documental posterior não muda runtime.

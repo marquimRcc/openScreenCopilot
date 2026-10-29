@@ -218,10 +218,12 @@ build/staging do binário em cada plataforma continua pendente.
 Script de staging tem2testes e executou build release offline/locked no Windows,
 copiando somente o executável; ainda não participa dos builds oficiais.
 Sidecar ganhou modo diagnóstico separado de WAV autorizado pelo host: normaliza
-arquivo limitado para16k e devolve somente metadados, com1teste Rust. Não produz
-transcrição, não integra provider e não aceita caminho pelo protocolo runtime.
-Parser TS estrito desses metadados tem3testes de schema/rates/counters/teto; ainda
-não há comando Electron que forneça caminhos ao probe.
+arquivo limitado para16k, mede frames completos de10ms com o gate RMS determinístico
+e devolve somente metadados, com2testes Rust. Não produz transcrição, não é VAD
+semântico, não integra provider e não aceita caminho pelo protocolo runtime.
+Parser TS estrito desses metadados tem4testes de schema/rates/counters/teto e
+consistência das transições/cauda; ainda não há comando Electron público que forneça
+caminhos ao probe.
 Runner main-only isolado tem3testes, canonicaliza binário+WAV autorizados, usa
 shell=false, timeout5s e stdout máximo4KiB. Integração opt-in adicional tem2testes
 com WAVs temporários16k/48k e processo Rust release reais, incluindo o resampler;

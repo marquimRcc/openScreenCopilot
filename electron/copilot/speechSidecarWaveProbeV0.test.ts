@@ -11,6 +11,13 @@ const valid = {
 	sampleRate: 16_000,
 	samples: "32000",
 	availabilityDelayFrames: "42",
+	activityGate: "energy-rms-diagnostic-v0",
+	activityFrameSamples: 160,
+	activityFrames: "200",
+	activityStarts: "1",
+	activityStops: "0",
+	activityTailSamples: 0,
+	activityAtEnd: true,
 };
 
 describe("speech sidecar wave probe v0", () => {
@@ -36,6 +43,20 @@ describe("speech sidecar wave probe v0", () => {
 		for (const samples of ["", "01", "-1", "1048577", 1]) {
 			expect(() => parseSpeechSidecarWaveProbeV0(JSON.stringify({ ...valid, samples }))).toThrow(
 				"speech-sidecar-wave-probe-v0:range",
+			);
+		}
+	});
+
+	it("rejects inconsistent activity accounting", () => {
+		for (const change of [
+			{ activityFrames: "199" },
+			{ activityStarts: "2" },
+			{ activityStops: "1" },
+			{ activityTailSamples: 160 },
+			{ activityAtEnd: false },
+		]) {
+			expect(() => parseSpeechSidecarWaveProbeV0(JSON.stringify({ ...valid, ...change }))).toThrow(
+				SpeechSidecarWaveProbeV0Error,
 			);
 		}
 	});

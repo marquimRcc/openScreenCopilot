@@ -47,6 +47,13 @@ describe("speech sidecar WAV probe service v0", () => {
 			sampleRate: 16_000 as const,
 			samples: "1600",
 			availabilityDelayFrames: "0",
+			activityGate: "energy-rms-diagnostic-v0" as const,
+			activityFrameSamples: 160 as const,
+			activityFrames: "10",
+			activityStarts: "0",
+			activityStops: "0",
+			activityTailSamples: 0,
+			activityAtEnd: false,
 		};
 		const run = vi.fn<SpeechSidecarWaveProbeRunV0>(async () => result);
 		await expect(probeSpeechSidecarWaveResourceV0({ ...options(true), run })).resolves.toBe(result);

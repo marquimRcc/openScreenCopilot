@@ -47,6 +47,13 @@ describe.runIf(executable)("speech sidecar WAV probe v0 process integration", ()
 				sampleRate: 16_000,
 				samples: "1600",
 				availabilityDelayFrames: "0",
+				activityGate: "energy-rms-diagnostic-v0",
+				activityFrameSamples: 160,
+				activityFrames: "10",
+				activityStarts: "1",
+				activityStops: "0",
+				activityTailSamples: 0,
+				activityAtEnd: true,
 			});
 		} finally {
 			await cleanupWav(wave);
@@ -64,6 +71,9 @@ describe.runIf(executable)("speech sidecar WAV probe v0 process integration", ()
 			expect(result.sampleRate).toBe(16_000);
 			expect(result.samples).toBe("1600");
 			expect(Number(result.availabilityDelayFrames)).toBeGreaterThan(0);
+			expect(result.activityFrames).toBe("10");
+			expect(result.activityStarts).toBe("0");
+			expect(result.activityAtEnd).toBe(false);
 		} finally {
 			await cleanupWav(wave);
 		}
