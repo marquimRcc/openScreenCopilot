@@ -729,6 +729,10 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
     MP4 258.582 bytes, SHA256 `2127A86690FC011EB517B8A49E486B14E96755A1FFB2D6904F698596A9C01CC6`.
     Ambos usaram WGC nativo/H.264 hardware e tiveram decode completo exit 0. O helper
     e cursor do pacote preservam respectivamente `811CD905…` e `40A1A89D…`.
+    Launch visual adicional do `win-unpacked` exibiu o HUD e todos os controles em
+    Português; abrir Studio foi recusado duas vezes pelo hit-test porque o HUD
+    transparente estava sobre o ChatGPT, sem clique forçado ou contorno. A instância
+    de QA foi fechada normalmente por Alt+F4 e seu desaparecimento foi confirmado.
   - Rebuild nativo x64 (30/10): `npm run build:native:win` terminou exit 0; região,
     timer, 177 testes de áudio, webcam, visibilidade, slot clock, 33 testes do encoder
     e source-close passaram. `wgc-capture.exe` recompilado, staged e empacotado têm o
