@@ -711,6 +711,24 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
     helper nativo, arquivo de mídia ou amostra de voz utilizável. Portanto isto é uma
     falha reproduzida do caminho CLI neste ambiente, não evidência acústica e não
     altera o microfone audível/independente para aprovado.
+  - Correção do caminho CLI (30/10, commit `ad0df93b`): a causa era a guarda de
+    ownership do IPC nativo aceitar os frames locais `hud-overlay` e `editor`, mas
+    não o frame local `cli-record`. A guarda continua exigindo origem local, frame
+    principal e o `webContents` atual da janela; somente a função local autorizada
+    foi acrescentada. O runner headless agora também propaga o erro real de startup,
+    em vez de substituí-lo por timeout. Suíte completa: 390 arquivos / 5.373 testes
+    aprovados, 2 arquivos / 10 testes ignorados; lint (26 avisos herdados), i18n,
+    docs e ambos os typechecks aprovados.
+  - Candidato final local de `ad0df93b`: `npm run build:win` exit 0, com
+    `release/0.1.0-alpha.1/win-unpacked` e instalador NÃO assinado/NÃO publicado
+    `openScreenCopilot.Setup.0.1.0-alpha.1-x64.exe` (186.735.958 bytes, SHA256
+    `700AA525615DDACE7C7A9087B6361C2D69761C0313AA0C47599E91EFFABAB8D9`).
+    Smoke do pacote: `--display 0 --duration 3 --cursor system` terminou em 3.168 ms,
+    MP4 613.914 bytes, SHA256 `1F82AC2E7873870E04BC12C271FAE91410E416011E05A88277D80DD524DE9523`;
+    `--window Notepad++ --duration 5 --cursor editable-overlay` terminou em 5.183 ms,
+    MP4 258.582 bytes, SHA256 `2127A86690FC011EB517B8A49E486B14E96755A1FFB2D6904F698596A9C01CC6`.
+    Ambos usaram WGC nativo/H.264 hardware e tiveram decode completo exit 0. O helper
+    e cursor do pacote preservam respectivamente `811CD905…` e `40A1A89D…`.
   - Rebuild nativo x64 (30/10): `npm run build:native:win` terminou exit 0; região,
     timer, 177 testes de áudio, webcam, visibilidade, slot clock, 33 testes do encoder
     e source-close passaram. `wgc-capture.exe` recompilado, staged e empacotado têm o
