@@ -100,6 +100,7 @@ export function CliRecordRunner() {
 	// remember it and apply as soon as recording flips on.
 	const stopRequestedRef = useRef(false);
 	const requestedPausedRef = useRef<boolean | null>(null);
+	const pauseTransitionTargetRef = useRef<boolean | null>(null);
 	const [status, setStatus] = useState("Preparing recording…");
 
 	const {
@@ -125,12 +126,27 @@ export function CliRecordRunner() {
 	const recordingRef = useRef(recording);
 	const pausedRef = useRef(paused);
 	const togglePausedRef = useRef(togglePaused);
+	const reconcilePauseRef = useRef<() => void>(() => undefined);
 	useEffect(() => {
 		toggleRecordingRef.current = toggleRecording;
 		recordingRef.current = recording;
 		pausedRef.current = paused;
 		togglePausedRef.current = togglePaused;
 	});
+	reconcilePauseRef.current = () => {
+		const target = requestedPausedRef.current;
+		if (
+			target === null ||
+			!recordingRef.current ||
+			phaseRef.current !== "recording" ||
+			pausedRef.current === target ||
+			pauseTransitionTargetRef.current !== null
+		) {
+			return;
+		}
+		pauseTransitionTargetRef.current = target;
+		togglePausedRef.current();
+	};
 
 	const fail = async (error: unknown) => {
 		phaseRef.current = "done";
@@ -274,11 +290,6 @@ export function CliRecordRunner() {
 				toggleRecordingRef.current();
 				return;
 			}
-			if (requestedPausedRef.current === true && !pausedRef.current) {
-				pausedRef.current = true;
-				togglePausedRef.current();
-			}
-
 			if (request?.durationMs) {
 				const timer = setTimeout(() => {
 					if (recordingRef.current && phaseRef.current === "recording") {
@@ -311,19 +322,20 @@ export function CliRecordRunner() {
 	useEffect(() => {
 		return window.electronAPI.onCliSetRecordingPaused((nextPaused) => {
 			requestedPausedRef.current = nextPaused;
-			if (
-				recordingRef.current &&
-				phaseRef.current === "recording" &&
-				pausedRef.current !== nextPaused
-			) {
-				// React publishes the real state on the next render. Mirror the command
-				// synchronously so `pause\nresume\n` arriving in one pipe read toggles
-				// twice instead of dropping resume against the stale render.
-				pausedRef.current = nextPaused;
-				togglePausedRef.current();
-			}
+			reconcilePauseRef.current();
 		});
 	}, []);
+
+	// `togglePaused` is asynchronous but intentionally exposes no Promise. Queue a
+	// newer desired state until React confirms the in-flight transition; this makes
+	// `pause\nresume\n` deterministic without sending two native pause commands.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: recording becoming true applies a command queued during startup
+	useEffect(() => {
+		if (pauseTransitionTargetRef.current === paused) {
+			pauseTransitionTargetRef.current = null;
+		}
+		reconcilePauseRef.current();
+	}, [paused, recording]);
 
 	// Completion: recording flipped off and the session finished saving.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: completion is keyed on recording/saving; fail is stable

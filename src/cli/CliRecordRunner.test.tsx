@@ -131,6 +131,9 @@ describe("CliRecordRunner", () => {
 		expect(recorder.togglePaused).toHaveBeenCalledOnce();
 
 		act(() => onCommand?.(false));
+		expect(recorder.togglePaused).toHaveBeenCalledOnce();
+		recorder.paused = true;
+		view.rerender(<CliRecordRunner />);
 		expect(recorder.togglePaused).toHaveBeenCalledTimes(2);
 		act(() => onCommand?.(false));
 		expect(recorder.togglePaused).toHaveBeenCalledTimes(2);
