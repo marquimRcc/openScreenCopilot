@@ -46,7 +46,7 @@ export function isWindowsAudioOutputFrameOwner(
 		const dev = process.env.VITE_DEV_SERVER_URL;
 		const local = url.protocol === "file:" || (dev && url.origin === new URL(dev).origin);
 		const role = url.searchParams.get("windowType");
-		return Boolean(local && (role === "hud-overlay" || role === "editor"));
+		return Boolean(local && (role === "hud-overlay" || role === "editor" || role === "cli-record"));
 	} catch {
 		return false;
 	}

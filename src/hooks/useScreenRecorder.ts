@@ -1842,6 +1842,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const startRecording = async (
 		countdownRunToken?: number,
 		preparedRecordingId?: number | null,
+		propagateFailure = false,
 	) => {
 		const platform = window.electronAPI.getPlatform();
 		const browserCursorCaptureMode = effectiveBrowserCursorMode(platform, cursorCaptureMode);
@@ -2187,6 +2188,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			screenRecorder.current = null;
 			webcamRecorder.current = null;
 			teardownMedia();
+			if (propagateFailure) throw error;
 		} finally {
 			if (attemptedWindowsBrowserCapture && !windowsBrowserCaptureStarted) {
 				try {
@@ -2534,7 +2536,10 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		saving,
 		elapsedSeconds,
 		toggleRecording,
-		startRecordingImmediately: () => startRecording(),
+		// Headless callers have no toast surface. Preserve the GUI's handled-error
+		// behaviour everywhere else, but let the CLI report the actual startup
+		// failure instead of waiting 30 seconds and replacing it with a timeout.
+		startRecordingImmediately: () => startRecording(undefined, undefined, true),
 		togglePaused,
 		canPauseRecording,
 		restartRecording,

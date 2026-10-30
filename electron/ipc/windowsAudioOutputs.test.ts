@@ -35,6 +35,7 @@ describe("owner-scoped WASAPI enumeration IPC", () => {
 	it.each([
 		"hud-overlay",
 		"editor",
+		"cli-record",
 	])("allows the current local %s main frame, without renderer arguments", async (role) => {
 		url = `file:///app/index.html?windowType=${role}`;
 		expect(await handler(event(), "untrusted.exe", ["arbitrary"])).toEqual({

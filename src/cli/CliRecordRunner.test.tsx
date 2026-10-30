@@ -109,6 +109,21 @@ describe("CliRecordRunner", () => {
 		expect(window.electronAPI.cliDone).not.toHaveBeenCalled();
 	});
 
+	it("reports the recorder's startup error instead of replacing it with a timeout", async () => {
+		recorder.startRecordingImmediately.mockRejectedValueOnce(
+			new Error("Native Windows capture failed: helper refused the source"),
+		);
+		render(<CliRecordRunner />);
+		await waitFor(() =>
+			expect(window.electronAPI.cliDone).toHaveBeenCalledWith(
+				expect.objectContaining({
+					success: false,
+					error: expect.stringContaining("helper refused the source"),
+				}),
+			),
+		);
+	});
+
 	it("keeps source selection for Linux without the native helper", async () => {
 		vi.mocked(window.electronAPI.getPlatform).mockReturnValue("linux");
 		render(<CliRecordRunner />);
