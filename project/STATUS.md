@@ -738,6 +738,12 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
     1686×1080, 3,05 s, 253.981 bytes, SHA256
     `28E8EB238D3BB8B52BB91DC884F23B75DCB7A1665F08FF94DA2CCDC87C7C003C`;
     decode completo exit 0. QSV foi selecionado após AMF/NVENC indisponíveis no host.
+  - CI remoto: os pushes anteriores apareciam como falha antes de qualquer job porque
+    `runner.temp` era inválido no `env` de nível de job em `ci.yml`. O commit
+    `6969295b` usa `github.workspace` para o target isolado do speech-core; YAML e
+    docs foram validados localmente. A branch deste fork não integra os filtros de
+    `push` do workflow (somente main, feat/ai-edition e release/**), portanto nenhum
+    run novo é esperado sem PR ou push numa branch configurada; nenhum PR foi criado.
   - Rebuild nativo x64 (30/10): `npm run build:native:win` terminou exit 0; região,
     timer, 177 testes de áudio, webcam, visibilidade, slot clock, 33 testes do encoder
     e source-close passaram. `wgc-capture.exe` recompilado, staged e empacotado têm o
