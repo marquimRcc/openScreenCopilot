@@ -102,7 +102,9 @@ jobs:
       contents: read
     env:
       RUSTUP_TOOLCHAIN: "1.98.1"
-      CARGO_TARGET_DIR: ${{ runner.temp }}/speech-core-target
+      # `runner` is not available while GitHub validates a job-level `env` map.
+      # Keep the isolated build output inside the ephemeral checkout instead.
+      CARGO_TARGET_DIR: ${{ github.workspace }}/.ci/speech-core-target
     steps:
       - uses: actions/checkout@v7
       - name: Install validated Rust toolchain
