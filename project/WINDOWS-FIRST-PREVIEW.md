@@ -45,16 +45,16 @@ tenham sido homologados em hardware e uso reais.
 
 ### 1. Homologação funcional real
 
-- [ ] Validar seleção e gravação de tela inteira.
-- [ ] Validar seleção e gravação de uma janela.
-- [ ] Validar seleção e gravação de uma região.
+- [x] Validar seleção e gravação de tela inteira.
+- [x] Validar seleção e gravação de uma janela.
+- [x] Validar seleção e gravação de uma região.
 - [ ] Confirmar pixels e coordenadas em DPI misto.
-- [ ] Confirmar áudio audível do sistema no endpoint escolhido.
+- [x] Confirmar áudio audível do sistema no endpoint escolhido.
 - [ ] Confirmar microfone audível e independente do áudio do sistema.
-- [ ] Validar pausa, retomada e parada sem perda ou dessincronização.
-- [ ] Conferir arquivo salvo, duração, streams, reprodução e ausência de corrupção.
-- [ ] Abrir o resultado no editor e concluir uma exportação reproduzível.
-- [ ] Validar o fluxo completo no pacote Windows, não somente em desenvolvimento.
+- [x] Validar pausa, retomada e parada sem perda ou dessincronização.
+- [x] Conferir arquivo salvo, duração, streams, reprodução e ausência de corrupção.
+- [x] Abrir o resultado no editor e concluir uma exportação reproduzível.
+- [x] Validar o fluxo completo no pacote Windows, não somente em desenvolvimento.
 
 ### 2. Robustez
 
@@ -62,18 +62,18 @@ tenham sido homologados em hardware e uso reais.
 - [ ] Testar fechamento da janela ou fonte capturada durante a gravação.
 - [ ] Testar encerramento inesperado do helper nativo.
 - [ ] Verificar recuperação e limpeza após cancelamento, erro e fechamento do app.
-- [ ] Executar gravação prolongada e conferir memória, CPU, sincronização e tamanho.
+- [x] Executar gravação prolongada e conferir memória, CPU, sincronização e tamanho.
 - [ ] Confirmar que não ficam processos ou arquivos temporários órfãos.
 
 ### 3. Regressão e pacote
 
-- [ ] Executar testes TypeScript e Rust aplicáveis ao corte.
-- [ ] Executar regressão do editor, reprodução e exportação.
+- [x] Executar testes TypeScript e Rust aplicáveis ao corte.
+- [x] Executar regressão do editor, reprodução e exportação.
 - [ ] Recompilar e verificar os binários nativos Windows usados pelo pacote.
-- [ ] Validar identidade, perfil, protocolos e ausência de atualização do upstream.
-- [ ] Revisar privacidade, avisos, licenças e origem dos binários distribuídos.
-- [ ] Gerar pacote Windows reproduzível do fork.
-- [ ] Registrar limitações conhecidas e evidências da homologação.
+- [x] Validar identidade, perfil, protocolos e ausência de atualização do upstream.
+- [x] Revisar privacidade, avisos, licenças e origem dos binários distribuídos.
+- [x] Gerar pacote Windows reproduzível do fork.
+- [x] Registrar limitações conhecidas e evidências da homologação.
 
 ## Regra para correções antes do preview
 

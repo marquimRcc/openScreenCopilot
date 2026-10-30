@@ -622,6 +622,68 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
   - Frames t=1s e t=29s inspecionados visualmente na raiz QA: 4 bordas amarelas, texto legível e movimento confirmados; sem área externa ou HUD em ambas as amostras (não prova cada frame individual).
   - Limitações e incidentes: stderr contém aviso de erro do Chromium WGC thumbnail timeout (5000ms GetFrame às 05:04:05 UTC) ANTES da tomada (não declarar QA globalmente sem avisos). Clique no Quit do HUD recusado 2 vezes por hit-test apontando para `electronChromeLegacyWindow`; 1 reativação/reobservação/retry feita sem forçar clique. Alt+F4 normal fechou o app; cover fechada com Alt+F4; conferência às 05:09 UTC confirmou 0 processos `openScreenCopilot`, `wgc-capture`, `whisper` ou `electron`. PIDs são históricos e não devem ser reutilizados. Nenhum processo ou cover deixado.
   - Aceite PARCIAL de execução empacotada autônoma (win-unpacked) no escopo coberto (captura de região curta, pausa, resultado, playback, open folder, new capture). Recibo privado em `.cache/qa-20261020-standalone-receipt.json`.
+- Homologação do pacote vigente `05524ffb` (29–30/10/2026, EXE real em
+  `.cache/package-windows-preview-05524ffb/win-unpacked`, monitor único
+  1920×1200 a 150% / 1280×800 DIP):
+  - Regressão antes da GUI: docs, lint (26 avisos herdados, zero erros), i18n e os
+    dois typechecks aprovados; Vitest completo com 390 arquivos aprovados, 2
+    ignorados, 5.371 testes aprovados e 10 ignorados. Fixture de protocolo que
+    bloqueava o lint foi apenas formatada no commit `05524ffb`.
+  - Pacote reproduzível: EXE SHA256
+    `DEE07C344AB62306FC22E0ABC332E1DB1A44D877B58E23908549C019DBC10A05`,
+    `app.asar` SHA256
+    `8D92BEACC5EF67CC3201F8A13426A6EED9AE4FC2ACEB507E3CA5A26EAF4343C0` e
+    helper WGC SHA256
+    `811CD9051F90C35DBCE0EA4355737E2CB3BA24EB3F6DE3B9DF957468E778E7B6`;
+    o helper coincide com a fonte nativa vigente, portanto não foi recompilado sem
+    mudança nativa.
+  - Tela inteira: sistema e microfone habilitados, medidor do microfone ativo,
+    pausa em 00:10 manteve o contador congelado enquanto a fixture avançou,
+    retomada e Stop/Save normais; resultado 00:17 / 2,2 MB, playback aprovado,
+    abertura no editor e exportação MP4 1080p60 aprovadas (1.054 frames, 00:18).
+    Original SHA256
+    `6C9FEBD71CA049FD8B3DFC8FD9CB5AE53B83DA826B9C2135008C13B31F394F6D`;
+    export SHA256
+    `6CA5E1B7FC8A3D6C157562A773417FC31903A80E76019922ECA92DB9DD7D380F`.
+    Decode completo exit 0; diferenças A/V de 23,1 ms no original e 16,3 ms no
+    export (export dentro de um frame a 60 fps).
+  - Janela: fonte confirmada como `Opaque Synthetic QA`, sem iniciar a seleção
+    acidental de uma janela privada; sistema OFF e microfone ON; resultado 00:18 /
+    1,8 MB, fonte sintética legível e playback aprovado. MP4 SHA256
+    `B9C47967DB11A360591A85BBC8B2AAE897D49FE40BB9F8CDA9348E850B2B9288`.
+    A faixa AAC existe, porém o ambiente estava silencioso (peak −73,42 dBFS,
+    RMS −108,11 dBFS); isto NÃO comprova microfone audível/independente.
+  - Região curta no mesmo pacote em 30/10: seleção visual exata da moldura
+    sintética produziu 960×600 px; resultado 00:22 / 2,4 MB, H.264 High
+    960×600 ~60 fps + AAC LC 48 kHz estéreo, SHA256
+    `0514CFC7D13FC556CD94C3FFF5202A5E758F40932961C74C42EA9EAF68DF529F`;
+    decode completo exit 0. Preview mostrou quatro bordas amarelas e nenhum texto
+    `OUTSIDE REGION`.
+  - Região longa no pacote: 30:47 / 225.930.219 bytes, H.264 High 960×600 60 fps,
+    AAC LC 48 kHz estéreo 192 kb/s, SHA256
+    `62576F557480D27F8EB4C63F0B66E0FFB5BA3E6B833304A4E2C22587D566809C`;
+    playback avançou a 00:02 e decode AV completo terminou exit 0 com
+    `-fps_mode:v passthrough -enc_time_base:v 1:60000`.
+  - Tom 440 Hz permaneceu no início (peak −23,088751 / RMS −26,217218 dBFS,
+    zero-cross 0,018319) e nos últimos 10 s (peak −23,114633 / RMS
+    −26,211974 dBFS, zero-cross 0,018623). Isto comprova continuidade do loopback
+    sintético, não sincronização com fala humana.
+  - Memória longa: 61 amostras a cada 30 s, sempre 10 processos do pacote;
+    PrivateMemorySize64 agregado iniciou em 773,3 MiB, variou entre 752,3 e
+    776,6 MiB e terminou em 771,5 MiB; working set iniciou em 1.319,8 MiB,
+    variou entre 1.299,8 e 1.320,3 MiB e terminou em 1.315,6 MiB. Sem crescimento
+    sustentado; não é promessa de teto absoluto.
+  - Condição deliberada da automação: `OPENSCREEN_DISABLE_CONTENT_PROTECTION=1`
+    tornou HUD e aviso de idioma visíveis dentro das gravações. Isso permite
+    controle/evidência pela supervisora e NÃO representa o pacote normal com
+    proteção habilitada; a passada empacotada de 20/10 com proteção normal já
+    mostrou ausência de HUD no recorte. O frame final atual preservou a moldura e
+    não vazou a legenda externa, mas contém esses overlays de QA.
+  - Limites desta rodada: um monitor a 150%, sem DPI misto; nenhuma aplicação real
+    de terceiros gravada; sem voz humana; sem troca/desconexão de dispositivo;
+    perfil foi apontado por engano para a raiz do checkout na retomada, removido
+    após registrar os hashes e não versionado; app e fixture terminaram sem
+    processos residuais.
 - Ensaio de seleção de janela e fechamento de fonte no pacote win-unpacked (20/10/2026, SKIPPED / sem aceite):
   - Tentativa adicional conduzida pela supervisora Codex via skill às ~05:13 UTC com raiz isolada `.cache/package-qa-34e17800-3e1a-480f-bff7-c555b02bb4fc` (launcher app PID 14592, histórico encerrado).
   - Coberturas: cover base PID 13368 (`opaque-qa-long.cjs`, tom não ativado) e alvo PID 7112 (`opaque-qa-source.cjs`), logs `.cache/window-close-{base,target}-59f0df09-65f0-454b-bf4b-aabd45286864.*`.
@@ -635,7 +697,8 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
   - Microfone real / fala audível / sincronização labial.
   - Escala de DPI misto / múltiplos monitores.
   - Janelas / aplicações reais de terceiros ou títulos pessoais do usuário.
-  - Execução longa (30min) com áudio/mic no runtime empacotado autônomo (win-unpacked standalone teve apenas passada curta 30s sem áudio aprovada).
+  - Microfone audível e independente e sincronização com fala humana; a execução
+    longa do pacote vigente aprovou vídeo + loopback sintético, não voz humana.
   - Fechamento de janela/fonte durante captura ativa E durante captura pausada teve aceite parcial no pacote win-unpacked 811C (autofinalização autônoma, resultado, playback, retorno ao HUD); minimizar/restaurar janela fonte sem falso encerramento validado com aceite parcial; fechamento pré-primeiro frame, legacy real, janelas reais de terceiros e DPI misto seguem pendentes (ensaio do harness privado em 2026-10-24 inconclusivo por limitação do ambiente gráfico/WGC, sem falha funcional de produto).
   - Etapas 01 e 02 completas e integração ASR (05).
 
