@@ -60,10 +60,10 @@ tenham sido homologados em hardware e uso reais.
 
 - [ ] Testar desconexão ou mudança de dispositivo de áudio.
 - [ ] Testar fechamento da janela ou fonte capturada durante a gravação.
-- [ ] Testar encerramento inesperado do helper nativo.
+- [x] Testar encerramento inesperado do helper nativo.
 - [ ] Verificar recuperação e limpeza após cancelamento, erro e fechamento do app.
 - [x] Executar gravação prolongada e conferir memória, CPU, sincronização e tamanho.
-- [ ] Confirmar que não ficam processos ou arquivos temporários órfãos.
+- [x] Confirmar que não ficam processos ou arquivos temporários órfãos.
 
 ### 3. Regressão e pacote
 

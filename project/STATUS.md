@@ -653,6 +653,14 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
     `B9C47967DB11A360591A85BBC8B2AAE897D49FE40BB9F8CDA9348E850B2B9288`.
     A faixa AAC existe, porém o ambiente estava silencioso (peak −73,42 dBFS,
     RMS −108,11 dBFS); isto NÃO comprova microfone audível/independente.
+  - Repetição de microfone independente em perfil isolado (30/10): linha de comando
+    do helper confirmou `captureSystemAudio:false`, `captureMic:true`, webcam OFF e
+    tela 1920×1200. Fixture acústica própria foi elevada temporariamente de gain
+    0,02 para 0,2 sem alterar volume/configuração do Windows. MP4 00:36 SHA256
+    `0B6A9E0B5AB187803B5A24324362FB90BB932B5A86B769E01AD81D9A78C2AE1E`
+    teve peak −44,649747 e RMS −84,651299 dBFS, mas a banda 440 Hz ficou em
+    peak −74,764358 / RMS −108,153269 dBFS; portanto o microfone continua NÃO
+    aprovado como audível/independente. A fixture foi restaurada para gain 0,02.
   - Região curta no mesmo pacote em 30/10: seleção visual exata da moldura
     sintética produziu 960×600 px; resultado 00:22 / 2,4 MB, H.264 High
     960×600 ~60 fps + AAC LC 48 kHz estéreo, SHA256
@@ -684,6 +692,16 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
     perfil foi apontado por engano para a raiz do checkout na retomada, removido
     após registrar os hashes e não versionado; app e fixture terminaram sem
     processos residuais.
+  - Encerramento inesperado do helper nativo (30/10): durante tomada de tela inteira,
+    a linha de comando comprovou sistema OFF, microfone ON, webcam OFF e cursor
+    editável; o processo `wgc-capture.exe` PID 7744 foi encerrado de forma forçada.
+    O app auto-finalizou sem comando Stop da UI, abriu `Recording saved` 00:34 /
+    4 MB, playback avançou a 00:02 e nenhum novo helper ficou ativo. MP4 privado
+    `recording-1793365422554.mp4`: 3.971.633 bytes, duração 34,58 s, H.264 High
+    1920×1200 ~60 fps + AAC LC 48 kHz estéreo 192 kb/s, SHA256
+    `C935C721350CB4D0CBDA5588DAA675E3A3AA95C46B0E74FBA99031F1F9BD579E`;
+    decode AV completo exit 0. App/fixture encerrados normalmente depois do teste e
+    perfil `.cache/preview-qa-mic-20261030` removido; zero processo próprio residual.
 - Ensaio de seleção de janela e fechamento de fonte no pacote win-unpacked (20/10/2026, SKIPPED / sem aceite):
   - Tentativa adicional conduzida pela supervisora Codex via skill às ~05:13 UTC com raiz isolada `.cache/package-qa-34e17800-3e1a-480f-bff7-c555b02bb4fc` (launcher app PID 14592, histórico encerrado).
   - Coberturas: cover base PID 13368 (`opaque-qa-long.cjs`, tom não ativado) e alvo PID 7112 (`opaque-qa-source.cjs`), logs `.cache/window-close-{base,target}-59f0df09-65f0-454b-bf4b-aabd45286864.*`.
