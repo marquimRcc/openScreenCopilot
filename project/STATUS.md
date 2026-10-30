@@ -702,6 +702,21 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
     `C935C721350CB4D0CBDA5588DAA675E3A3AA95C46B0E74FBA99031F1F9BD579E`;
     decode AV completo exit 0. App/fixture encerrados normalmente depois do teste e
     perfil `.cache/preview-qa-mic-20261030` removido; zero processo próprio residual.
+  - Tentativa assistida de voz humana (30/10): o operador recebeu um aviso grande e
+    visível fora do chat, mas nenhuma tomada válida foi criada. O comando headless do
+    mesmo pacote foi tentado primeiro em `--display 0 --mic` e depois em
+    `--window "novo 11" --mic`; nos dois casos a enumeração encontrou a fonte, o
+    Chromium WGC registrou timeout de 5 s aguardando o primeiro frame e o runner
+    terminou após 30 s com `Recording did not start`. Não houve evento de início do
+    helper nativo, arquivo de mídia ou amostra de voz utilizável. Portanto isto é uma
+    falha reproduzida do caminho CLI neste ambiente, não evidência acústica e não
+    altera o microfone audível/independente para aprovado.
+  - Rebuild nativo x64 (30/10): `npm run build:native:win` terminou exit 0; região,
+    timer, 177 testes de áudio, webcam, visibilidade, slot clock, 33 testes do encoder
+    e source-close passaram. `wgc-capture.exe` recompilado, staged e empacotado têm o
+    mesmo SHA256 `811CD9051F90C35DBCE0EA4355737E2CB3BA24EB3F6DE3B9DF957468E778E7B6`;
+    `cursor-sampler.exe` também coincide nos três locais, SHA256
+    `40A1A89DF2140C028A59C486E988838588EAEE40E702BD9642057E7F3734CA56`.
 - Ensaio de seleção de janela e fechamento de fonte no pacote win-unpacked (20/10/2026, SKIPPED / sem aceite):
   - Tentativa adicional conduzida pela supervisora Codex via skill às ~05:13 UTC com raiz isolada `.cache/package-qa-34e17800-3e1a-480f-bff7-c555b02bb4fc` (launcher app PID 14592, histórico encerrado).
   - Coberturas: cover base PID 13368 (`opaque-qa-long.cjs`, tom não ativado) e alvo PID 7112 (`opaque-qa-source.cjs`), logs `.cache/window-close-{base,target}-59f0df09-65f0-454b-bf4b-aabd45286864.*`.

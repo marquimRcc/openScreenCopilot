@@ -69,7 +69,7 @@ tenham sido homologados em hardware e uso reais.
 
 - [x] Executar testes TypeScript e Rust aplicáveis ao corte.
 - [x] Executar regressão do editor, reprodução e exportação.
-- [ ] Recompilar e verificar os binários nativos Windows usados pelo pacote.
+- [x] Recompilar e verificar os binários nativos Windows usados pelo pacote.
 - [x] Validar identidade, perfil, protocolos e ausência de atualização do upstream.
 - [x] Revisar privacidade, avisos, licenças e origem dos binários distribuídos.
 - [x] Gerar pacote Windows reproduzível do fork.
