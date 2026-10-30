@@ -17,9 +17,22 @@ export function regionIndicatorBounds(selection: TrustedWindowsRegion): Rectangl
 	};
 }
 
+/** Resolve the protected border for a native Windows take, failing closed for windows. */
+export function windowsCaptureIndicatorBounds(
+	sourceType: "display" | "window",
+	displayBounds: Rectangle,
+	selection: TrustedWindowsRegion | null,
+	hasCrop: boolean,
+): Rectangle | null {
+	if (sourceType !== "display") return null;
+	if (hasCrop) return selection ? regionIndicatorBounds(selection) : null;
+	return displayBounds;
+}
+
 interface IndicatorWindow {
 	isDestroyed(): boolean;
 	destroy(): void;
+	setOpacity?(opacity: number): void;
 }
 
 /** One indicator per helper; stop/exit of an older helper cannot close a newer one. */
@@ -28,8 +41,18 @@ export class WindowsRegionIndicator {
 	constructor(private readonly create: (bounds: Rectangle) => IndicatorWindow) {}
 
 	show(owner: object, selection: TrustedWindowsRegion) {
+		this.showBounds(owner, regionIndicatorBounds(selection));
+	}
+
+	/** Show the protected border around an already trusted DIP rectangle. */
+	showBounds(owner: object, bounds: Rectangle) {
 		this.clear();
-		this.current = { owner, window: this.create(regionIndicatorBounds(selection)) };
+		this.current = { owner, window: this.create(bounds) };
+	}
+
+	setPaused(owner: object, paused: boolean) {
+		if (!this.current || this.current.owner !== owner || this.current.window.isDestroyed()) return;
+		this.current.window.setOpacity?.(paused ? 0.45 : 1);
 	}
 
 	clear(owner?: object) {

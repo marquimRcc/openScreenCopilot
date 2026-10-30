@@ -1,6 +1,7 @@
 # Requisitos e limites
 
-Estado: especificação inicial, ainda não implementada pelo fork.
+Estado: especificação viva; partes do MVP já estão implementadas e as lacunas de
+aceite permanecem identificadas abaixo e em `STATUS.md`.
 
 ## MVP Windows 11
 
@@ -23,7 +24,10 @@ Estado: especificação inicial, ainda não implementada pelo fork.
 
 ## Indicador persistente da área gravada
 
-Pedido do usuário em 2026-10-13 para a próxima versão; **ainda não implementado**.
+Pedido do usuário em 2026-10-13. A borda protegida já acompanha a região fixa e,
+no checkpoint atual, também delimita a tela inteira; pausa reduz sua opacidade e
+stop/cancel/falha/exit a remove por ownership do helper. Acompanhamento de janela,
+texto de pausa independente do HUD e homologação física/DPI misto continuam pendentes.
 
 - Borda vermelha fina e pontilhada/tracejada delimitando exatamente o monitor,
   a janela ou o retângulo que está sendo capturado. Visível durante toda a gravação,
@@ -40,8 +44,11 @@ Pedido do usuário em 2026-10-13 para a próxima versão; **ainda não implement
 
 ## Confirmação de salvamento e acesso ao arquivo
 
-Pedido do usuário em 2026-10-13 após encerrar uma captura e não encontrar o MP4;
-**ainda não implementado no fluxo pós-gravação do fork**.
+Pedido do usuário em 2026-10-13 após encerrar uma captura e não encontrar o MP4.
+O fluxo pós-gravação já mostra prévia, nome, caminho completo, duração/tamanho,
+"Abrir pasta", "Nova captura" e "Editar", revalidando no main o arquivo da sessão.
+Aceite empacotado de resultado/playback/abrir pasta/nova captura existe; manter os
+casos de erro e mudanças não salvas sob regressão.
 
 - Ao finalizar com sucesso, mostrar "Gravação salva", nome do arquivo e caminho
   completo, com ação explícita "Abrir local salvo" / "Abrir pasta da gravação".

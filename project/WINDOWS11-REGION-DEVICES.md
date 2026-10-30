@@ -135,11 +135,14 @@ não substituem esses aceites.
    Reprojeção implementada e coberta por testes; homologar no MP4/editor antes de release.
 5. Testar bordas por imagem exportada, não só thumbnail, em 100%/125%/150% e DPI misto.
 
-### Indicador persistente — solicitado para a próxima versão
+### Indicador persistente — implementado parcialmente, em validação
 
-Ainda não implementado. Requisito confirmado pelo usuário em 2026-10-13:
-contorno vermelho fino, pontilhado/tracejado e discreto que permita reconhecer
-o que está ou não sendo gravado durante toda a tomada, não só ao selecionar.
+Requisito confirmado pelo usuário em 2026-10-13: contorno vermelho fino,
+pontilhado/tracejado e discreto durante toda a tomada, não só ao selecionar.
+O main cria uma janela click-through com proteção de conteúdo depois do handshake
+do helper. Região usa a conversão inversa do crop físico efetivo para DIP; tela
+inteira usa o retângulo DIP confiável do display. Pausa reduz a opacidade e retomada
+a restaura. Ownership impede que exit/stop antigo remova a borda de uma nova tomada.
 
 O main deverá manter uma sobreposição dedicada, sem roubar foco ou cliques,
 associada à fonte e ao estado reais da sessão. Para janela, acompanhar a geometria
@@ -152,25 +155,25 @@ em DPI misto e junto ao cursor editável. Não presumir proteção herdada do HU
 nem deslocar/reduzir a área capturada para esconder a borda. Critérios completos
 em [REQUIREMENTS.md](REQUIREMENTS.md) e [TESTING.md](TESTING.md).
 
-Este checkpoint registra o pedido, sem reiniciar ou alterar a gravação de teste
-que o usuário já iniciou. Nenhum overlay persistente está disponível no pacote atual.
+Ainda pendem acompanhamento de geometria na captura de janela, texto de pausa que
+não dependa somente do HUD, comprovação física no desktop e exclusão em MP4/export
+para tela inteira no novo checkpoint, além de DPI misto. O pacote anterior já levou
+a borda de região; o incremento de tela inteira exige novo pacote local.
 
 ### Confirmação de arquivo salvo — solicitado após a primeira captura do usuário
 
-Ainda não implementado no fluxo pós-gravação. Ao terminar, exibir confirmação
-persistente com nome/caminho do MP4 original e botão "Abrir local salvo". Abrir
-o Explorador com esse arquivo selecionado; manter ação acessível no editor e
-não confundir com salvar projeto ou exportar uma edição.
+Implementado no fluxo pós-gravação: confirmação persistente com prévia, nome,
+caminho completo, duração/tamanho e "Abrir pasta" para o MP4 original, além de
+"Nova captura" e "Editar". O main revalida o arquivo esperado da sessão antes de
+revelar ou editar e falha sem anunciar sucesso quando ele mudou/sumiu.
 
 Pedido adicional: botão "Nova captura" destacado na edição após finalizar.
 Reutilizar o fluxo de preparação existente, preservando MP4/projeto anterior e
 tratando mudanças não salvas. Não iniciar nova gravação sem ação explícita do usuário.
 
-Já existe infraestrutura `revealInFolder` no preload/IPC e uso na exportação;
-a existência desse código não aprova a descoberta do arquivo após gravar.
-A integração deve usar o arquivo da sessão validado no main e tratar arquivo
-ausente/erro do shell sem apresentar sucesso falso. Critérios em
-[REQUIREMENTS.md](REQUIREMENTS.md) e [TESTING.md](TESTING.md).
+O fluxo foi aprovado em tomadas GUI anteriores para resultado, playback, Abrir pasta
+e Nova captura. Permanecem regressão de mudanças não salvas e erros reais do shell.
+Critérios em [REQUIREMENTS.md](REQUIREMENTS.md) e [TESTING.md](TESTING.md).
 
 ## 02C — saída de áudio, microfone e falhas
 

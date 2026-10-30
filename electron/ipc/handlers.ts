@@ -174,7 +174,10 @@ import {
 } from "../recording/windowsCaptureStartupValidation";
 import { WindowsMeterCaptureGuard } from "../recording/windowsMeterCaptureGuard";
 import { WindowsOutputMeter } from "../recording/windowsOutputMeter";
-import { WindowsRegionIndicator } from "../recording/windowsRegionIndicator";
+import {
+	WindowsRegionIndicator,
+	windowsCaptureIndicatorBounds,
+} from "../recording/windowsRegionIndicator";
 import {
 	isWindowsRegionCurrent,
 	supportsWindowsRegion,
@@ -3505,12 +3508,18 @@ export function registerIpcHandlers(
 
 				await waitForNativeWindowsCaptureStart(proc);
 				watcher.onRecordingStarted();
-				if (crop && regionSelection && proc.exitCode === null && proc.signalCode === null) {
+				const indicatorBounds = windowsCaptureIndicatorBounds(
+					request.source.type,
+					bounds,
+					regionSelection,
+					Boolean(crop),
+				);
+				if (indicatorBounds && proc.exitCode === null && proc.signalCode === null) {
 					try {
-						windowsRegionIndicator.show(proc, regionSelection);
+						windowsRegionIndicator.showBounds(proc, indicatorBounds);
 					} catch (error) {
 						// An indicator failure must not destroy a recording already started.
-						console.warn("[native-wgc] region indicator unavailable", error);
+						console.warn("[native-wgc] capture indicator unavailable", error);
 					}
 				}
 				const captureStartedAtMs = Date.now();
@@ -3924,6 +3933,7 @@ export function registerIpcHandlers(
 			proc.stdin.write("pause\n");
 			nativeWindowsIsPaused = true;
 			nativeWindowsPauseStartedAtMs = Date.now();
+			windowsRegionIndicator.setPaused(proc, true);
 			return { success: true };
 		} catch (error) {
 			return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -3946,6 +3956,7 @@ export function registerIpcHandlers(
 			proc.stdin.write("resume\n");
 			completeNativeWindowsCursorPauseRange();
 			nativeWindowsIsPaused = false;
+			windowsRegionIndicator.setPaused(proc, false);
 			return { success: true };
 		} catch (error) {
 			return { success: false, error: error instanceof Error ? error.message : String(error) };

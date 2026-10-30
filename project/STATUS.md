@@ -316,7 +316,7 @@ PR2 de01 continua dependente dos aceites; não promover distribuição por teste
 |---|---|
 |00 fundação|Concluída:fork/históricos/licenças/vendor/contratos/política CI|
 |01 Windows/identidade|Código/pacote isolados, timestamps corrigidos; GUI curta/longa 30min sintética (dist) e execução empacotada curta (win-unpacked 30s) aprovadas; pacote 30min com áudio/títulos reais/DPI misto pendentes|
-|02 região/dispositivos/resultado|Implementados (guarda pré-spawn, região, loopback sintético 30min, source close ativo + pausado e minimizar/restaurar validados); borda física/mic audível/DPI misto/fluxo completo pendente|
+|02 região/dispositivos/resultado|Implementados (guarda pré-spawn, região, resultado, borda protegida para região+tela inteira, loopback sintético 30min, source close ativo + pausado e minimizar/restaurar validados); borda física/janela dinâmica/mic audível/DPI misto pendentes|
 |03 compressão|Inventário/sondas MF apenas; AV1 não grava, comparação30min não feita|
 |04 speech-core|Core isolado inclui WAV/normalização/gate/janelas/dedup; sidecar v0 executa só handshake fail-closed e anuncia sem provider; sem PCM live/engine/ASR|
 |05 ASRlive|Não integrado; depende02/04 (03 adiada ao backlog)/relógio/journal/créditos|
@@ -334,7 +334,8 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   limitado aScreens/Windows, fallbackfullscreen ou autostart. ForaWindows preservado.
 - Região React/arraste/Escape, cropD3D11 GPU, cursor físico recortado; requests
   inválidos recusados. Borda pontilhada helper-owned protegida, independenteHUD,
-  removida stop/cancel/reset/exit. DPI misto/borda física ainda sem aceite.
+  agora cobre região e tela inteira, reduz opacidade em pausa e é removida em
+  stop/cancel/reset/exit. Janela dinâmica, DPI misto e borda física ainda sem aceite.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
   reset lógico, timeout/kill não confirmado e evento tardio de geração antiga não
   autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.

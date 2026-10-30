@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { regionIndicatorBounds, WindowsRegionIndicator } from "./windowsRegionIndicator";
+import {
+	regionIndicatorBounds,
+	WindowsRegionIndicator,
+	windowsCaptureIndicatorBounds,
+} from "./windowsRegionIndicator";
 
 const selection = {
 	sourceId: "screen:1:0",
@@ -14,6 +18,20 @@ const selection = {
 };
 
 describe("Windows region indicator", () => {
+	it("selects the effective region, full display, or no static border by source", () => {
+		const displayBounds = { x: -1280, y: 0, width: 1280, height: 800 };
+		expect(windowsCaptureIndicatorBounds("display", displayBounds, selection, true)).toEqual({
+			x: -1180,
+			y: 150,
+			width: 640,
+			height: 400,
+		});
+		expect(windowsCaptureIndicatorBounds("display", displayBounds, null, false)).toBe(
+			displayBounds,
+		);
+		expect(windowsCaptureIndicatorBounds("display", displayBounds, null, true)).toBeNull();
+		expect(windowsCaptureIndicatorBounds("window", displayBounds, selection, false)).toBeNull();
+	});
 	it("maps actual physical crop locally on a negative-origin 150% display", () => {
 		expect(regionIndicatorBounds(selection)).toEqual({
 			x: -1180,
@@ -47,6 +65,28 @@ describe("Windows region indicator", () => {
 		indicator.clear(second);
 		indicator.clear(second);
 		expect(windows[1].destroy).toHaveBeenCalledOnce();
+	});
+	it("can outline a trusted full-display DIP rectangle without crop conversion", () => {
+		const window = { isDestroyed: () => false, destroy: vi.fn() };
+		const create = vi.fn(() => window);
+		const indicator = new WindowsRegionIndicator(create);
+		const bounds = { x: -1280, y: 0, width: 1280, height: 800 };
+
+		indicator.showBounds({}, bounds);
+
+		expect(create).toHaveBeenCalledWith(bounds);
+	});
+	it("dims only the current owner's border while paused and restores it on resume", () => {
+		const window = { isDestroyed: () => false, destroy: vi.fn(), setOpacity: vi.fn() };
+		const indicator = new WindowsRegionIndicator(() => window);
+		const owner = {};
+		indicator.show(owner, selection);
+
+		indicator.setPaused({}, true);
+		indicator.setPaused(owner, true);
+		indicator.setPaused(owner, false);
+
+		expect(window.setOpacity.mock.calls).toEqual([[0.45], [1]]);
 	});
 	it("does not destroy an already closed window", () => {
 		const window = { isDestroyed: () => true, destroy: vi.fn() };

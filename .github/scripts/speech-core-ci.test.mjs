@@ -18,7 +18,7 @@ describe("isolated speech-core CI", () => {
 		expect(job).toContain("name: Rust speech-core (isolated)");
 		expect(job).toContain("contents: read");
 		expect(job).toContain("timeout-minutes: 15");
-		expect(job).toContain("CARGO_TARGET_DIR: ${{ runner.temp }}/speech-core-target");
+		expect(job).toContain("CARGO_TARGET_DIR: ${{ github.workspace }}/.ci/speech-core-target");
 		expect(job).not.toMatch(
 			/secrets\.|publish|upload-artifact|workflow_dispatch|fetch-ffmpeg|fetch-onnx|vendor\//,
 		);
