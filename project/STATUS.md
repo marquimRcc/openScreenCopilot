@@ -779,6 +779,15 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
     `--duration 8`, 372.263 bytes, SHA256
     `96F5EF7FA48D1DFE03CCA5946E3800BF8926609BB1B9E60DB79F8547B9A48907`
     e decode exit 0; a fila aguarda a confirmação do pause antes de emitir resume.
+    Repetição no `win-unpacked` atualizado (não assinado/não publicado) também passou:
+    `pause\nresume\n`, exit 0, 8,034117 s, H.264 hardware 1920×1128,
+    354.102 bytes, SHA256
+    `B20F9F003F04524BBF3B931619E843ED47EA10BF685C4F1A41D2FF8949BC1EBB`
+    e decode exit 0. Integridade do pacote local: `app.asar` 109.156.253 bytes,
+    SHA256 `074CE3559BB2D358E272AA9062F956C0CD4D8C2C2305A76EE035D8954FCB1D1F`;
+    EXE 223.298.048 bytes, SHA256
+    `CB6FC326248293D1667B570832078A39825A16B4D73D580C8B242D167491B4AB`;
+    helper WGC preservado em `811CD905…`.
     Regressão final deste incremento: 390 arquivos aprovados + 2 ignorados,
     5.379 testes aprovados + 10 ignorados, exit 0 em 428,51 s; `tsc --noEmit`,
     checks focados e docs também aprovados.
