@@ -67,7 +67,7 @@ openscreen record --display 1 --cursor system
 | `--camera` | Record the default webcam beside the screen |
 | `--camera-device <name>` | Record the camera whose label contains `<name>`, ignoring case. Implies `--camera` |
 | `--cursor <editable-overlay\|system>` | `editable-overlay` (default) hides the system pointer and records it as data, so the editor can restyle it. `system` draws the pointer into the video |
-| `--duration <seconds>` | Stop automatically after this long |
+| `--duration <seconds>` | Stop after this much wall-clock time. Paused time counts toward this limit but is absent from the saved media |
 | `--project <out.openscreen>` | When done, write a project file that references the recording, ready for `export` or the editor. Must end in `.openscreen` |
 | `--json` | NDJSON events on stdout |
 

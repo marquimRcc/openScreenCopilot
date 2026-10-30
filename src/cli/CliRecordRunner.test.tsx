@@ -148,6 +148,20 @@ describe("CliRecordRunner", () => {
 		expect(recorder.togglePaused).toHaveBeenCalledOnce();
 	});
 
+	it("cancels a startup pause when resume arrives before capture is active", async () => {
+		const view = render(<CliRecordRunner />);
+		await waitFor(() => expect(recorder.startRecordingImmediately).toHaveBeenCalledTimes(1));
+		const onCommand = vi.mocked(window.electronAPI.onCliSetRecordingPaused).mock.calls[0]?.[0];
+		act(() => {
+			onCommand?.(true);
+			onCommand?.(false);
+		});
+
+		recorder.recording = true;
+		view.rerender(<CliRecordRunner />);
+		expect(recorder.togglePaused).not.toHaveBeenCalled();
+	});
+
 	it("reports the recorder's startup error instead of replacing it with a timeout", async () => {
 		recorder.startRecordingImmediately.mockRejectedValueOnce(
 			new Error("Native Windows capture failed: helper refused the source"),

@@ -117,7 +117,7 @@ Record options (recording is saved into the app's recordings directory):
   --camera-device <name>    Camera device name (implies --camera)
   --cursor <editable-overlay|system>
                             Cursor capture mode (default editable-overlay)
-  --duration <seconds>      Stop automatically after this long
+  --duration <seconds>      Stop after this much wall time (pauses count)
   --project <out.openscreen>
                             Write a ready-to-export project file when done
   --json                    NDJSON events on stdout
