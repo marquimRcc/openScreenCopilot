@@ -774,6 +774,11 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
     `B4CBED7883AC077BBF4A92ED26334596DF727C2A7454838E471393EBA92ADABD`,
     decode completo exit 0. A diferença de ~2 s comprova que o trecho pausado foi
     removido da mídia; não envolve fala humana nem dispositivos adiados.
+    Caso de corrida adicional enviou literalmente `pause\nresume\n` numa única
+    escrita logo após o start: exit 0, ambos os eventos, mídia de 8,034467 s para
+    `--duration 8`, 372.263 bytes, SHA256
+    `96F5EF7FA48D1DFE03CCA5946E3800BF8926609BB1B9E60DB79F8547B9A48907`
+    e decode exit 0; a fila aguarda a confirmação do pause antes de emitir resume.
     Regressão final deste incremento: 390 arquivos aprovados + 2 ignorados,
     5.379 testes aprovados + 10 ignorados, exit 0 em 428,51 s; `tsc --noEmit`,
     checks focados e docs também aprovados.
