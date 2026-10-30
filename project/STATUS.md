@@ -336,6 +336,17 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   inválidos recusados. Borda pontilhada helper-owned protegida, independenteHUD,
   agora cobre região e tela inteira, reduz opacidade em pausa e é removida em
   stop/cancel/reset/exit. Janela dinâmica, DPI misto e borda física ainda sem aceite.
+  Checkpoint `8f1bb6da`: pacote Windows completo passou; CLI empacotado gravou tela
+  inteira por 20,193 s em perfil isolado, WGC/H.264 hardware, MP4 1.869.665 bytes,
+  SHA256 `AAAEEB17C37B188CE62FC5F0657296E8B1F66F72BB77373D91DD6D214A084DCE`,
+  decode completo exit 0. A janela protegida `Recording region` existiu durante a
+  tomada e desapareceu após o helper; frame t=10 s não contém a borda vermelha.
+  Como a própria captura da janela protegida omite seus pixels, isto comprova ciclo
+  de vida/exclusão no vídeo, não visibilidade física da borda ao operador. Full Vitest
+  final: 390 arquivos / 5.376 testes aprovados, 2 arquivos / 10 testes ignorados.
+  A primeira passada revelou expectativa CI stale do conserto `github.workspace`;
+  o teste foi alinhado e a segunda passada ficou verde. Instalador local não assinado
+  `C8145E3F…` (187.503.623 bytes), EXE unpacked `92E7456D…`; não publicados.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
   reset lógico, timeout/kill não confirmado e evento tardio de geração antiga não
   autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.
