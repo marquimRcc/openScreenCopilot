@@ -714,4 +714,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		ipcRenderer.on("cli-stop-recording", listener);
 		return () => ipcRenderer.removeListener("cli-stop-recording", listener);
 	},
+	onCliSetRecordingPaused: (callback: (paused: boolean) => void) => {
+		const listener = (_event: Electron.IpcRendererEvent, paused: boolean) => callback(paused);
+		ipcRenderer.on("cli-set-recording-paused", listener);
+		return () => ipcRenderer.removeListener("cli-set-recording-paused", listener);
+	},
 });

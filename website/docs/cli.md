@@ -73,12 +73,12 @@ openscreen record --display 1 --cursor system
 
 With `--camera`, the webcam is recorded beside the screen, and the `--project` file links it.
 
-**Stopping.** Without `--duration`, stop a recording with Ctrl+C (SIGINT), SIGTERM, or by typing `stop`, `q` or `quit` and Enter on its stdin. Closing stdin does not stop it. A forced kill skips the normal finish, so no `done` event and no project file are written.
+**Pausing and stopping.** Type `pause` (or `p`) and Enter on stdin to pause, and `resume` (or `r`) to continue. The commands are idempotent, including while capture is still starting. Without `--duration`, stop with Ctrl+C (SIGINT), SIGTERM, or stdin `stop`, `q` or `quit`. Closing stdin does not stop it. A forced kill skips the normal finish, so no `done` event and no project file are written.
 
 **Per platform**
 
 - **macOS.** Capture goes through the ScreenCaptureKit helper, with no fallback. The Screen Recording permission is required; for a development build started from a terminal, grant it to the terminal. With `--mic`, the CLI asks for microphone access if it has not been granted. Pointer clicks and shapes are only recorded with the Accessibility permission.
-- **Windows.** Capture goes through the Windows Graphics Capture helper, from Windows 10 build 19041. On older builds, or without the helper, OpenScreen falls back to browser capture. Windows never delivers SIGTERM: use Ctrl+C, stdin `stop`, or `--duration`.
+- **Windows.** Capture goes through the Windows Graphics Capture helper, from Windows 10 build 19041. On older builds, or without the helper, OpenScreen falls back to browser capture. Windows never delivers SIGTERM: use Ctrl+C, stdin `stop`, or `--duration`; stdin `pause` and `resume` work on both paths.
 - **Linux.** Capture goes through the PipeWire helper and the desktop's ScreenCast portal. The portal's own picker decides what is recorded, and it opens on every run and waits for an answer, so `--display` and `--window` do not choose the source and a Linux recording cannot start unattended. It needs a desktop session with `xdg-desktop-portal`: an SSH session without a display cannot record. Only a build without the helper falls back to Chromium's capture.
 
 ### `openscreen sources`
@@ -208,6 +208,8 @@ With `--json`, stdout carries one JSON object per line. stderr carries diagnosti
 | `started` | A `record`, `sources`, `export` or `captions` run begins | `command` |
 | `log` | A status line, such as `Recording started` | `message` |
 | `progress` | Export frames are encoded | `percentage`, `currentFrame`, `totalFrames`, `estimatedTimeRemaining` in seconds. While `--audio` is mixed: `percentage` and `phase: "mixing-voiceover"` |
+| `pausing` | `record` received an idempotent stdin pause request | — |
+| `resuming` | `record` received an idempotent stdin resume request | — |
 | `stopping` | `record` received a stop request | `reason`: `SIGINT`, `SIGTERM` or `stdin` |
 | `warning` | The run succeeded with a caveat | `message` |
 | `error` | A failure was reported | `message` |

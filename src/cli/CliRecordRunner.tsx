@@ -99,6 +99,7 @@ export function CliRecordRunner() {
 	// A stop (SIGINT/stdin) can land while the capture helper is still starting;
 	// remember it and apply as soon as recording flips on.
 	const stopRequestedRef = useRef(false);
+	const requestedPausedRef = useRef<boolean | null>(null);
 	const [status, setStatus] = useState("Preparing recording…");
 
 	const {
@@ -106,6 +107,8 @@ export function CliRecordRunner() {
 		saving,
 		startRecordingImmediately,
 		toggleRecording,
+		togglePaused,
+		paused,
 		setMicrophoneEnabled,
 		setMicrophoneDeviceId,
 		setMicrophoneDeviceName,
@@ -120,9 +123,13 @@ export function CliRecordRunner() {
 	// Keep latest values in refs for the stop/finish effects.
 	const toggleRecordingRef = useRef(toggleRecording);
 	const recordingRef = useRef(recording);
+	const pausedRef = useRef(paused);
+	const togglePausedRef = useRef(togglePaused);
 	useEffect(() => {
 		toggleRecordingRef.current = toggleRecording;
 		recordingRef.current = recording;
+		pausedRef.current = paused;
+		togglePausedRef.current = togglePaused;
 	});
 
 	const fail = async (error: unknown) => {
@@ -267,6 +274,10 @@ export function CliRecordRunner() {
 				toggleRecordingRef.current();
 				return;
 			}
+			if (requestedPausedRef.current === true && !pausedRef.current) {
+				pausedRef.current = true;
+				togglePausedRef.current();
+			}
 
 			if (request?.durationMs) {
 				const timer = setTimeout(() => {
@@ -291,6 +302,25 @@ export function CliRecordRunner() {
 			} else {
 				// Capture is still starting; stop as soon as it comes up.
 				stopRequestedRef.current = true;
+			}
+		});
+	}, []);
+
+	// External pause/resume commands from stdin. Commands received while the
+	// helper is starting are applied once recording becomes active.
+	useEffect(() => {
+		return window.electronAPI.onCliSetRecordingPaused((nextPaused) => {
+			requestedPausedRef.current = nextPaused;
+			if (
+				recordingRef.current &&
+				phaseRef.current === "recording" &&
+				pausedRef.current !== nextPaused
+			) {
+				// React publishes the real state on the next render. Mirror the command
+				// synchronously so `pause\nresume\n` arriving in one pipe read toggles
+				// twice instead of dropping resume against the stale render.
+				pausedRef.current = nextPaused;
+				togglePausedRef.current();
 			}
 		});
 	}, []);

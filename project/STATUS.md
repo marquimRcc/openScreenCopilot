@@ -762,6 +762,21 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
     mesmo SHA256 `811CD9051F90C35DBCE0EA4355737E2CB3BA24EB3F6DE3B9DF957468E778E7B6`;
     `cursor-sampler.exe` também coincide nos três locais, SHA256
     `40A1A89DF2140C028A59C486E988838588EAEE40E702BD9642057E7F3734CA56`.
+  - Controle de pausa/retomada para automação CLI (30/10): `openscreen record`
+    aceita linhas idempotentes `pause`/`p` e `resume`/`r` no mesmo stdin já usado
+    por `stop`; pedidos durante startup ficam retidos e comandos consecutivos no
+    mesmo read não dependem de um render React intermediário. Eventos NDJSON
+    `pausing`/`resuming`, preload tipado e documentação CLI foram adicionados.
+    Teste real de janela Notepad++ sem áudio/mic/câmera, em perfil isolado e com
+    cursor system: pause após `Recording started`, espera de 2 s, resume e stop por
+    `--duration 12`; exit 0, eventos na ordem esperada, MP4 H.264 hardware de
+    9,985033 s / 463.825 bytes, SHA256
+    `B4CBED7883AC077BBF4A92ED26334596DF727C2A7454838E471393EBA92ADABD`,
+    decode completo exit 0. A diferença de ~2 s comprova que o trecho pausado foi
+    removido da mídia; não envolve fala humana nem dispositivos adiados.
+    Regressão final deste incremento: 390 arquivos aprovados + 2 ignorados,
+    5.379 testes aprovados + 10 ignorados, exit 0 em 428,51 s; `tsc --noEmit`,
+    checks focados e docs também aprovados.
 - Ensaio de seleção de janela e fechamento de fonte no pacote win-unpacked (20/10/2026, SKIPPED / sem aceite):
   - Tentativa adicional conduzida pela supervisora Codex via skill às ~05:13 UTC com raiz isolada `.cache/package-qa-34e17800-3e1a-480f-bff7-c555b02bb4fc` (launcher app PID 14592, histórico encerrado).
   - Coberturas: cover base PID 13368 (`opaque-qa-long.cjs`, tom não ativado) e alvo PID 7112 (`opaque-qa-source.cjs`), logs `.cache/window-close-{base,target}-59f0df09-65f0-454b-bf4b-aabd45286864.*`.

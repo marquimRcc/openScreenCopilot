@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, waitFor } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CliRecordRunner } from "./CliRecordRunner";
 
@@ -8,6 +8,8 @@ const recorder = vi.hoisted(() => ({
 	saving: false,
 	startRecordingImmediately: vi.fn(async () => undefined),
 	toggleRecording: vi.fn(),
+	togglePaused: vi.fn(),
+	paused: false,
 	setMicrophoneEnabled: vi.fn(),
 	setMicrophoneDeviceId: vi.fn(),
 	setMicrophoneDeviceName: vi.fn(),
@@ -51,8 +53,12 @@ const request = {
 
 describe("CliRecordRunner", () => {
 	beforeEach(() => {
+		recorder.recording = false;
+		recorder.saving = false;
+		recorder.paused = false;
 		recorder.startRecordingImmediately.mockClear();
 		recorder.toggleRecording.mockClear();
+		recorder.togglePaused.mockClear();
 		window.electronAPI = {
 			getPlatform: vi.fn(() => "win32"),
 			isNativeLinuxCaptureAvailable: vi.fn(async () => ({ success: true, available: false })),
@@ -60,6 +66,7 @@ describe("CliRecordRunner", () => {
 			cliLog: vi.fn(),
 			cliDone: vi.fn(async () => undefined),
 			onCliStopRecording: vi.fn(() => () => undefined),
+			onCliSetRecordingPaused: vi.fn(() => () => undefined),
 			getCurrentRecordingSession: vi.fn(async () => ({ success: false, session: null })),
 			getSources: vi.fn(async () => [screenSource]),
 			selectSource: vi.fn(async () => screenSource),
@@ -107,6 +114,38 @@ describe("CliRecordRunner", () => {
 		render(<CliRecordRunner />);
 		await waitFor(() => expect(recorder.startRecordingImmediately).toHaveBeenCalledTimes(1));
 		expect(window.electronAPI.cliDone).not.toHaveBeenCalled();
+	});
+
+	it("applies idempotent pause and resume commands to an active CLI recording", async () => {
+		const view = render(<CliRecordRunner />);
+		await waitFor(() => expect(recorder.startRecordingImmediately).toHaveBeenCalledTimes(1));
+		recorder.recording = true;
+		view.rerender(<CliRecordRunner />);
+
+		const onCommand = vi.mocked(window.electronAPI.onCliSetRecordingPaused).mock.calls[0]?.[0];
+		expect(onCommand).toBeTypeOf("function");
+		act(() => onCommand?.(true));
+		expect(recorder.togglePaused).toHaveBeenCalledOnce();
+
+		act(() => onCommand?.(true));
+		expect(recorder.togglePaused).toHaveBeenCalledOnce();
+
+		act(() => onCommand?.(false));
+		expect(recorder.togglePaused).toHaveBeenCalledTimes(2);
+		act(() => onCommand?.(false));
+		expect(recorder.togglePaused).toHaveBeenCalledTimes(2);
+	});
+
+	it("remembers a pause command received while capture is still starting", async () => {
+		const view = render(<CliRecordRunner />);
+		await waitFor(() => expect(recorder.startRecordingImmediately).toHaveBeenCalledTimes(1));
+		const onCommand = vi.mocked(window.electronAPI.onCliSetRecordingPaused).mock.calls[0]?.[0];
+		act(() => onCommand?.(true));
+		expect(recorder.togglePaused).not.toHaveBeenCalled();
+
+		recorder.recording = true;
+		view.rerender(<CliRecordRunner />);
+		expect(recorder.togglePaused).toHaveBeenCalledOnce();
 	});
 
 	it("reports the recorder's startup error instead of replacing it with a timeout", async () => {

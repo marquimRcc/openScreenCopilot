@@ -604,6 +604,7 @@ interface Window {
 		cliLog: (level: "info" | "error", message: string) => void;
 		cliDone: (result: import("../src/lib/cliContracts").CliDoneResult) => Promise<void>;
 		onCliStopRecording: (callback: () => void) => () => void;
+		onCliSetRecordingPaused: (callback: (paused: boolean) => void) => () => void;
 		setLocale: (locale: string) => Promise<void>;
 		saveDiagnostic: (payload: {
 			error: string;
