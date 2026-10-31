@@ -704,7 +704,7 @@ export function createRegionIndicatorWindow(
 	void win
 		.loadURL(
 			`data:text/html;charset=utf-8,${encodeURIComponent(
-				`<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Recording region</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{box-sizing:border-box;border:2px dashed #ef4444;pointer-events:none;font:700 12px system-ui;color:#fff}#paused{display:none;position:absolute;top:6px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:#b91c1c;letter-spacing:.08em}body[data-paused="true"]{border-color:#f59e0b}body[data-paused="true"] #paused{display:block}</style><div id="paused">${pauseLabel}</div>`,
+				`<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Recording region</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{box-sizing:border-box;border:2px dashed #ef4444;pointer-events:none;font:700 12px system-ui;color:#fff}.status{position:absolute;top:6px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:#b91c1c;letter-spacing:.08em}#paused{display:none}body[data-paused="true"]{border-color:#f59e0b}body[data-paused="true"] #recording{display:none}body[data-paused="true"] #paused{display:block;background:#b45309}</style><div class="status" id="recording">REC</div><div class="status" id="paused">${pauseLabel}</div>`,
 			)}`,
 		)
 		.catch(() => {

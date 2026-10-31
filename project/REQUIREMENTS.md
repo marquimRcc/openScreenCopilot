@@ -27,8 +27,9 @@ aceite permanecem identificadas abaixo e em `STATUS.md`.
 Pedido do usuário em 2026-10-13. A borda protegida já acompanha a região fixa, a
 tela inteira e a geometria dinâmica de janela informada pelo helper nativo; pausa
 reduz sua opacidade e stop/cancel/falha/exit a remove por ownership do helper.
-Durante a pausa, a própria borda protegida exibe texto PAUSADO/PAUSED e muda de
-cor, sem depender do HUD. Homologação física/DPI misto continua pendente.
+A própria borda protegida exibe `REC` durante a gravação; na pausa, troca para
+PAUSADO/PAUSED e muda de cor, sem depender do HUD. Homologação física/DPI misto
+continua pendente.
 
 - Borda vermelha fina e pontilhada/tracejada delimitando exatamente o monitor,
   a janela ou o retângulo que está sendo capturado. Visível durante toda a gravação,

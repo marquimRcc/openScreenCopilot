@@ -91,7 +91,9 @@ describe("HUD content protection on Windows (#1105)", () => {
 		});
 		expect(win.setBounds).toHaveBeenCalledWith(bounds);
 		expect(win.loadURL).toHaveBeenCalledWith(expect.stringContaining("data:text/html"));
-		expect(decodeURIComponent(win.loadURL.mock.calls[0][0])).toContain("PAUSED");
+		const indicatorHtml = decodeURIComponent(win.loadURL.mock.calls[0][0]);
+		expect(indicatorHtml).toContain('id="recording">REC</div>');
+		expect(indicatorHtml).toContain("PAUSED");
 		const loaded = win.webContents.on.mock.calls.find(([name]) => name === "did-finish-load")?.[1];
 		loaded();
 		(win as unknown as { setPausedVisual(paused: boolean): void }).setPausedVisual(true);

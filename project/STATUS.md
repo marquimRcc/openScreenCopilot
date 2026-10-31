@@ -367,16 +367,17 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   `0089133E5421A011C99E91788E65516F9137231BA846DEFA3B8B681E2114D79E`.
   Regressão: Vitest completo 390 arquivos / 5.382 testes aprovados, 2 arquivos /
   10 testes ignorados; typecheck, lint (26 avisos herdados), i18n e docs aprovados.
-  A sobreposição protegida também retém estado de pausa antes/depois do load,
-  troca a borda para âmbar e exibe selo textual `PAUSADO` no locale `pt*` ou
-  `PAUSED` nos demais, independente do HUD e ainda click-through. Contrato testado;
+  A sobreposição protegida exibe selo `REC` no estado ativo, retém estado de
+  pausa antes/depois do load, troca a borda para âmbar e o selo para `PAUSADO` no
+  locale `pt*` ou `PAUSED` nos demais, independente do HUD e ainda click-through.
+  Contrato testado;
   a visibilidade física do selo continua no mesmo aceite manual pendente da borda.
-  Rebuild Windows após o selo: exit 0; instalador local 190.563.015 bytes SHA256
-  `69D697784FEC052E140756334F9F62C8192437828E4030221DC1D55E20A9AD80`,
+  Rebuild Windows final após os selos: exit 0; instalador local 191.325.313 bytes
+  SHA256 `BC8B981BF0F5783BFA3A3322DB14385EAFA1F45CF600CA3D4F4F1BC8A9AD572A`,
   EXE unpacked 223.298.048 bytes
-  `0A3317447C038D17E5D97BF27C90B88B9399A7EB07D40865158189475220F8EA`
-  e `app.asar` 117.713.376 bytes
-  `49648676F9A95F665395BAB63A6C357E38E418A1DA8CF16577256D5636A02760`;
+  `8A4296DD0E0813DF7AFBBED904CE5BC84508C99246E237D37FFB3B6CC4AB6BE7`
+  e `app.asar` 121.992.441 bytes
+  `4B67EE1F3A055CA8C5E00897CA22B8D9FA8DFC8297EAE7CA63BDF9DA3B917318`;
   não assinados, instalados ou publicados. Vitest completo permaneceu verde com
   390 arquivos / 5.382 testes aprovados e 2 arquivos / 10 testes ignorados.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
