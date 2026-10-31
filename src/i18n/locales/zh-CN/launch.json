@@ -2,7 +2,7 @@
 	"tooltips": {
 		"hideHUD": "隐藏录制栏",
 		"hideHUDTip": "隐藏录制栏，可通过系统托盘图标重新显示",
-		"closeApp": "退出 OpenScreen",
+		"closeApp": "退出 openScreenCopilot",
 		"restartRecording": "删除本次录制并重新开始",
 		"cancelRecording": "停止录制并删除本次录制内容",
 		"pauseRecording": "暂停录制",
@@ -37,6 +37,23 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "测试系统音频（30秒）",
+		"outputMeterStop": "停止测试",
+		"outputMeterStarting": "正在开始测试…",
+		"outputMeterActive": "输出活动 — 并非录音",
+		"outputMeterStopping": "正在停止测试…",
+		"outputMeterStopped": "测试已结束",
+		"outputMeterError": "无法测试，请重试。",
+		"outputMeterHint": "输出音量调节前的峰值。独占模式可能显示为零；活动并不能证明音频已录制。",
+		"outputMeterLevel": "系统音频活动",
+		"outputDevice": "音频输出",
+		"outputDefault": "Windows 默认",
+		"outputUnavailable": "所选输出不可用",
+		"outputRefresh": "刷新",
+		"outputLoading": "正在加载输出…",
+		"outputLoadFailed": "无法加载输出。请选择 Windows 默认输出或刷新。",
+		"outputSaveFailed": "无法保存输出。请重试。",
+		"outputScope": "录制此输出播放的所有声音，而不是单个应用的声音。",
 		"systemAudio": "系统音频",
 		"microphone": "麦克风",
 		"inputDevice": "输入设备"
@@ -57,13 +74,42 @@
 		"editableTip": "可编辑光标：单独记录光标，可在编辑器中修改样式并使用自动缩放",
 		"systemTip": "系统光标：直接录制到视频中，无法修改样式或使用自动缩放"
 	},
+	"recordingResult": {
+		"saveCopy": "保存副本…",
+		"copying": "正在复制原始视频，不含编辑效果…",
+		"copySaved": "副本已保存到：",
+		"cancelCopy": "取消复制",
+		"copyExists": "目标文件已存在。请选择新名称；原始视频和现有文件将保留。",
+		"originalPreview": "原始视频预览。单独录制的摄像头、可编辑光标和编辑效果可在“编辑”中查看。",
+		"saved": "录制已保存",
+		"title": "录制",
+		"loading": "正在加载录制…",
+		"unavailable": "找不到已保存的录制。此页面未删除原文件。",
+		"actionFailed": "无法完成操作。录制未被修改。",
+		"preview": "录制预览",
+		"previewFailed": "无法预览。您仍可打开文件夹或尝试编辑器。",
+		"location": "保存位置",
+		"openFolder": "打开文件夹",
+		"newCapture": "新录制",
+		"edit": "编辑",
+		"retry": "重试"
+	},
+	"regionSelection": {
+		"tab": "区域",
+		"monitorHint": "选择显示器，然后框选录制区域。",
+		"draw": "框选区域",
+		"hint": "拖动以框选录制区域。",
+		"keys": "Enter：确认 · Esc：取消",
+		"confirm": "使用此区域",
+		"error": "无法选择区域，请重试。"
+	},
 	"sourceSelector": {
 		"loading": "正在加载源...",
 		"screens": "屏幕 ({{count}})",
 		"windows": "窗口 ({{count}})",
 		"emptyTitle": "未找到屏幕或窗口",
-		"emptyDescription": "如果您刚刚授予了屏幕录制权限，请重新加载此选择器。在 macOS 上，您可能需要重新打开 OpenScreen。",
-		"loadFailedDescription": "OpenScreen 无法加载采集源。请重新加载此选择器并重试。",
+		"emptyDescription": "如果您刚刚授予了屏幕录制权限，请重新加载此选择器。在 macOS 上，您可能需要重新打开 openScreenCopilot。",
+		"loadFailedDescription": "openScreenCopilot 无法加载采集源。请重新加载此选择器并重试。",
 		"defaultSourceName": "屏幕"
 	},
 	"recording": {
@@ -77,13 +123,13 @@
 	"languageWithName": "语言：{{language}}",
 	"systemLanguagePrompt": {
 		"title": "使用系统语言吗？",
-		"description": "我们检测到你的系统语言是{{language}}。是否将 OpenScreen 切换为{{language}}？",
+		"description": "我们检测到你的系统语言是{{language}}。是否将 openScreenCopilot 切换为{{language}}？",
 		"switch": "切换到{{language}}",
 		"keepDefault": "保持当前语言"
 	},
 	"softwareEncoderFallback": {
 		"title": "已切换到软件编码",
-		"description": "默认 GPU 编码器启动失败，OpenScreen 已改用软件 H.264 编码。录制会正常继续，但 CPU 占用可能更高。",
+		"description": "默认 GPU 编码器启动失败，openScreenCopilot 已改用软件 H.264 编码。录制会正常继续，但 CPU 占用可能更高。",
 		"dismiss": "知道了",
 		"dontShowAgain": "不再提示"
 	},
@@ -100,7 +146,7 @@
 		"checkingForUpdates": "正在检查…"
 	},
 	"permissions": {
-		"title": "OpenScreen 需要一些权限",
+		"title": "openScreenCopilot 需要一些权限",
 		"subtitle": "macOS 只会请求你授予一次。你可以随时在“系统设置”中更改。",
 		"level": {
 			"required": "必需",
@@ -137,17 +183,17 @@
 			"continue": "继续",
 			"allow": "允许",
 			"openSettings": "打开设置",
-			"restart": "重新启动 OpenScreen",
+			"restart": "重新启动 openScreenCopilot",
 			"start": "开始使用"
 		},
 		"help": {
-			"screenPrompt": "接下来 macOS 会请你在“系统设置”中开启 OpenScreen。",
-			"screenSettings": "请在“系统设置”中开启 OpenScreen。如果 macOS 提示退出并重新打开，请同意：此窗口会重新出现。",
-			"screenNotListed": "列表中没有 OpenScreen？点按 +，然后在“应用程序”中选择 OpenScreen。",
-			"screenRestart": "已允许。OpenScreen 需要重新启动才能使用。",
-			"screenRecurring": "首次录制时，macOS 会询问是否允许 OpenScreen 不通过系统选择器直接访问你的屏幕。请点按“允许”。macOS 会不时再次询问，这是正常现象。",
-			"systemAudioPrompt": "macOS 会请你允许 OpenScreen 录制 Mac 播放的声音。",
-			"systemAudioRequested": "如果你拒绝了，请在“系统设置”的“仅系统录音”中开启 OpenScreen。"
+			"screenPrompt": "接下来 macOS 会请你在“系统设置”中开启 openScreenCopilot。",
+			"screenSettings": "请在“系统设置”中开启 openScreenCopilot。如果 macOS 提示退出并重新打开，请同意：此窗口会重新出现。",
+			"screenNotListed": "列表中没有 openScreenCopilot？点按 +，然后在“应用程序”中选择 openScreenCopilot。",
+			"screenRestart": "已允许。openScreenCopilot 需要重新启动才能使用。",
+			"screenRecurring": "首次录制时，macOS 会询问是否允许 openScreenCopilot 不通过系统选择器直接访问你的屏幕。请点按“允许”。macOS 会不时再次询问，这是正常现象。",
+			"systemAudioPrompt": "macOS 会请你允许 openScreenCopilot 录制 Mac 播放的声音。",
+			"systemAudioRequested": "如果你拒绝了，请在“系统设置”的“仅系统录音”中开启 openScreenCopilot。"
 		},
 		"footer": {
 			"screenRequired": "录制需要屏幕录制权限。",

@@ -155,7 +155,7 @@ describe("useScreenRecorder Restart that does not start a new take", () => {
 		});
 		await restart(view);
 
-		expect(api.stopNativeWindowsRecording).toHaveBeenCalledWith(true);
+		expect(api.stopNativeWindowsRecording).toHaveBeenCalledWith(true, 7);
 		expect(api.startNativeWindowsRecording).toHaveBeenCalledTimes(2);
 		expect(view.result.current.recording).toBe(false);
 		expect(toast.error).toHaveBeenCalledWith("recording.restartFailed");

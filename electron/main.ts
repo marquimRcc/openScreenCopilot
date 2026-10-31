@@ -1,3 +1,4 @@
+import "./initialize-identity";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -12,6 +13,7 @@ import {
 	shell,
 	Tray,
 } from "electron";
+import { SELF_UPDATE_ENABLED } from "../src/config/product";
 import { ShortcutBinding } from "../src/lib/shortcuts";
 import {
 	type AboutFacts,
@@ -67,6 +69,7 @@ import {
 	showPermissionsWindow,
 	showPermissionsWindowIfNeeded,
 } from "./permissions";
+import { createAppQuitLifecycle } from "./quitBarrier";
 import { setDisplaySleepBlocked } from "./recording/displaySleepBlocker";
 import { RecordingsDirManager } from "./recording/recordingsDirManager";
 import { offersStarPrompt, REPO_URL, storeReviewUrl } from "./star-prompt";
@@ -642,7 +645,7 @@ let currentUpdateMode: UpdateMode = "notify";
 let backgroundUpdateTimer: ReturnType<typeof setInterval> | null = null;
 
 function showUpdateSettingsMenu(): boolean {
-	return app.isPackaged && ownsItsUpdates(getInstallChannel());
+	return SELF_UPDATE_ENABLED && app.isPackaged && ownsItsUpdates(getInstallChannel());
 }
 
 function persistUpdateMode(mode: UpdateMode) {
@@ -766,7 +769,7 @@ function startBackgroundUpdateTimer() {
 	if (
 		!shouldStartBackgroundUpdateTimer({
 			isPackaged: app.isPackaged,
-			ownsItsUpdates: ownsItsUpdates(getInstallChannel()),
+			ownsItsUpdates: SELF_UPDATE_ENABLED && ownsItsUpdates(getInstallChannel()),
 		})
 	) {
 		return;
@@ -1017,14 +1020,14 @@ function forceCloseEditorWindow(windowToClose: BrowserWindow | null) {
 	});
 }
 
-function createEditorWindowWrapper() {
+function createEditorWindowWrapper(query: Record<string, string> = {}) {
 	if (mainWindow) {
 		isForceClosing = true;
 		mainWindow.close();
 		isForceClosing = false;
 		mainWindow = null;
 	}
-	mainWindow = createEditorWindow();
+	mainWindow = createEditorWindow(query);
 	editorHasUnsavedChanges = false;
 
 	mainWindow.on("close", (event) => {
@@ -1133,38 +1136,38 @@ app.on("activate", () => {
 	}
 });
 
-let sttShutdownPromise: Promise<void> | null = null;
-let sttShutdownFinished = false;
+let pauseRecordingDerivatives: ReturnType<typeof registerIpcHandlers>["pauseRecordingDerivatives"] =
+	() => ({ settled: Promise.resolve(undefined), resume: () => undefined });
+let prepareWindowsBrowserCapture: ReturnType<
+	typeof registerIpcHandlers
+>["prepareWindowsBrowserCapture"] = async () => {
+	throw new Error("Recording services are not ready");
+};
 
-// Electron does not wait for an async event listener. Hold the first quit long
-// enough to terminate the long-lived Whisper helper, then re-enter app.quit()
-// with a guard so the second before-quit event can proceed normally. Without
-// this, a normal Cmd+Q orphaned the helper under launchd with the model and GPU
-// resources still resident after every OpenScreen window had gone away.
+// before-quit precedes window close confirmation. Drain derivatives here, but
+// do NOT terminally shut down STT until every window has accepted close.
+const quitLifecycle = createAppQuitLifecycle({
+	pauseDerivatives: () => pauseRecordingDerivatives(),
+	flush: flushChatPersistence,
+	shutdownStt: () =>
+		shutdownStt().catch((error) => {
+			console.error("[stt] Failed to stop whisper helper during app quit:", error);
+		}),
+	quit: () => app.quit(),
+	onError: (error) => console.error("[quit] Failed to finish shutdown; app remains open:", error),
+});
 app.on("before-quit", (event) => {
 	// A check started seconds ago must not settle after the app is gone and try to open a
 	// dialog on a quitting app. Aborting on the FIRST quit is deliberate even though that
 	// quit is deferred below: the user asked to leave, and a check they can re-run from the
 	// tray is not worth holding the helper's teardown behind.
 	updateCheckAbort?.abort();
-	if (sttShutdownFinished) return;
-	event.preventDefault();
-	if (sttShutdownPromise) return;
-	sttShutdownPromise = shutdownStt()
-		.catch((error) => {
-			console.error("[stt] Failed to stop whisper helper during app quit:", error);
-		})
-		// Chat history is written asynchronously. Flushing after the helper stops also
-		// catches a reply that landed meanwhile; a turn still running is not waited for.
-		.then(flushChatPersistence)
-		.finally(() => {
-			sttShutdownFinished = true;
-			app.quit();
-		});
+	quitLifecycle.beforeQuit(event);
 });
 
-app.on("will-quit", () => {
-	unregisterAllGlobalShortcuts();
+app.on("will-quit", (event) => {
+	quitLifecycle.willQuit(event);
+	if (!event.defaultPrevented) unregisterAllGlobalShortcuts();
 });
 
 const appReady = !cliCommand && hasSingleInstanceLock ? app.whenReady() : null;
@@ -1224,10 +1227,47 @@ appReady?.then(async () => {
 				return;
 			}
 
-			callback({
-				video: source,
-				...(request.audioRequested && process.platform === "win32" ? { audio: "loopback" } : {}),
-			});
+			const grant = () =>
+				callback({
+					video: source,
+					...(request.audioRequested && process.platform === "win32" ? { audio: "loopback" } : {}),
+				});
+			if (process.platform !== "win32") {
+				grant();
+				return;
+			}
+			void (async () => {
+				let release: (() => void) | undefined;
+				const deny = () => {
+					try {
+						callback({});
+					} catch {
+						/* Request frame already gone. */
+					}
+				};
+				try {
+					const lease = await prepareWindowsBrowserCapture(request.frame, request.audioRequested);
+					release = lease.release;
+					if (
+						!lease.isCurrent() ||
+						!request.frame ||
+						getSelectedDesktopSource()?.id !== source.id
+					) {
+						release();
+						deny();
+						return;
+					}
+				} catch {
+					release?.();
+					deny();
+					return;
+				}
+				try {
+					grant();
+				} catch {
+					release?.();
+				}
+			})();
 		},
 		{ useSystemPicker: false },
 	);
@@ -1299,15 +1339,17 @@ appReady?.then(async () => {
 	ipcMain.handle("star-prompt:export-finished", () => {
 		const { successfulExports, dismissed } = starPromptSettings.recordSuccessfulExport();
 		return {
-			offer: offersStarPrompt({
-				successfulExports,
-				dismissed,
-				recording: isRecording,
-				// Every handler in this file is registered inside `appReady`, which the CLI boot
-				// path never reaches, so this is the second lock on a shut door — see the note on
-				// `headless` in star-prompt.ts.
-				headless: cliCommand !== null,
-			}),
+			offer:
+				SELF_UPDATE_ENABLED &&
+				offersStarPrompt({
+					successfulExports,
+					dismissed,
+					recording: isRecording,
+					// Every handler in this file is registered inside `appReady`, which the CLI boot
+					// path never reaches, so this is the second lock on a shut door — see the note on
+					// `headless` in star-prompt.ts.
+					headless: cliCommand !== null,
+				}),
 			// Drives which links the prompt shows. A Store copy must not be pointed at Releases
 			// or at an .exe, so it is offered the repo root and the Store's own review page.
 			store: getInstallChannel() === "store",
@@ -1389,7 +1431,7 @@ appReady?.then(async () => {
 		showMainWindow();
 	}
 
-	const { mcpController, mcpAppChannel } = registerIpcHandlers(
+	const ipcServices = registerIpcHandlers(
 		createEditorWindowWrapper,
 		createSourceSelectorWindowWrapper,
 		createCountdownOverlayWindowWrapper,
@@ -1414,6 +1456,9 @@ appReady?.then(async () => {
 		switchToHudWrapper,
 		() => editorHasUnsavedChanges,
 	);
+	const { mcpController, mcpAppChannel } = ipcServices;
+	pauseRecordingDerivatives = ipcServices.pauseRecordingDerivatives;
+	prepareWindowsBrowserCapture = ipcServices.prepareWindowsBrowserCapture;
 
 	// Native STT (whisper.cpp + forced alignment) — single instance per app.
 	registerSttIpc(ipcMain);

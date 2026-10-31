@@ -117,13 +117,13 @@ Record options (recording is saved into the app's recordings directory):
   --camera-device <name>    Camera device name (implies --camera)
   --cursor <editable-overlay|system>
                             Cursor capture mode (default editable-overlay)
-  --duration <seconds>      Stop automatically after this long
+  --duration <seconds>      Stop after this much wall time (pauses count)
   --project <out.openscreen>
                             Write a ready-to-export project file when done
   --json                    NDJSON events on stdout
 
-Stopping a recording: send SIGINT/SIGTERM, type "stop" + Enter on stdin,
-or pass --duration.
+Controlling a recording: type "pause", "resume", or "stop" + Enter on stdin.
+SIGINT/SIGTERM and --duration also stop it.
 `;
 
 function takeValue(argv: string[], i: number, flag: string): [string, number] {
@@ -143,6 +143,26 @@ function takeValue(argv: string[], i: number, flag: string): [string, number] {
 
 function resolvePath(p: string, cwd: string): string {
 	return path.isAbsolute(p) ? p : path.resolve(cwd, p);
+}
+
+export type RecordControlCommand = "stop" | "pause" | "resume";
+
+/** Parse one human/pipe control line without making stdin ownership part of args parsing. */
+export function parseRecordControlLine(line: string): RecordControlCommand | null {
+	switch (line.trim().toLowerCase()) {
+		case "stop":
+		case "q":
+		case "quit":
+			return "stop";
+		case "pause":
+		case "p":
+			return "pause";
+		case "resume":
+		case "r":
+			return "resume";
+		default:
+			return null;
+	}
 }
 
 /**

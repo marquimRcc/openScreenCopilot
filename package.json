@@ -1,9 +1,9 @@
 {
-	"name": "openscreen",
+	"name": "openscreen-copilot",
 	"private": true,
-	"version": "2.0.0",
-	"description": "Record your screen and polish the demo",
-	"homepage": "https://getopenscreen.com/",
+	"version": "0.1.0-alpha.1",
+	"description": "Quality-first screen recording and local transcription (experimental fork)",
+	"homepage": "https://github.com/marquimRcc/openScreenCopilot",
 	"license": "MIT",
 	"type": "module",
 	"packageManager": "npm@10.9.4",
@@ -12,23 +12,27 @@
 		"npm": "10.9.4"
 	},
 	"author": {
-		"name": "Etienne Lescot",
-		"url": "https://github.com/EtienneLescot"
+		"name": "openScreenCopilot contributors",
+		"url": "https://github.com/marquimRcc/openScreenCopilot"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/getopenscreen/openscreen.git"
+		"url": "git+https://github.com/marquimRcc/openScreenCopilot.git"
 	},
 	"contributors": [
 		{
 			"name": "Siddharth Vaddem",
 			"url": "https://github.com/siddharthvaddem"
+		},
+		{
+			"name": "Etienne Lescot",
+			"url": "https://github.com/EtienneLescot"
 		}
 	],
 	"maintainers": [
 		{
-			"name": "Etienne Lescot",
-			"url": "https://github.com/EtienneLescot"
+			"name": "marquimRcc",
+			"url": "https://github.com/marquimRcc"
 		}
 	],
 	"scripts": {
@@ -51,9 +55,11 @@
 		"build:native:compositor:linux": "node scripts/build-linux-compositor-addon.mjs",
 		"build:native:linux": "node scripts/build-linux-pipewire-helper.mjs",
 		"build:win": "npm run build:native:win && npm run fetch:ffmpeg && npm run fetch:onnxruntime && npm run stage:vcomp && npm run build:native:compositor && tsc && vite build && npm run licenses:generate && electron-builder --win --config.npmRebuild=false",
-		"build:win:store": "npm run build:native:win && npm run fetch:ffmpeg && npm run fetch:onnxruntime && npm run stage:vcomp && npm run build:native:compositor && tsc && vite build && npm run licenses:generate && electron-builder --win appx --config.npmRebuild=false",
+		"delivery:win": "node scripts/create-windows-preview-delivery.mjs",
+		"build:win:store": "node scripts/fork-store-disabled.mjs",
 		"build:linux": "npm run fetch:ffmpeg:sdk && npm run build:native:linux && npm run fetch:onnxruntime && npm run build:native:compositor:linux && tsc && vite build && npm run licenses:generate && electron-builder --linux AppImage deb pacman rpm --config.npmRebuild=false",
 		"build:whisper-binaries": "bash scripts/build-whisper-stt.sh",
+		"build:speech-sidecar": "node scripts/build-speech-sidecar.mjs",
 		"test:whisper-stt": "node scripts/test-whisper-stt.mjs",
 		"build:native:win:arm64": "node scripts/build-windows-wgc-helper.mjs --arch arm64",
 		"build:win:arm64": "npm run build:native:win:arm64 && npm run fetch:ffmpeg && npm run fetch:onnxruntime && npm run stage:vcomp && npm run build:native:compositor && tsc && vite build && npm run licenses:generate && electron-builder --win --arm64 --config.npmRebuild=false",

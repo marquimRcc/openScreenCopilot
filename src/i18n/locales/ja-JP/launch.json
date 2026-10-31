@@ -37,6 +37,23 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "システム音声をテスト（30秒）",
+		"outputMeterStop": "テストを停止",
+		"outputMeterStarting": "テストを開始中…",
+		"outputMeterActive": "出力の動作 — 録音ではありません",
+		"outputMeterStopping": "テストを停止中…",
+		"outputMeterStopped": "テスト終了",
+		"outputMeterError": "テストできません。再試行してください。",
+		"outputMeterHint": "出力音量調整前のピークです。排他モードではゼロになる場合があります。動作は録音の証明ではありません。",
+		"outputMeterLevel": "システム音声の動作",
+		"outputDevice": "音声出力",
+		"outputDefault": "Windows の既定",
+		"outputUnavailable": "選択した出力は利用できません",
+		"outputRefresh": "更新",
+		"outputLoading": "出力を読み込み中…",
+		"outputLoadFailed": "出力を読み込めませんでした。Windows の既定を選ぶか更新してください。",
+		"outputSaveFailed": "出力を保存できませんでした。もう一度お試しください。",
+		"outputScope": "特定のアプリだけでなく、この出力で再生されるすべての音声を録音します。",
 		"systemAudio": "システム音声",
 		"microphone": "マイク",
 		"inputDevice": "入力デバイス"
@@ -57,13 +74,42 @@
 		"editableTip": "編集可能なカーソル：別途記録されるため、エディターでスタイルを変更でき、自動ズームも使えます",
 		"systemTip": "システムカーソル：実際のカーソルが動画に録画されます。スタイル変更や自動ズームは使えません。"
 	},
+	"recordingResult": {
+		"saveCopy": "コピーを保存…",
+		"copying": "編集を加えずに元の動画をコピー中…",
+		"copySaved": "コピーの保存先：",
+		"cancelCopy": "コピーをキャンセル",
+		"copyExists": "保存先には既にファイルがあります。別の名前を選んでください。元の動画と既存のファイルは保持されます。",
+		"originalPreview": "元の動画のプレビューです。別録りのカメラ、編集可能なカーソル、編集内容は「編集」で表示されます。",
+		"saved": "録画を保存しました",
+		"title": "録画",
+		"loading": "録画を読み込み中…",
+		"unavailable": "保存した録画が見つかりません。この画面は元のファイルを削除していません。",
+		"actionFailed": "操作を完了できませんでした。録画は変更されていません。",
+		"preview": "録画のプレビュー",
+		"previewFailed": "プレビューできません。フォルダーを開くか、編集画面をお試しください。",
+		"location": "保存先",
+		"openFolder": "フォルダーを開く",
+		"newCapture": "新しい録画",
+		"edit": "編集",
+		"retry": "再試行"
+	},
+	"regionSelection": {
+		"tab": "範囲",
+		"monitorHint": "モニターを選び、録画する範囲を指定してください。",
+		"draw": "範囲を指定",
+		"hint": "ドラッグして録画する範囲を指定してください。",
+		"keys": "Enter：確定 · Esc：キャンセル",
+		"confirm": "この範囲を使う",
+		"error": "範囲を選択できませんでした。再試行してください。"
+	},
 	"sourceSelector": {
 		"loading": "ソースを読み込み中...",
 		"screens": "画面 ({{count}})",
 		"windows": "ウィンドウ ({{count}})",
 		"emptyTitle": "画面またはウィンドウが見つかりません",
-		"emptyDescription": "画面収録の権限を許可したばかりの場合は、このピッカーを再読み込みしてください。macOSではOpenScreenの再起動が必要な場合があります。",
-		"loadFailedDescription": "OpenScreenはキャプチャソースを読み込めませんでした。このピッカーを再読み込みしてもう一度お試しください。",
+		"emptyDescription": "画面収録の権限を許可したばかりの場合は、このピッカーを再読み込みしてください。macOSではopenScreenCopilotの再起動が必要な場合があります。",
+		"loadFailedDescription": "openScreenCopilotはキャプチャソースを読み込めませんでした。このピッカーを再読み込みしてもう一度お試しください。",
 		"defaultSourceName": "画面"
 	},
 	"recording": {
@@ -77,13 +123,13 @@
 	"languageWithName": "言語：{{language}}",
 	"systemLanguagePrompt": {
 		"title": "システム言語を使用しますか？",
-		"description": "システム言語として{{language}}が検出されました。OpenScreenを{{language}}に切り替えますか？",
+		"description": "システム言語として{{language}}が検出されました。openScreenCopilotを{{language}}に切り替えますか？",
 		"switch": "{{language}}に切り替え",
 		"keepDefault": "現在の言語を保持"
 	},
 	"softwareEncoderFallback": {
 		"title": "ソフトウェアエンコードに切り替えました",
-		"description": "既定のGPUエンコーダーを開始できなかったため、OpenScreenはソフトウェアH.264エンコードに切り替えました。録画はそのまま続行されますが、CPU使用率が高くなる場合があります。",
+		"description": "既定のGPUエンコーダーを開始できなかったため、openScreenCopilotはソフトウェアH.264エンコードに切り替えました。録画はそのまま続行されますが、CPU使用率が高くなる場合があります。",
 		"dismiss": "OK",
 		"dontShowAgain": "今後表示しない"
 	},
@@ -100,7 +146,7 @@
 		"checkingForUpdates": "確認中…"
 	},
 	"permissions": {
-		"title": "OpenScreen にはいくつかの許可が必要です",
+		"title": "openScreenCopilot にはいくつかの許可が必要です",
 		"subtitle": "macOS ではそれぞれ一度だけ許可します。システム設定でいつでも変更できます。",
 		"level": {
 			"required": "必須",
@@ -137,17 +183,17 @@
 			"continue": "続ける",
 			"allow": "許可",
 			"openSettings": "設定を開く",
-			"restart": "OpenScreen を再起動",
+			"restart": "openScreenCopilot を再起動",
 			"start": "はじめる"
 		},
 		"help": {
-			"screenPrompt": "このあと macOS から、システム設定で OpenScreen をオンにするよう求められます。",
-			"screenSettings": "システム設定で OpenScreen をオンにしてください。macOS が終了して再度開くよう提案した場合は、そのまま進めてください。このウインドウが再び表示されます。",
-			"screenNotListed": "リストに OpenScreen がない場合は、＋をクリックして「アプリケーション」から OpenScreen を選んでください。",
-			"screenRestart": "許可済みです。使用するには OpenScreen の再起動が必要です。",
-			"screenRecurring": "最初の録画時に、macOS から OpenScreen がシステムのピッカーを使わずに画面へ直接アクセスしてよいか確認されます。「許可」をクリックしてください。macOS はときどき再確認します。これは正常な動作です。",
-			"systemAudioPrompt": "macOS から、OpenScreen に Mac のサウンドの録音を許可するか確認されます。",
-			"systemAudioRequested": "拒否した場合は、システム設定の「システムオーディオ録音のみ」で OpenScreen をオンにしてください。"
+			"screenPrompt": "このあと macOS から、システム設定で openScreenCopilot をオンにするよう求められます。",
+			"screenSettings": "システム設定で openScreenCopilot をオンにしてください。macOS が終了して再度開くよう提案した場合は、そのまま進めてください。このウインドウが再び表示されます。",
+			"screenNotListed": "リストに openScreenCopilot がない場合は、＋をクリックして「アプリケーション」から openScreenCopilot を選んでください。",
+			"screenRestart": "許可済みです。使用するには openScreenCopilot の再起動が必要です。",
+			"screenRecurring": "最初の録画時に、macOS から openScreenCopilot がシステムのピッカーを使わずに画面へ直接アクセスしてよいか確認されます。「許可」をクリックしてください。macOS はときどき再確認します。これは正常な動作です。",
+			"systemAudioPrompt": "macOS から、openScreenCopilot に Mac のサウンドの録音を許可するか確認されます。",
+			"systemAudioRequested": "拒否した場合は、システム設定の「システムオーディオ録音のみ」で openScreenCopilot をオンにしてください。"
 		},
 		"footer": {
 			"screenRequired": "録画には画面収録が必要です。",

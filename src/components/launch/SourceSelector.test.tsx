@@ -37,6 +37,11 @@ describe("SourceSelector", () => {
 			...window.electronAPI,
 			getSources: vi.fn().mockResolvedValue([]),
 			selectSource: vi.fn(),
+			getPlatform: vi.fn(() => "win32"),
+			isNativeWindowsCaptureAvailable: vi
+				.fn()
+				.mockResolvedValue({ success: true, available: true, supportsRegion: true }),
+			selectSourceRegion: vi.fn().mockResolvedValue({ selected: false }),
 		} as typeof window.electronAPI;
 	});
 
@@ -45,6 +50,33 @@ describe("SourceSelector", () => {
 
 		await screen.findByText("No screens or windows found");
 		expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
+	});
+	it("canceling a region never selects the full-screen source", async () => {
+		vi.mocked(window.electronAPI.getSources).mockResolvedValue([
+			{ id: "screen:1:0", name: "Display 1", display_id: "1", thumbnail: null, appIcon: null },
+		]);
+		render(<SourceSelector />);
+		const regionTab = await screen.findByRole("tab", { name: "regionSelection.tab" });
+		fireEvent.mouseDown(regionTab, { button: 0, ctrlKey: false });
+		fireEvent.click(await screen.findByRole("button", { name: /Display 1/ }));
+		fireEvent.click(screen.getByRole("button", { name: "regionSelection.draw" }));
+		await waitFor(() =>
+			expect(window.electronAPI.selectSourceRegion).toHaveBeenCalledExactlyOnceWith("screen:1:0"),
+		);
+		expect(window.electronAPI.selectSource).not.toHaveBeenCalled();
+	});
+
+	it("does not offer a region when the helper cannot prove crop support", async () => {
+		vi.mocked(window.electronAPI.getSources).mockResolvedValue([
+			{ id: "screen:1:0", name: "Display 1", display_id: "1", thumbnail: null, appIcon: null },
+		]);
+		vi.mocked(window.electronAPI.isNativeWindowsCaptureAvailable).mockResolvedValue({
+			success: true,
+			available: true,
+		});
+		render(<SourceSelector />);
+		await screen.findByText("Display 1");
+		expect(screen.queryByRole("tab", { name: "regionSelection.tab" })).toBeNull();
 	});
 
 	it("reloads capture sources from the empty state", async () => {

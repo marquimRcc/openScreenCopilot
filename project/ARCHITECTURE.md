@@ -56,7 +56,11 @@ Origem principal: `vendor/meeting-copilot/frontend/src-tauri/src/audio/`.
 Primeiro mapear os vínculos com AppHandle, eventos Tauri, estado global, modelos
 e persistência. Extrair por testes de contrato, não copiando o aplicativo inteiro.
 
-Estrutura futura, ainda não criada:
+Estrutura alvo: speech-core já reúne fundamentos isolados de aritmética, PCM WAV,
+normalização, gate de atividade, janelas/provider e contratos limitados. Um executável
+speech-sidecar de handshake NDJSON existe, mas anuncia `providerAvailable:false` e
+aceita apenas hello/shutdown; não há PCM/engine/modelo/runtime ASR. Os demais diretórios
+continuam incompletos (electron/copilot ainda não é SessionCoordinator/runtime ASR):
 
 ```text
 crates/speech-core/          áudio normalizado, VAD, segmentador, providers, sessão

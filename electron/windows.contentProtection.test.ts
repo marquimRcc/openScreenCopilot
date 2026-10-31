@@ -2,20 +2,32 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 
 const electron = vi.hoisted(() => {
 	class FakeWindow {
-		webContents = { on: vi.fn(), send: vi.fn() };
+		constructor(readonly options: Record<string, unknown>) {}
+		webContents = {
+			on: vi.fn(),
+			send: vi.fn(),
+			executeJavaScript: vi.fn().mockResolvedValue(undefined),
+		};
+		setMenu = vi.fn();
+		setBounds = vi.fn();
+		setIgnoreMouseEvents = vi.fn();
+		setAlwaysOnTop = vi.fn();
+		showInactive = vi.fn();
+		isDestroyed = () => false;
+		destroy = vi.fn();
 		setContentProtection = vi.fn();
 		setAutoHideMenuBar = vi.fn();
 		setVisibleOnAllWorkspaces = vi.fn();
 		once = vi.fn();
 		on = vi.fn();
-		loadURL = vi.fn();
+		loadURL = vi.fn().mockResolvedValue(undefined);
 		loadFile = vi.fn();
 	}
 	return { FakeWindow };
 });
 
 vi.mock("electron", () => ({
-	app: {},
+	app: { getLocale: () => "en-US" },
 	BrowserWindow: electron.FakeWindow,
 	ipcMain: { on: vi.fn() },
 	screen: {
@@ -62,6 +74,37 @@ afterAll(() => {
 });
 
 describe("HUD content protection on Windows (#1105)", () => {
+	it("always excludes the click-through region border, even with the HUD QA override", async () => {
+		vi.stubEnv("OPENSCREEN_DISABLE_CONTENT_PROTECTION", "1");
+		const { createRegionIndicatorWindow } = await load("win32", "10.0.26100");
+		const bounds = { x: 100, y: 150, width: 640, height: 400 };
+		const win = createRegionIndicatorWindow(bounds) as unknown as InstanceType<
+			typeof electron.FakeWindow
+		>;
+		expect(win.setContentProtection).toHaveBeenCalledWith(true);
+		expect(win.setIgnoreMouseEvents).toHaveBeenCalledWith(true);
+		expect(win.options).toMatchObject({
+			focusable: false,
+			show: false,
+			skipTaskbar: true,
+			webPreferences: { sandbox: true, nodeIntegration: false, contextIsolation: true },
+		});
+		expect(win.setBounds).toHaveBeenCalledWith(bounds);
+		expect(win.loadURL).toHaveBeenCalledWith(expect.stringContaining("data:text/html"));
+		const indicatorHtml = decodeURIComponent(win.loadURL.mock.calls[0][0]);
+		expect(indicatorHtml).toContain('id="recording">REC</div>');
+		expect(indicatorHtml).toContain("PAUSED");
+		const loaded = win.webContents.on.mock.calls.find(([name]) => name === "did-finish-load")?.[1];
+		loaded();
+		(win as unknown as { setPausedVisual(paused: boolean): void }).setPausedVisual(true);
+		expect(win.webContents.executeJavaScript.mock.calls).toEqual([
+			['document.body.dataset.paused = "false"'],
+			['document.body.dataset.paused = "true"'],
+		]);
+		const ready = win.once.mock.calls.find(([name]) => name === "ready-to-show")?.[1];
+		ready();
+		expect(win.showInactive).toHaveBeenCalledOnce();
+	});
 	it.each([
 		["10 22H2", "10.0.19045"],
 		["11 21H2", "10.0.22000"],

@@ -37,6 +37,23 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Otestovat systémový zvuk (30 s)",
+		"outputMeterStop": "Zastavit test",
+		"outputMeterStarting": "Spouštění testu…",
+		"outputMeterActive": "Aktivita výstupu — nejde o nahrávání",
+		"outputMeterStopping": "Ukončování testu…",
+		"outputMeterStopped": "Test ukončen",
+		"outputMeterError": "Test není dostupný. Zkuste to znovu.",
+		"outputMeterHint": "Špička před hlasitostí výstupu. Ve výhradním režimu může být nulová; aktivita nepotvrzuje nahraný zvuk.",
+		"outputMeterLevel": "Aktivita systémového zvuku",
+		"outputDevice": "Zvukový výstup",
+		"outputDefault": "Výchozí ve Windows",
+		"outputUnavailable": "Vybraný výstup není dostupný",
+		"outputRefresh": "Obnovit",
+		"outputLoading": "Načítání výstupů…",
+		"outputLoadFailed": "Výstupy se nepodařilo načíst. Vyberte výchozí výstup Windows nebo obnovte seznam.",
+		"outputSaveFailed": "Výstup se nepodařilo uložit. Zkuste to znovu.",
+		"outputScope": "Nahrává všechny zvuky tohoto výstupu, ne pouze jednu aplikaci.",
 		"systemAudio": "Systémový zvuk",
 		"microphone": "Mikrofon",
 		"inputDevice": "Vstupní zařízení"
@@ -57,13 +74,42 @@
 		"editableTip": "Upravitelný kurzor: nahrává se zvlášť, takže v editoru můžete změnit jeho styl a použít automatické přiblížení",
 		"systemTip": "Systémový kurzor: váš skutečný kurzor, zaznamenaný ve videu. Bez změny stylu a bez automatického přiblížení."
 	},
+	"recordingResult": {
+		"saveCopy": "Uložit kopii…",
+		"copying": "Kopírování originálu bez úprav…",
+		"copySaved": "Kopie uložena do:",
+		"cancelCopy": "Zrušit kopírování",
+		"copyExists": "Cíl již existuje. Zvolte nový název; originál i existující soubory budou zachovány.",
+		"originalPreview": "Náhled původního videa. Samostatná kamera, upravitelný kurzor a úpravy se zobrazí v editoru.",
+		"saved": "Záznam uložen",
+		"title": "Záznam",
+		"loading": "Načítání záznamu…",
+		"unavailable": "Uložený záznam nebyl nalezen. Tato obrazovka původní soubor nesmazala.",
+		"actionFailed": "Akci nelze dokončit. Záznam nebyl změněn.",
+		"preview": "Náhled záznamu",
+		"previewFailed": "Náhled není dostupný. Můžete otevřít složku nebo zkusit editor.",
+		"location": "Místo uložení",
+		"openFolder": "Otevřít složku",
+		"newCapture": "Nový záznam",
+		"edit": "Upravit",
+		"retry": "Zkusit znovu"
+	},
+	"regionSelection": {
+		"tab": "Oblast",
+		"monitorHint": "Vyberte monitor a vyznačte oblast záznamu.",
+		"draw": "Vyznačit oblast",
+		"hint": "Tažením vyznačte oblast záznamu.",
+		"keys": "Enter: potvrdit · Esc: zrušit",
+		"confirm": "Použít tuto oblast",
+		"error": "Oblast se nepodařilo vybrat. Zkuste to znovu."
+	},
 	"sourceSelector": {
 		"loading": "Načítání zdrojů...",
 		"screens": "Obrazovky ({{count}})",
 		"windows": "Okna ({{count}})",
 		"emptyTitle": "Žádné obrazovky ani okna nenalezena",
-		"emptyDescription": "Pokud jste právě udělili oprávnění pro záznam obrazovky, znovu načtěte tento výběr. Na macOS může být nutné znovu otevřít OpenScreen.",
-		"loadFailedDescription": "OpenScreen nemohl načíst zdroje záznamu. Znovu načtěte tento výběr a zkuste to znovu.",
+		"emptyDescription": "Pokud jste právě udělili oprávnění pro záznam obrazovky, znovu načtěte tento výběr. Na macOS může být nutné znovu otevřít openScreenCopilot.",
+		"loadFailedDescription": "openScreenCopilot nemohl načíst zdroje záznamu. Znovu načtěte tento výběr a zkuste to znovu.",
 		"defaultSourceName": "Obrazovka"
 	},
 	"recording": {
@@ -77,13 +123,13 @@
 	"languageWithName": "Jazyk: {{language}}",
 	"systemLanguagePrompt": {
 		"title": "Použít jazyk systému?",
-		"description": "Detekovali jsme {{language}} jako jazyk vašeho systému. Chcete přepnout OpenScreen na {{language}}?",
+		"description": "Detekovali jsme {{language}} jako jazyk vašeho systému. Chcete přepnout openScreenCopilot na {{language}}?",
 		"switch": "Přepnout na {{language}}",
 		"keepDefault": "Ponechat aktuální jazyk"
 	},
 	"softwareEncoderFallback": {
 		"title": "Přepnuto na softwarové kódování",
-		"description": "Výchozí GPU enkodér se nepodařilo spustit, takže OpenScreen přepnul na softwarové kódování H.264. Nahrávání by mělo pokračovat normálně, ale využití CPU může být vyšší.",
+		"description": "Výchozí GPU enkodér se nepodařilo spustit, takže openScreenCopilot přepnul na softwarové kódování H.264. Nahrávání by mělo pokračovat normálně, ale využití CPU může být vyšší.",
 		"dismiss": "Rozumím",
 		"dontShowAgain": "Již nezobrazovat"
 	},
@@ -100,7 +146,7 @@
 		"checkingForUpdates": "Kontrola…"
 	},
 	"permissions": {
-		"title": "OpenScreen potřebuje několik oprávnění",
+		"title": "openScreenCopilot potřebuje několik oprávnění",
 		"subtitle": "macOS vás o každé požádá jen jednou. Kdykoli je můžete změnit v Nastavení systému.",
 		"level": {
 			"required": "Povinné",
@@ -137,17 +183,17 @@
 			"continue": "Pokračovat",
 			"allow": "Povolit",
 			"openSettings": "Otevřít Nastavení",
-			"restart": "Restartovat OpenScreen",
+			"restart": "Restartovat openScreenCopilot",
 			"start": "Začít"
 		},
 		"help": {
-			"screenPrompt": "macOS vás pak požádá, abyste OpenScreen zapnuli v Nastavení systému.",
-			"screenSettings": "V Nastavení systému zapněte OpenScreen. Pokud macOS nabídne aplikaci ukončit a znovu otevřít, přijměte: toto okno se vrátí.",
-			"screenNotListed": "OpenScreen v seznamu chybí? Klikněte na + a vyberte OpenScreen ve složce Aplikace.",
-			"screenRestart": "Povoleno. OpenScreen se musí restartovat, aby oprávnění mohl použít.",
-			"screenRecurring": "Při prvním nahrávání se vás macOS zeptá, zda smí OpenScreen přistupovat k obrazovce přímo, bez systémového výběru. Klikněte na Povolit. macOS se čas od času zeptá znovu, to je v pořádku.",
-			"systemAudioPrompt": "macOS se vás zeptá, zda smí OpenScreen nahrávat zvuk z vašeho Macu.",
-			"systemAudioRequested": "Pokud jste odmítli, zapněte OpenScreen v části „Jen záznam systémového zvuku“ v Nastavení systému."
+			"screenPrompt": "macOS vás pak požádá, abyste openScreenCopilot zapnuli v Nastavení systému.",
+			"screenSettings": "V Nastavení systému zapněte openScreenCopilot. Pokud macOS nabídne aplikaci ukončit a znovu otevřít, přijměte: toto okno se vrátí.",
+			"screenNotListed": "openScreenCopilot v seznamu chybí? Klikněte na + a vyberte openScreenCopilot ve složce Aplikace.",
+			"screenRestart": "Povoleno. openScreenCopilot se musí restartovat, aby oprávnění mohl použít.",
+			"screenRecurring": "Při prvním nahrávání se vás macOS zeptá, zda smí openScreenCopilot přistupovat k obrazovce přímo, bez systémového výběru. Klikněte na Povolit. macOS se čas od času zeptá znovu, to je v pořádku.",
+			"systemAudioPrompt": "macOS se vás zeptá, zda smí openScreenCopilot nahrávat zvuk z vašeho Macu.",
+			"systemAudioRequested": "Pokud jste odmítli, zapněte openScreenCopilot v části „Jen záznam systémového zvuku“ v Nastavení systému."
 		},
 		"footer": {
 			"screenRequired": "K nahrávání je potřeba nahrávání obrazovky.",

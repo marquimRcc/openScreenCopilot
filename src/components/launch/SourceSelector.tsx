@@ -19,6 +19,10 @@ export function SourceSelector() {
 	const [selectedSource, setSelectedSource] = useState<DesktopSource | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [loadFailed, setLoadFailed] = useState(false);
+	const [regionAvailable, setRegionAvailable] = useState(false);
+	const [regionMode, setRegionMode] = useState(false);
+	const [selecting, setSelecting] = useState(false);
+	const [selectionFailed, setSelectionFailed] = useState(false);
 
 	const fetchSources = useCallback(async () => {
 		setLoading(true);
@@ -57,6 +61,25 @@ export function SourceSelector() {
 	useEffect(() => {
 		void fetchSources();
 	}, [fetchSources]);
+	useEffect(() => {
+		let active = true;
+		if (window.electronAPI.getPlatform?.() === "win32" && window.electronAPI.selectSourceRegion) {
+			window.electronAPI
+				.isNativeWindowsCaptureAvailable()
+				.then((result) => {
+					if (active)
+						setRegionAvailable(
+							result.success && result.available && result.supportsRegion === true,
+						);
+				})
+				.catch(() => {
+					if (active) setRegionAvailable(false);
+				});
+		}
+		return () => {
+			active = false;
+		};
+	}, []);
 
 	const screenSources = sources.filter((s) => s.id.startsWith("screen:"));
 	const windowSources = sources.filter((s) => s.id.startsWith("window:"));
@@ -64,7 +87,20 @@ export function SourceSelector() {
 
 	const handleSourceSelect = (source: DesktopSource) => setSelectedSource(source);
 	const handleShare = async () => {
-		if (selectedSource) await window.electronAPI.selectSource(selectedSource);
+		if (!selectedSource || selecting) return;
+		setSelecting(true);
+		setSelectionFailed(false);
+		try {
+			if (regionMode) {
+				await window.electronAPI.selectSourceRegion?.(selectedSource.id);
+			} else {
+				await window.electronAPI.selectSource(selectedSource);
+			}
+		} catch {
+			setSelectionFailed(true);
+		} finally {
+			setSelecting(false);
+		}
 	};
 
 	if (loading) {
@@ -144,6 +180,11 @@ export function SourceSelector() {
 		<div className={`h-screen flex flex-col ${styles.glassContainer}`}>
 			<Tabs
 				defaultValue={screenSources.length === 0 ? "windows" : "screens"}
+				onValueChange={(value) => {
+					setRegionMode(value === "region");
+					setSelectedSource(null);
+					setSelectionFailed(false);
+				}}
 				className="flex-1 flex flex-col min-h-0"
 			>
 				<TabsList className="flex items-center gap-1.5 h-auto p-3.5 rounded-none bg-transparent border-b border-[#191d24] flex-shrink-0">
@@ -159,8 +200,23 @@ export function SourceSelector() {
 					>
 						{t("sourceSelector.windows", { count: String(windowSources.length) })}
 					</TabsTrigger>
+					{regionAvailable && (
+						<TabsTrigger value="region" className="flex-1 h-10 rounded-[11px]">
+							{t("regionSelection.tab")}
+						</TabsTrigger>
+					)}
 				</TabsList>
 				<div className="flex-1 min-h-0 px-[18px] pt-[18px] pb-1.5">
+					{regionAvailable && (
+						<TabsContent value="region" className="h-full mt-0">
+							<p className="mb-3 text-xs text-[#828c99]">{t("regionSelection.monitorHint")}</p>
+							<div
+								className={`grid auto-rows-min grid-cols-2 gap-3.5 overflow-y-auto ${styles.sourceGridScroll}`}
+							>
+								{screenSources.map(renderSourceCard)}
+							</div>
+						</TabsContent>
+					)}
 					<TabsContent value="screens" className="h-full mt-0">
 						<div
 							className={`grid h-full auto-rows-min grid-cols-2 gap-3.5 overflow-y-auto pr-1.5 ${styles.sourceGridScroll}`}
@@ -177,6 +233,11 @@ export function SourceSelector() {
 					</TabsContent>
 				</div>
 			</Tabs>
+			{selectionFailed && (
+				<p role="alert" className="px-[18px] text-sm text-red-400">
+					{t("regionSelection.error")}
+				</p>
+			)}
 			<div className="flex justify-end gap-2.5 border-t border-[#191d24] px-[18px] py-4">
 				<Button
 					data-testid="source-selector-cancel-button"
@@ -189,10 +250,10 @@ export function SourceSelector() {
 				<Button
 					data-testid="source-selector-share-button"
 					onClick={handleShare}
-					disabled={!selectedSource}
+					disabled={!selectedSource || selecting}
 					className="h-9 rounded-[9px] bg-[#10b981] px-5 text-[13px] font-semibold text-[#08090d] transition-transform duration-150 hover:bg-[#10b981]/85 active:scale-95 disabled:bg-[#232830] disabled:border disabled:border-[#242932] disabled:text-[#565f6b] disabled:opacity-100"
 				>
-					{tc("actions.share")}
+					{regionMode ? t("regionSelection.draw") : tc("actions.share")}
 				</Button>
 			</div>
 		</div>

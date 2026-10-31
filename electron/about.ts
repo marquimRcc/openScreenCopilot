@@ -6,13 +6,12 @@
 // copy does or does not offer "Check for Updates" (see install-channel.ts), and the first
 // thing worth knowing about a bug report from a build we did not install ourselves.
 
+import { PRODUCT_NAME, REPOSITORY_URL } from "../src/config/product";
 import type { InstallChannel } from "./install-channel";
 
-export const WEBSITE_URL = "https://getopenscreen.com";
-/** The brand spelling, for the surfaces we render ourselves. NOT `app.name`: that resolves to
- *  electron-builder's `productName` ("Openscreen") when packaged and to package.json's `name`
- *  ("openscreen") in dev, so the About box would disagree with its own title bar. */
-export const PRODUCT_NAME = "OpenScreen";
+export const WEBSITE_URL = REPOSITORY_URL;
+/** Shared with window titles and the isolated Electron profile. */
+export { PRODUCT_NAME };
 /** The collective form, and deliberately NOT the whole of LICENSE. LICENSE carries two holders:
  *  Siddharth Vaddem, who created the project — MIT obliges us to keep that notice on a codebase
  *  that still contains his code — and the contributors collectively. This is the line every user

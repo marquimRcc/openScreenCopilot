@@ -2,7 +2,7 @@
 	"tooltips": {
 		"hideHUD": "Hide recording bar",
 		"hideHUDTip": "Hide the recording bar. Show it again from the tray icon.",
-		"closeApp": "Quit OpenScreen",
+		"closeApp": "Quit openScreenCopilot",
 		"restartRecording": "Delete this recording and start a new one",
 		"cancelRecording": "Stop and delete this recording",
 		"pauseRecording": "Pause recording",
@@ -37,6 +37,23 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Test system audio (30 s)",
+		"outputMeterStop": "Stop test",
+		"outputMeterStarting": "Starting test…",
+		"outputMeterActive": "Output activity — not a recording",
+		"outputMeterStopping": "Stopping test…",
+		"outputMeterStopped": "Test ended",
+		"outputMeterError": "Test unavailable. Try again.",
+		"outputMeterHint": "Peak before output volume. Zero may occur in exclusive mode; activity does not prove recorded audio.",
+		"outputMeterLevel": "System audio activity",
+		"outputDevice": "Audio output",
+		"outputDefault": "Windows default",
+		"outputUnavailable": "Selected output unavailable",
+		"outputRefresh": "Refresh",
+		"outputLoading": "Loading outputs…",
+		"outputLoadFailed": "Could not load outputs. You can choose Windows default or refresh.",
+		"outputSaveFailed": "Could not save the output. Try again.",
+		"outputScope": "Records all sound played through this output, not a single app.",
 		"systemAudio": "System audio",
 		"microphone": "Microphone",
 		"inputDevice": "Input device"
@@ -57,13 +74,42 @@
 		"editableTip": "Editable cursor: recorded separately, so you can restyle it and auto-zoom in the editor",
 		"systemTip": "System cursor: your real cursor, recorded in the video. No restyling, no auto-zoom."
 	},
+	"recordingResult": {
+		"saveCopy": "Save a copy…",
+		"copying": "Copying the original, without edits…",
+		"copySaved": "Copy saved to:",
+		"cancelCopy": "Cancel copy",
+		"copyExists": "This destination already exists. Choose a new name; the original and existing files will be preserved.",
+		"originalPreview": "Original video preview. Separate camera, editable cursor and edits appear in Edit.",
+		"saved": "Recording saved",
+		"title": "Recording",
+		"loading": "Loading recording…",
+		"unavailable": "The saved recording could not be found. The original has not been deleted by this screen.",
+		"actionFailed": "The action could not be completed. Your recording has not been changed.",
+		"preview": "Recording preview",
+		"previewFailed": "Preview unavailable. You can still open the folder or try the editor.",
+		"location": "Saved location",
+		"openFolder": "Open folder",
+		"newCapture": "New capture",
+		"edit": "Edit",
+		"retry": "Try again"
+	},
+	"regionSelection": {
+		"tab": "Region",
+		"monitorHint": "Choose a monitor, then draw the area to record.",
+		"draw": "Draw area",
+		"hint": "Drag to mark the area to record.",
+		"keys": "Enter: confirm · Esc: cancel",
+		"confirm": "Use this area",
+		"error": "Could not select the area. Try again."
+	},
 	"sourceSelector": {
 		"loading": "Loading screens and windows...",
 		"screens": "Screens ({{count}})",
 		"windows": "Windows ({{count}})",
 		"emptyTitle": "No screens or windows found",
-		"emptyDescription": "If you just granted screen recording permission, reload this picker. On macOS you may need to reopen OpenScreen.",
-		"loadFailedDescription": "OpenScreen couldn't load your screens and windows. Reload this picker and try again.",
+		"emptyDescription": "If you just granted screen recording permission, reload this picker. On macOS you may need to reopen openScreenCopilot.",
+		"loadFailedDescription": "openScreenCopilot couldn't load your screens and windows. Reload this picker and try again.",
 		"defaultSourceName": "Screen"
 	},
 	"recording": {
@@ -77,13 +123,13 @@
 	"languageWithName": "Language: {{language}}",
 	"systemLanguagePrompt": {
 		"title": "Use your system language?",
-		"description": "We detected {{language}} as your system language. Do you want to switch OpenScreen to {{language}}?",
+		"description": "We detected {{language}} as your system language. Do you want to switch openScreenCopilot to {{language}}?",
 		"switch": "Switch to {{language}}",
 		"keepDefault": "Keep current language"
 	},
 	"softwareEncoderFallback": {
 		"title": "Switched to a backup encoder",
-		"description": "Your graphics card's encoder didn't start, so OpenScreen switched to a backup. Your recording is fine, though your computer may work a little harder.",
+		"description": "Your graphics card's encoder didn't start, so openScreenCopilot switched to a backup. Your recording is fine, though your computer may work a little harder.",
 		"dismiss": "Got it",
 		"dontShowAgain": "Don't show again"
 	},
@@ -100,7 +146,7 @@
 		"checkingForUpdates": "Checking…"
 	},
 	"permissions": {
-		"title": "OpenScreen needs a few permissions",
+		"title": "openScreenCopilot needs a few permissions",
 		"subtitle": "macOS asks you to grant each one once. You can change them at any time in System Settings.",
 		"level": {
 			"required": "Required",
@@ -137,17 +183,17 @@
 			"continue": "Continue",
 			"allow": "Allow",
 			"openSettings": "Open Settings",
-			"restart": "Restart OpenScreen",
+			"restart": "Restart openScreenCopilot",
 			"start": "Get started"
 		},
 		"help": {
-			"screenPrompt": "macOS will then ask you to turn on OpenScreen in System Settings.",
-			"screenSettings": "In System Settings, turn on OpenScreen. If macOS offers to quit and reopen it, accept: this window will come back.",
-			"screenNotListed": "OpenScreen isn't in the list? Click +, then choose OpenScreen in Applications.",
-			"screenRestart": "Allowed. OpenScreen needs to restart before it can use it.",
-			"screenRecurring": "On your first recording, macOS will ask whether OpenScreen may access your screen directly, without the system picker. Click Allow. macOS asks again from time to time; that's expected.",
-			"systemAudioPrompt": "macOS will ask you to allow OpenScreen to record the sound your Mac plays.",
-			"systemAudioRequested": "If you said no, turn on OpenScreen under “System Audio Recording Only” in System Settings."
+			"screenPrompt": "macOS will then ask you to turn on openScreenCopilot in System Settings.",
+			"screenSettings": "In System Settings, turn on openScreenCopilot. If macOS offers to quit and reopen it, accept: this window will come back.",
+			"screenNotListed": "openScreenCopilot isn't in the list? Click +, then choose openScreenCopilot in Applications.",
+			"screenRestart": "Allowed. openScreenCopilot needs to restart before it can use it.",
+			"screenRecurring": "On your first recording, macOS will ask whether openScreenCopilot may access your screen directly, without the system picker. Click Allow. macOS asks again from time to time; that's expected.",
+			"systemAudioPrompt": "macOS will ask you to allow openScreenCopilot to record the sound your Mac plays.",
+			"systemAudioRequested": "If you said no, turn on openScreenCopilot under “System Audio Recording Only” in System Settings."
 		},
 		"footer": {
 			"screenRequired": "Screen recording is needed to record.",

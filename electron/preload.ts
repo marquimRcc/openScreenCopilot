@@ -3,7 +3,13 @@ import type { NativeLinuxRecordingRequest } from "../src/lib/nativeLinuxRecordin
 import type { NativeMacRecordingRequest } from "../src/lib/nativeMacRecording";
 import type { NativeWindowsRecordingRequest } from "../src/lib/nativeWindowsRecording";
 import type { RecordingSession, StoreRecordedSessionInput } from "../src/lib/recordingSession";
+import type { SavedGifProgress, SavedGifRequest } from "../src/lib/savedRecordingGif";
 import type { ShortcutBinding } from "../src/lib/shortcuts";
+import type {
+	WindowsOutputMeterMessage,
+	WindowsOutputMeterStartResult,
+	WindowsOutputMeterStopResult,
+} from "../src/lib/windowsOutputMeter";
 import type {
 	AiEditionChatEvent,
 	AiEditionMcpHostRequest,
@@ -62,6 +68,23 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	// module has no such gate, so the write crosses here.
 	copyToClipboard: (text: string) =>
 		ipcRenderer.invoke("clipboard:write-text", text) as Promise<void>,
+
+	listWindowsAudioOutputs: () =>
+		ipcRenderer.invoke("list-windows-audio-outputs") as Promise<
+			import("./ipc/windowsAudioOutputs").WindowsAudioOutputsResult
+		>,
+	startWindowsOutputMeter: () =>
+		ipcRenderer.invoke("start-windows-output-meter") as Promise<WindowsOutputMeterStartResult>,
+	stopWindowsOutputMeter: (meterId: string) =>
+		ipcRenderer.invoke(
+			"stop-windows-output-meter",
+			meterId,
+		) as Promise<WindowsOutputMeterStopResult>,
+	onWindowsOutputMeter: (listener: (message: WindowsOutputMeterMessage) => void) => {
+		const handler = (_event: unknown, message: WindowsOutputMeterMessage) => listener(message);
+		ipcRenderer.on("windows-output-meter-event", handler);
+		return () => ipcRenderer.off("windows-output-meter-event", handler);
+	},
 
 	// --- Native export encoder -------------------------------------------------
 	// The renderer composites and extracts frames but cannot spawn ffmpeg (it is
@@ -178,6 +201,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	getSelectedSource: () => {
 		return ipcRenderer.invoke("get-selected-source");
 	},
+	selectSourceRegion: (sourceId: string) => ipcRenderer.invoke("select-source-region", sourceId),
+	getRegionSelectionInfo: () => ipcRenderer.invoke("region-selection-info"),
+	finishRegionSelection: (
+		rectangle: import("../src/lib/windowsCaptureRegion").CaptureRectangle | null,
+	) => ipcRenderer.invoke("region-selection-finish", rectangle),
 	getRecordingPrefs: () => {
 		return ipcRenderer.invoke("get-recording-prefs");
 	},
@@ -283,8 +311,31 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	startNativeWindowsRecording: (request: NativeWindowsRecordingRequest) => {
 		return ipcRenderer.invoke("start-native-windows-recording", request);
 	},
-	stopNativeWindowsRecording: (discard?: boolean) => {
-		return ipcRenderer.invoke("stop-native-windows-recording", discard);
+	stopNativeWindowsRecording: (discard?: boolean, expectedRecordingId?: number) => {
+		return ipcRenderer.invoke("stop-native-windows-recording", discard, expectedRecordingId);
+	},
+	queryNativeWindowsCaptureStatus: (expectedRecordingId: number) => {
+		return ipcRenderer.invoke("query-native-windows-capture-status", expectedRecordingId);
+	},
+	onNativeWindowsCaptureEnded: (
+		callback: (payload: {
+			recordingId: number;
+			code?: number | null;
+			signal?: NodeJS.Signals | null;
+			reason?: string;
+		}) => void,
+	) => {
+		const listener = (
+			_: unknown,
+			payload: {
+				recordingId: number;
+				code?: number | null;
+				signal?: NodeJS.Signals | null;
+				reason?: string;
+			},
+		) => callback(payload);
+		ipcRenderer.on("native-windows-capture-ended", listener);
+		return () => ipcRenderer.removeListener("native-windows-capture-ended", listener);
 	},
 	pauseNativeWindowsRecording: () => {
 		return ipcRenderer.invoke("pause-native-windows-recording");
@@ -374,6 +425,22 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	},
 	getCurrentVideoPath: () => {
 		return ipcRenderer.invoke("get-current-video-path");
+	},
+	showRecordingResult: () => ipcRenderer.invoke("show-recording-result"),
+	getSavedRecordingInfo: () => ipcRenderer.invoke("get-saved-recording-info"),
+	revealSavedRecording: (expectedPath: string) =>
+		ipcRenderer.invoke("reveal-saved-recording", expectedPath),
+	prepareNewCapture: () => ipcRenderer.invoke("prepare-new-capture"),
+	copySavedRecording: (expectedPath: string) =>
+		ipcRenderer.invoke("copy-saved-recording", expectedPath),
+	cancelSavedRecordingCopy: () => ipcRenderer.invoke("cancel-saved-recording-copy"),
+	exportSavedRecordingGif: (expectedPath: string, options: SavedGifRequest) =>
+		ipcRenderer.invoke("export-saved-recording-gif", expectedPath, options),
+	cancelSavedRecordingGif: () => ipcRenderer.invoke("cancel-saved-recording-gif"),
+	onSavedRecordingGifProgress: (listener: (progress: SavedGifProgress) => void) => {
+		const handler = (_event: unknown, progress: SavedGifProgress) => listener(progress);
+		ipcRenderer.on("saved-recording-gif-progress", handler);
+		return () => ipcRenderer.off("saved-recording-gif-progress", handler);
 	},
 	getCurrentRecordingSession: () => {
 		return ipcRenderer.invoke("get-current-recording-session");
@@ -646,5 +713,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		const listener = () => callback();
 		ipcRenderer.on("cli-stop-recording", listener);
 		return () => ipcRenderer.removeListener("cli-stop-recording", listener);
+	},
+	onCliSetRecordingPaused: (callback: (paused: boolean) => void) => {
+		const listener = (_event: Electron.IpcRendererEvent, paused: boolean) => callback(paused);
+		ipcRenderer.on("cli-set-recording-paused", listener);
+		return () => ipcRenderer.removeListener("cli-set-recording-paused", listener);
 	},
 });

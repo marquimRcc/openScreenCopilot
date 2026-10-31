@@ -1,0 +1,18 @@
+[package]
+name = "openscreen-speech-core"
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Isolated bounded speech preprocessing foundations; no ASR runtime"
+
+[dependencies]
+# Bounded file-buffer normalization only. No FFT backend, logging, hardware or runtime capture.
+rubato = { version = "=0.15.0", default-features = false }
+
+# Deliberately isolated from the compositor workspace and all vendor build scripts.
+[workspace]
+resolver = "2"
+
+[dev-dependencies]
+serde_json = "=1.0.150"

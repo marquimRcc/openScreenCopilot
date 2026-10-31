@@ -19,6 +19,7 @@ import {
 	parseWindowHandleFromSourceId,
 } from "@/lib/nativeWindowsRecording";
 import type { CursorCaptureMode, RecordedVideoAssetInput } from "@/lib/recordingSession";
+import { showSavedRecording } from "@/lib/savedRecording";
 import { loadUserPreferences, saveUserPreferences } from "@/lib/userPreferences";
 import { canRecordMicrophone } from "@/utils/platformUtils";
 import { createRecorderHandle, type RecorderHandle } from "./recorderHandle";
@@ -270,6 +271,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const [webcamQuality, setWebcamQuality] = useState<WebcamQualityId>(DEFAULT_WEBCAM_QUALITY);
 	const [webcamDeviceName, setWebcamDeviceName] = useState<string | undefined>(undefined);
 	const [systemAudioEnabled, setSystemAudioEnabled] = useState(false);
+	const [windowsSystemAudioDeviceId, setWindowsSystemAudioDeviceId] = useState<string | null>(null);
 	const [webcamEnabled, setWebcamEnabledState] = useState(false);
 	const [cursorCaptureMode, setCursorCaptureMode] = useState<CursorCaptureMode>("editable-overlay");
 	const [softwareEncoderFallbackNoticeVisible, setSoftwareEncoderFallbackNoticeVisible] =
@@ -294,6 +296,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			camDeviceName?: string | null;
 			camQuality?: WebcamQualityId | null;
 			systemAudioEnabled: boolean;
+			windowsSystemAudioDeviceId?: string | null;
 			cursorCaptureMode: CursorCaptureMode;
 		}) => {
 			if (cancelled) return;
@@ -312,6 +315,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			}
 			setWebcamQuality(webcamQualityFrom(prefs.camQuality));
 			setSystemAudioEnabled(prefs.systemAudioEnabled);
+			setWindowsSystemAudioDeviceId(prefs.windowsSystemAudioDeviceId ?? null);
 			setCursorCaptureMode(prefs.cursorCaptureMode);
 			setRecordingPrefsLoaded(true);
 		};
@@ -673,7 +677,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 						await window.electronAPI.setCurrentVideoPath(result.path);
 					}
 
-					await window.electronAPI.switchToEditor();
+					await showSavedRecording(window.electronAPI);
 				} catch (error) {
 					console.error("Error saving recording:", error);
 				} finally {
@@ -720,7 +724,10 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		};
 
 		try {
-			const result = await window.electronAPI.stopNativeWindowsRecording(discard);
+			const result = await window.electronAPI.stopNativeWindowsRecording(
+				discard,
+				activeNativeRecording.recordingId,
+			);
 			if (discard || result.discarded) {
 				clearNativeRecordingState();
 				return true;
@@ -757,7 +764,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				await window.electronAPI.setCurrentVideoPath(result.path);
 			}
 
-			await window.electronAPI.switchToEditor();
+			await showSavedRecording(window.electronAPI);
 			return true;
 		} catch (error) {
 			console.error("Error saving native Windows recording:", error);
@@ -867,7 +874,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					await window.electronAPI.setCurrentVideoPath(result.path);
 				}
 
-				await window.electronAPI.switchToEditor();
+				await showSavedRecording(window.electronAPI);
 				return true;
 			} catch (error) {
 				console.error("Error saving native macOS recording:", error);
@@ -985,7 +992,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					await window.electronAPI.setCurrentVideoPath(result.path);
 				}
 
-				await window.electronAPI.switchToEditor();
+				await showSavedRecording(window.electronAPI);
 				return true;
 			} catch (error) {
 				console.error("Error saving native Linux recording:", error);
@@ -1074,6 +1081,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 
 	useEffect(() => {
 		let cleanup: (() => void) | undefined;
+		let cleanupEnded: (() => void) | undefined;
 
 		if (window.electronAPI?.onStopRecordingFromTray) {
 			cleanup = window.electronAPI.onStopRecordingFromTray(() => {
@@ -1081,9 +1089,21 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			});
 		}
 
+		if (window.electronAPI?.onNativeWindowsCaptureEnded) {
+			cleanupEnded = window.electronAPI.onNativeWindowsCaptureEnded((payload) => {
+				const active = nativeWindowsRecording.current;
+				if (!active || active.recordingId !== payload.recordingId || active.finalizing) {
+					return;
+				}
+				console.warn("[screen-recorder] native Windows helper exited unexpectedly", payload);
+				void finalizeNativeWindowsRecording(false);
+			});
+		}
+
 		return () => {
 			const activeRunId = countdownRunId.current;
 			if (cleanup) cleanup();
+			if (cleanupEnded) cleanupEnded();
 			countdownRunId.current += 1;
 			void safeHideCountdownOverlay(activeRunId);
 			allowAutoFinalize.current = false;
@@ -1191,6 +1211,15 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 
 			const availability = await window.electronAPI.isNativeWindowsCaptureAvailable();
 			if (!availability.success || !availability.available) {
+				if (systemAudioEnabled && windowsSystemAudioDeviceId !== null) {
+					throw new Error(
+						"The selected system audio output requires native Windows capture. Browser fallback is disabled.",
+					);
+				}
+				if (selectedSource.captureRegion)
+					throw new Error(
+						"Region capture requires the native Windows helper. Full-screen fallback is disabled.",
+					);
 				if (availability.reason === "unsupported-os") {
 					return false;
 				}
@@ -1209,6 +1238,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			const activeRecordingId = Date.now();
 			const displayId = Number(selectedSource.display_id);
 			const sourceType = selectedSource.id.startsWith("window:") ? "window" : "display";
+			if (selectedSource.captureRegion && !availability.supportsRegion) {
+				throw new Error("This capture helper does not support regions. Select the area again.");
+			}
 			const windowHandle = parseWindowHandleFromSourceId(selectedSource.id);
 			let webcamIdentity = { deviceId: webcamDeviceId, deviceName: webcamDeviceName };
 			if (webcamEnabled) {
@@ -1234,6 +1266,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				source: {
 					type: sourceType,
 					sourceId: selectedSource.id,
+					captureRegion: !!selectedSource.captureRegion,
 					...(Number.isFinite(displayId) ? { displayId } : {}),
 					...(windowHandle ? { windowHandle } : {}),
 				},
@@ -1301,6 +1334,27 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			setRecording(true);
 			setPaused(false);
 			setElapsedSeconds(0);
+
+			if (window.electronAPI?.queryNativeWindowsCaptureStatus) {
+				try {
+					const status = await window.electronAPI.queryNativeWindowsCaptureStatus(
+						result.recordingId,
+					);
+					if (status?.closed) {
+						const active = nativeWindowsRecording.current;
+						if (active && active.recordingId === result.recordingId && !active.finalizing) {
+							console.warn(
+								"[screen-recorder] helper was already closed when start completed",
+								status,
+							);
+							void finalizeNativeWindowsRecording(false);
+						}
+					}
+				} catch (queryError) {
+					console.warn("[screen-recorder] failed to query capture status after start:", queryError);
+				}
+			}
+
 			return true;
 		} catch (error) {
 			console.error("Native Windows capture failed:", error);
@@ -1788,9 +1842,12 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const startRecording = async (
 		countdownRunToken?: number,
 		preparedRecordingId?: number | null,
+		propagateFailure = false,
 	) => {
 		const platform = window.electronAPI.getPlatform();
 		const browserCursorCaptureMode = effectiveBrowserCursorMode(platform, cursorCaptureMode);
+		let attemptedWindowsBrowserCapture = false;
+		let windowsBrowserCaptureStarted = false;
 
 		try {
 			if (!isCountdownRunActive(countdownRunToken)) {
@@ -1841,6 +1898,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			) {
 				return;
 			}
+			if (selectedSource.captureRegion) {
+				throw new Error("Native region capture is unavailable. Full-screen fallback is disabled.");
+			}
 			if (
 				await startNativeMacRecordingIfAvailable(
 					selectedSource,
@@ -1856,6 +1916,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			// start of the recording (issue #57).
 			const screenCapture = (async (): Promise<MediaStream> => {
 				if (platform === "win32") {
+					attemptedWindowsBrowserCapture = true;
 					// getDisplayMedia + setDisplayMediaRequestHandler (main.ts) supplies the
 					// pre-selected source. Editable cursor mode excludes the system cursor so
 					// the editor can render a replacement; system mode bakes it into the video.
@@ -2089,6 +2150,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			setPaused(false);
 			setElapsedSeconds(0);
 			window.electronAPI?.setRecordingState(true, recordingId.current, browserCursorCaptureMode);
+			windowsBrowserCaptureStarted = platform === "win32";
 
 			const activeScreenRecorder = screenRecorder.current;
 			const activeWebcamRecorder = webcamRecorder.current;
@@ -2111,6 +2173,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			}
 		} catch (error) {
 			console.error("Failed to start recording:", error);
+			windowsBrowserCaptureStarted = false;
 			const errorMsg = error instanceof Error ? error.message : "Failed to start recording";
 			if (errorMsg.includes("Permission denied") || errorMsg.includes("NotAllowedError")) {
 				toast.error(t("recording.permissionDenied"));
@@ -2125,6 +2188,15 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			screenRecorder.current = null;
 			webcamRecorder.current = null;
 			teardownMedia();
+			if (propagateFailure) throw error;
+		} finally {
+			if (attemptedWindowsBrowserCapture && !windowsBrowserCaptureStarted) {
+				try {
+					await window.electronAPI?.setRecordingState(false);
+				} catch {
+					console.warn("Failed to release Windows capture preparation");
+				}
+			}
 		}
 	};
 
@@ -2464,7 +2536,10 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		saving,
 		elapsedSeconds,
 		toggleRecording,
-		startRecordingImmediately: () => startRecording(),
+		// Headless callers have no toast surface. Preserve the GUI's handled-error
+		// behaviour everywhere else, but let the CLI report the actual startup
+		// failure instead of waiting 30 seconds and replacing it with a timeout.
+		startRecordingImmediately: () => startRecording(undefined, undefined, true),
 		togglePaused,
 		canPauseRecording,
 		restartRecording,

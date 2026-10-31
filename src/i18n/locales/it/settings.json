@@ -140,7 +140,7 @@
 	"stylePresets": {
 		"button": "Preset",
 		"menuLabel": "Preset di stile",
-		"factoryName": "OpenScreen",
+		"factoryName": "openScreenCopilot",
 		"factoryBadge": "Integrato",
 		"empty": "Nessun preset salvato",
 		"create": "Crea nuovo preset…",

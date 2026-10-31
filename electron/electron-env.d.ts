@@ -33,6 +33,21 @@ interface Window {
 		 *  navigator.clipboard.writeText, so Copy message crosses to main's
 		 *  clipboard module. Optional: shim/web contexts have no bridge. */
 		copyToClipboard?: (text: string) => Promise<void>;
+		startWindowsOutputMeter?: () => Promise<
+			import("../src/lib/windowsOutputMeter").WindowsOutputMeterStartResult
+		>;
+		stopWindowsOutputMeter?: (
+			meterId: string,
+		) => Promise<import("../src/lib/windowsOutputMeter").WindowsOutputMeterStopResult>;
+		onWindowsOutputMeter?: (
+			listener: (
+				message: import("../src/lib/windowsOutputMeter").WindowsOutputMeterMessage,
+			) => void,
+		) => () => void;
+		/** Read-only MMDevice outputs; does not change selection or open audio streams. */
+		listWindowsAudioOutputs?: () => Promise<
+			import("./ipc/windowsAudioOutputs").WindowsAudioOutputsResult
+		>;
 		/** Native (D3D) export progress — frames encoded so far, pushed at ~10 Hz max while
 		 *  `compositor.export`/`compositor.exportMulti` runs. Distinct from `exportOnFrameAck`,
 		 *  the OLD web/CPU pipeline's per-frame ack, not a progress signal. */
@@ -67,6 +82,31 @@ interface Window {
 			options?: { persist?: boolean },
 		) => Promise<ProcessedDesktopSource | null>;
 		getSelectedSource: () => Promise<ProcessedDesktopSource | null>;
+		showRecordingResult?: () => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
+		getSavedRecordingInfo?: () => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
+		revealSavedRecording?: (
+			expectedPath: string,
+		) => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
+		prepareNewCapture?: () => Promise<import("../src/lib/savedRecording").SavedRecordingResult>;
+		copySavedRecording?: (
+			expectedPath: string,
+		) => Promise<import("../src/lib/savedRecording").SavedRecordingCopyResult>;
+		cancelSavedRecordingCopy?: () => Promise<{ accepted: boolean }>;
+		exportSavedRecordingGif?: (
+			expectedPath: string,
+			options: import("../src/lib/savedRecordingGif").SavedGifRequest,
+		) => Promise<import("../src/lib/savedRecordingGif").SavedGifResult>;
+		cancelSavedRecordingGif?: () => Promise<{ accepted: boolean }>;
+		onSavedRecordingGifProgress?: (
+			listener: (progress: import("../src/lib/savedRecordingGif").SavedGifProgress) => void,
+		) => () => void;
+		selectSourceRegion?: (sourceId: string) => Promise<{ selected: boolean }>;
+		getRegionSelectionInfo?: () => Promise<
+			import("../src/lib/windowsCaptureRegion").RegionSelectionInfo | null
+		>;
+		finishRegionSelection?: (
+			rectangle: import("../src/lib/windowsCaptureRegion").CaptureRectangle | null,
+		) => Promise<void>;
 		onSelectedSourceChanged: (
 			callback: (source: ProcessedDesktopSource | null) => void,
 		) => () => void;
@@ -151,6 +191,7 @@ interface Window {
 			cursorCaptureMode?: import("../src/lib/recordingSession").CursorCaptureMode,
 		) => Promise<void>;
 		isNativeWindowsCaptureAvailable: () => Promise<{
+			supportsRegion?: boolean;
 			success: boolean;
 			available: boolean;
 			helperPath?: string;
@@ -167,7 +208,10 @@ interface Window {
 		startNativeWindowsRecording: (
 			request: import("../src/lib/nativeWindowsRecording").NativeWindowsRecordingRequest,
 		) => Promise<import("../src/lib/nativeWindowsRecording").NativeWindowsRecordingStartResult>;
-		stopNativeWindowsRecording: (discard?: boolean) => Promise<{
+		stopNativeWindowsRecording: (
+			discard?: boolean,
+			expectedRecordingId?: number,
+		) => Promise<{
 			success: boolean;
 			path?: string;
 			session?: import("../src/lib/recordingSession").RecordingSession;
@@ -180,6 +224,25 @@ interface Window {
 			 */
 			webcamDropped?: boolean;
 		}>;
+		queryNativeWindowsCaptureStatus: (expectedRecordingId: number) => Promise<{
+			active: boolean;
+			closed: boolean;
+			code?: number | null;
+			signal?: string | null;
+			reason?: string | null;
+			stopState?: string;
+			stale?: boolean;
+			unauthorized?: boolean;
+			invalidId?: boolean;
+		}>;
+		onNativeWindowsCaptureEnded: (
+			callback: (payload: {
+				recordingId: number;
+				code?: number | null;
+				signal?: string | null;
+				reason?: string;
+			}) => void,
+		) => () => void;
 		pauseNativeWindowsRecording: () => Promise<{
 			success: boolean;
 			error?: string;
@@ -541,6 +604,7 @@ interface Window {
 		cliLog: (level: "info" | "error", message: string) => void;
 		cliDone: (result: import("../src/lib/cliContracts").CliDoneResult) => Promise<void>;
 		onCliStopRecording: (callback: () => void) => () => void;
+		onCliSetRecordingPaused: (callback: (paused: boolean) => void) => () => void;
 		setLocale: (locale: string) => Promise<void>;
 		saveDiagnostic: (payload: {
 			error: string;
@@ -552,6 +616,7 @@ interface Window {
 }
 
 interface ProcessedDesktopSource {
+	captureRegion?: import("../src/lib/windowsCaptureRegion").WindowsCaptureRegion;
 	id: string;
 	name: string;
 	display_id: string;

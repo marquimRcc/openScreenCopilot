@@ -37,6 +37,23 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Testar áudio do sistema (30 s)",
+		"outputMeterStop": "Parar teste",
+		"outputMeterStarting": "Iniciando teste…",
+		"outputMeterActive": "Atividade da saída — não é gravação",
+		"outputMeterStopping": "Encerrando teste…",
+		"outputMeterStopped": "Teste encerrado",
+		"outputMeterError": "Teste indisponível. Tente novamente.",
+		"outputMeterHint": "Pico antes do volume da saída. No modo exclusivo pode indicar zero; atividade não comprova áudio gravado.",
+		"outputMeterLevel": "Atividade do áudio do sistema",
+		"outputDevice": "Saída de áudio",
+		"outputDefault": "Padrão do Windows",
+		"outputUnavailable": "Saída selecionada indisponível",
+		"outputRefresh": "Atualizar",
+		"outputLoading": "Carregando saídas…",
+		"outputLoadFailed": "Não foi possível carregar as saídas. Escolha o padrão do Windows ou atualize.",
+		"outputSaveFailed": "Não foi possível salvar a saída. Tente novamente.",
+		"outputScope": "Grava todos os sons reproduzidos nesta saída, não apenas um aplicativo.",
 		"systemAudio": "Áudio do sistema",
 		"microphone": "Microfone",
 		"inputDevice": "Dispositivo de entrada"
@@ -57,13 +74,42 @@
 		"editableTip": "Cursor editável: gravado separadamente, para você mudar o estilo e usar o zoom automático no editor",
 		"systemTip": "Cursor do sistema: seu cursor real, gravado no vídeo. Sem mudança de estilo, sem zoom automático."
 	},
+	"recordingResult": {
+		"saveCopy": "Salvar uma cópia…",
+		"copying": "Copiando o original, sem edições…",
+		"copySaved": "Cópia salva em:",
+		"cancelCopy": "Cancelar cópia",
+		"copyExists": "Esse destino já existe. Escolha um novo nome; o original e os arquivos existentes serão preservados.",
+		"originalPreview": "Prévia do vídeo original. Câmera separada, cursor editável e edições aparecem em Editar.",
+		"saved": "Gravação salva",
+		"title": "Gravação",
+		"loading": "Carregando gravação…",
+		"unavailable": "Não foi possível encontrar a gravação salva. Esta tela não excluiu o original.",
+		"actionFailed": "Não foi possível concluir a ação. Sua gravação não foi alterada.",
+		"preview": "Prévia da gravação",
+		"previewFailed": "Prévia indisponível. Você ainda pode abrir a pasta ou tentar o editor.",
+		"location": "Local salvo",
+		"openFolder": "Abrir pasta",
+		"newCapture": "Nova captura",
+		"edit": "Editar",
+		"retry": "Tentar novamente"
+	},
+	"regionSelection": {
+		"tab": "Região",
+		"monitorHint": "Escolha um monitor e desenhe a área que deseja gravar.",
+		"draw": "Marcar área",
+		"hint": "Arraste para marcar a área que deseja gravar.",
+		"keys": "Enter: confirmar · Esc: cancelar",
+		"confirm": "Usar esta área",
+		"error": "Não foi possível selecionar a área. Tente novamente."
+	},
 	"sourceSelector": {
 		"loading": "Carregando fontes...",
 		"screens": "Telas ({{count}})",
 		"windows": "Janelas ({{count}})",
 		"emptyTitle": "Nenhuma tela ou janela encontrada",
-		"emptyDescription": "Se você acabou de conceder a permissão de gravação de tela, recarregue este seletor. No macOS, pode ser necessário reabrir o OpenScreen.",
-		"loadFailedDescription": "O OpenScreen não conseguiu carregar as fontes de captura. Recarregue este seletor e tente novamente.",
+		"emptyDescription": "Se você acabou de conceder a permissão de gravação de tela, recarregue este seletor. No macOS, pode ser necessário reabrir o openScreenCopilot.",
+		"loadFailedDescription": "O openScreenCopilot não conseguiu carregar as fontes de captura. Recarregue este seletor e tente novamente.",
 		"defaultSourceName": "Tela"
 	},
 	"recording": {
@@ -77,13 +123,13 @@
 	"languageWithName": "Idioma: {{language}}",
 	"systemLanguagePrompt": {
 		"title": "Usar o idioma do seu sistema?",
-		"description": "Detectamos {{language}} como o idioma do seu sistema. Deseja mudar o OpenScreen para {{language}}?",
+		"description": "Detectamos {{language}} como o idioma do seu sistema. Deseja mudar o openScreenCopilot para {{language}}?",
 		"switch": "Mudar para {{language}}",
 		"keepDefault": "Manter idioma atual"
 	},
 	"softwareEncoderFallback": {
 		"title": "Mudou para codificação por software",
-		"description": "O codificador de GPU padrão não pôde ser iniciado, então o OpenScreen passou a usar a codificação H.264 por software. A gravação deve continuar normalmente, mas o uso da CPU pode ser maior.",
+		"description": "O codificador de GPU padrão não pôde ser iniciado, então o openScreenCopilot passou a usar a codificação H.264 por software. A gravação deve continuar normalmente, mas o uso da CPU pode ser maior.",
 		"dismiss": "Entendi",
 		"dontShowAgain": "Não mostrar novamente"
 	},
@@ -100,7 +146,7 @@
 		"checkingForUpdates": "Verificando…"
 	},
 	"permissions": {
-		"title": "O OpenScreen precisa de algumas permissões",
+		"title": "O openScreenCopilot precisa de algumas permissões",
 		"subtitle": "O macOS pede que você conceda cada uma apenas uma vez. Você pode alterá-las a qualquer momento nos Ajustes do Sistema.",
 		"level": {
 			"required": "Obrigatória",
@@ -137,17 +183,17 @@
 			"continue": "Continuar",
 			"allow": "Permitir",
 			"openSettings": "Abrir Ajustes",
-			"restart": "Reiniciar o OpenScreen",
+			"restart": "Reiniciar o openScreenCopilot",
 			"start": "Começar"
 		},
 		"help": {
-			"screenPrompt": "Em seguida, o macOS pedirá que você ative o OpenScreen nos Ajustes do Sistema.",
-			"screenSettings": "Nos Ajustes do Sistema, ative o OpenScreen. Se o macOS oferecer encerrar e reabrir o app, aceite: esta janela voltará.",
-			"screenNotListed": "O OpenScreen não está na lista? Clique em + e escolha o OpenScreen em Aplicativos.",
-			"screenRestart": "Permitido. O OpenScreen precisa reiniciar para usá-la.",
-			"screenRecurring": "Na sua primeira gravação, o macOS perguntará se o OpenScreen pode acessar sua tela diretamente, sem o seletor do sistema. Clique em Permitir. O macOS pergunta de novo de vez em quando; isso é normal.",
-			"systemAudioPrompt": "O macOS pedirá que você permita ao OpenScreen gravar o som do seu Mac.",
-			"systemAudioRequested": "Se você recusou, ative o OpenScreen em “Apenas Gravação do Áudio do Sistema” nos Ajustes do Sistema."
+			"screenPrompt": "Em seguida, o macOS pedirá que você ative o openScreenCopilot nos Ajustes do Sistema.",
+			"screenSettings": "Nos Ajustes do Sistema, ative o openScreenCopilot. Se o macOS oferecer encerrar e reabrir o app, aceite: esta janela voltará.",
+			"screenNotListed": "O openScreenCopilot não está na lista? Clique em + e escolha o openScreenCopilot em Aplicativos.",
+			"screenRestart": "Permitido. O openScreenCopilot precisa reiniciar para usá-la.",
+			"screenRecurring": "Na sua primeira gravação, o macOS perguntará se o openScreenCopilot pode acessar sua tela diretamente, sem o seletor do sistema. Clique em Permitir. O macOS pergunta de novo de vez em quando; isso é normal.",
+			"systemAudioPrompt": "O macOS pedirá que você permita ao openScreenCopilot gravar o som do seu Mac.",
+			"systemAudioRequested": "Se você recusou, ative o openScreenCopilot em “Apenas Gravação do Áudio do Sistema” nos Ajustes do Sistema."
 		},
 		"footer": {
 			"screenRequired": "A gravação de tela é necessária para gravar.",

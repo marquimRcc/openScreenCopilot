@@ -1,4 +1,5 @@
 #include "audio_sample_utils.h"
+#include "capture_region.h"
 #include "desktop_icon_cover.h"
 #include "dpi_awareness.h"
 #include "frame_slot_clock.h"
@@ -7,16 +8,19 @@
 #include "monitor_utils.h"
 #include "wasapi_device_watcher.h"
 #include "wasapi_loopback_capture.h"
+#include "wasapi_output_devices.h"
 #include "wasapi_render_keepalive.h"
 #include "frame_visibility.h"
 #include "webcam_capture.h"
 #include "wgc_session.h"
 
 #include <winrt/Windows.Foundation.h>
+#include <endpointvolume.h>
 
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <condition_variable>
 #include <cctype>
 #include <cstdint>
@@ -29,6 +33,13 @@
 #include <thread>
 
 namespace {
+
+std::mutex protocolOutputMutex;
+
+void writeProtocolLine(const std::string& line) {
+    std::lock_guard lock(protocolOutputMutex);
+    std::cout << line << std::endl;
+}
 
 struct CaptureConfig {
     int schemaVersion = 1;
@@ -44,7 +55,10 @@ struct CaptureConfig {
     int height = 0;
     MonitorBounds bounds{};
     bool hasDisplayBounds = false;
+    bool hasCaptureRegion = false;
+    CaptureRegion captureRegion{};
     bool captureSystemAudio = false;
+    std::string systemAudioDeviceId;
     bool captureMic = false;
     bool captureCursor = false;
     bool webcamEnabled = false;
@@ -574,12 +588,22 @@ bool parseConfig(const std::string& json, CaptureConfig& config) {
     config.bounds.width = findInt(json, "displayW", 0);
     config.bounds.height = findInt(json, "displayH", 0);
     config.hasDisplayBounds = findBool(json, "hasDisplayBounds", false);
+    config.hasCaptureRegion = findBool(json, "hasCaptureRegion", false);
+    config.captureRegion = {
+        findInt(json, "regionX", -1), findInt(json, "regionY", -1),
+        findInt(json, "regionWidth", -1), findInt(json, "regionHeight", -1)};
     config.captureSystemAudio = findBool(json, "captureSystemAudio", false);
     config.captureMic = findBool(json, "captureMic", false);
     config.captureCursor = findBool(json, "captureCursor", false);
     config.webcamEnabled = findBool(json, "webcamEnabled", false);
     config.preferSoftwareEncoder = findBool(json, "preferSoftwareEncoder", false);
     config.hideDesktopIcons = findBool(json, "hideDesktopIcons", false);
+    config.systemAudioDeviceId = findString(json, "systemAudioDeviceId");
+    // An absent field keeps legacy default behavior. An explicit but empty or
+    // non-string selection must not silently become the default output.
+    if (json.find("\"systemAudioDeviceId\"") != std::string::npos && config.systemAudioDeviceId.empty()) {
+        return false;
+    }
     config.microphoneDeviceId = findString(json, "microphoneDeviceId");
     config.microphoneDeviceName = findString(json, "microphoneDeviceName");
     config.microphoneGain = findDouble(json, "microphoneGain", 1.0);
@@ -614,14 +638,14 @@ void readCaptureCommands(CaptureControl& control, const std::function<void(bool)
         if (line == "pause") {
             control.setPaused(true);
             onPauseChanged(true);
-            std::cout << "{\"event\":\"recording-paused\",\"schemaVersion\":2}" << std::endl;
+            writeProtocolLine("{\"event\":\"recording-paused\",\"schemaVersion\":2}");
             control.cv.notify_all();
             continue;
         }
         if (line == "resume") {
             control.setPaused(false);
             onPauseChanged(false);
-            std::cout << "{\"event\":\"recording-resumed\",\"schemaVersion\":2}" << std::endl;
+            writeProtocolLine("{\"event\":\"recording-resumed\",\"schemaVersion\":2}");
             control.cv.notify_all();
             continue;
         }
@@ -640,7 +664,103 @@ void readCaptureCommands(CaptureControl& control, const std::function<void(bool)
 // name) came out as bytes `utf8ToWide` could not decode, so Media Foundation was
 // handed a directory that does not exist and failed with ERROR_PATH_NOT_FOUND
 // (0x80070003) before any encoder was involved (getopenscreen/openscreen#483).
+// Read only the endpoint peak meter; never initialize IAudioClient, capture PCM,
+// start a keepalive or change volume. A main-owned stdin pipe is the lease owner.
+static int runOutputMeter(const std::wstring& requestedId) {
+    const auto error = [](const char* code) {
+        std::cout << "{\"schemaVersion\":1,\"event\":\"error\",\"code\":\"" << code << "\"}" << std::endl;
+        return 1;
+    };
+    const auto stopped = [](const char* reason) {
+        std::cout << "{\"schemaVersion\":1,\"event\":\"stopped\",\"reason\":\"" << reason << "\"}" << std::endl;
+        return 0;
+    };
+    const HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
+    if (input == INVALID_HANDLE_VALUE || GetFileType(input) != FILE_TYPE_PIPE)
+        return error("invalid-control-pipe");
+    Microsoft::WRL::ComPtr<IMMDevice> device;
+    WasapiOutputDevice info;
+    if (!resolveWasapiOutputDevice(requestedId, device, info)) return error("output-unavailable");
+    Microsoft::WRL::ComPtr<IAudioMeterInformation> meter;
+    if (FAILED(device->Activate(__uuidof(IAudioMeterInformation), CLSCTX_ALL, nullptr,
+                               reinterpret_cast<void**>(meter.GetAddressOf())))) return error("meter-unavailable");
+    DWORD support = 0;
+    if (FAILED(meter->QueryHardwareSupport(&support))) return error("meter-unavailable");
+    std::cout << "{\"schemaVersion\":1,\"event\":\"ready\",\"scope\":\"render-peak\",\"position\":\"before-endpoint-volume\",\"id\":\""
+              << jsonEscape(wideToUtf8(info.id)) << "\",\"hardwareMeter\":"
+              << ((support & ENDPOINT_HARDWARE_SUPPORT_METER) ? "true" : "false") << "}" << std::endl;
+    std::string command;
+    const auto start = std::chrono::steady_clock::now();
+    unsigned sequence = 0;
+    while (sequence < 300 && std::chrono::steady_clock::now() - start < std::chrono::seconds(30)) {
+        DWORD available = 0;
+        if (!PeekNamedPipe(input, nullptr, 0, nullptr, &available, nullptr)) {
+            if (GetLastError() == ERROR_BROKEN_PIPE) return stopped("stdin-eof");
+            return error("control-failed");
+        }
+        if (available) {
+            if (available > 64 || command.size() + available > 64) return error("invalid-command");
+            char buffer[64];
+            DWORD read = 0;
+            if (!ReadFile(input, buffer, available, &read, nullptr) || read == 0) return error("control-failed");
+            command.append(buffer, read);
+            if (command == "stop\n" || command == "stop\r\n") return stopped("stop");
+            if (std::string("stop\r\n").find(command) != 0 && std::string("stop\n").find(command) != 0)
+                return error("invalid-command");
+        }
+        DWORD state = 0;
+        if (FAILED(device->GetState(&state)) || state != DEVICE_STATE_ACTIVE) return error("output-unavailable");
+        float peak = 0;
+        if (FAILED(meter->GetPeakValue(&peak)) || !std::isfinite(peak) || peak < 0 || peak > 1)
+            return error("meter-unavailable");
+        // Quantized scalar, not audio samples. Sequence and total lifetime are bounded.
+        std::cout << "{\"schemaVersion\":1,\"event\":\"level\",\"sequence\":" << sequence++
+                  << ",\"peakPermille\":" << static_cast<int>(std::lround(peak * 1000)) << "}" << std::endl;
+        if (!std::cout.good()) return 1;
+        // Never burst/catch up after a slow COM call or scheduler stall.
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    return stopped("lease-expired");
+}
+
 int wmain(int argc, wchar_t* argv[]) {
+    if (argc == 2 && std::wstring(argv[1]) == L"--capabilities") {
+        std::cout << "{\"schemaVersion\":1,\"captureRegion\":true,\"audioOutputEnumeration\":true,\"audioOutputSelection\":true,\"audioOutputMeter\":true}" << std::endl;
+        return 0;
+    }
+    if (argc == 3 && std::wstring(argv[1]) == L"--meter-audio-output") {
+        winrt::init_apartment(winrt::apartment_type::multi_threaded);
+        return runOutputMeter(argv[2]);
+    }
+    if (argc == 2 && std::wstring(argv[1]) == L"--list-audio-outputs") {
+        winrt::init_apartment(winrt::apartment_type::multi_threaded);
+        std::vector<WasapiOutputDevice> devices;
+        if (!enumerateWasapiOutputDevices(devices)) {
+            std::cerr << "ERROR: Failed to enumerate WASAPI output devices" << std::endl;
+            return 1;
+        }
+        std::cout << "{\"schemaVersion\":1,\"scope\":\"render-loopback\",\"devices\":[";
+        for (size_t i = 0; i < devices.size(); ++i) {
+            if (i) std::cout << ",";
+            std::cout << "{\"id\":\"" << jsonEscape(wideToUtf8(devices[i].id))
+                      << "\",\"name\":\"" << jsonEscape(wideToUtf8(devices[i].name))
+                      << "\",\"isDefault\":" << (devices[i].isDefault ? "true" : "false") << "}";
+        }
+        std::cout << "]}" << std::endl;
+        return 0;
+    }
+    if (argc == 3 && std::wstring(argv[1]) == L"--check-audio-output") {
+        winrt::init_apartment(winrt::apartment_type::multi_threaded);
+        Microsoft::WRL::ComPtr<IMMDevice> device;
+        WasapiOutputDevice info;
+        if (!resolveWasapiOutputDevice(argv[2], device, info)) {
+            std::cerr << "ERROR: Requested WASAPI output is unavailable; no fallback" << std::endl;
+            return 1;
+        }
+        std::cout << "{\"schemaVersion\":1,\"id\":\"" << jsonEscape(wideToUtf8(info.id))
+                  << "\",\"name\":\"" << jsonEscape(wideToUtf8(info.name)) << "\"}" << std::endl;
+        return 0;
+    }
     // Before anything reads a coordinate. `findMonitorForCapture` matches the
     // config's display bounds against the rects `EnumDisplayMonitors` reports,
     // and the caller sends those bounds in physical pixels; a DPI-unaware
@@ -664,6 +784,15 @@ int wmain(int argc, wchar_t* argv[]) {
     CaptureConfig config;
     if (!parseConfig(wideToUtf8(argv[1]), config)) {
         std::cerr << "ERROR: Failed to parse config JSON" << std::endl;
+        return 1;
+    }
+    // Region support is deliberately monitor-only. Never degrade an invalid
+    // request to full-screen capture, which could expose unselected content.
+    if (config.hasCaptureRegion &&
+        (config.sourceType != "display" || !config.hasDisplayBounds ||
+         config.bounds.width < 2 || config.bounds.height < 2 ||
+         !validCaptureRegion(config.captureRegion, config.bounds.width, config.bounds.height))) {
+        std::cerr << "ERROR: A capture region requires valid pixels and explicit display bounds" << std::endl;
         return 1;
     }
 
@@ -706,6 +835,7 @@ int wmain(int argc, wchar_t* argv[]) {
     DesktopIconCover desktopIconCover;
     WgcSession session;
     HMONITOR capturedMonitor = nullptr;
+    HWND capturedWindow = nullptr;
     if (config.sourceType == "display") {
         HMONITOR monitor = findMonitorForCapture(
             config.displayId,
@@ -733,6 +863,7 @@ int wmain(int argc, wchar_t* argv[]) {
         // A window is captured by whichever display it currently sits on, which
         // is the adapter that matters for the same reason a monitor's does.
         capturedMonitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+        capturedWindow = window;
         // A window source would otherwise lose every context menu and dropdown,
         // which are windows of their own (getopenscreen/openscreen#894). Windows 11
         // 24H2+ can draw them into this capture; OPENSCREEN_WGC_DISABLE_SECONDARY_
@@ -751,11 +882,19 @@ int wmain(int argc, wchar_t* argv[]) {
 
     reportCaptureAdapters(session.device(), capturedMonitor);
 
-    // WGC owns the captured texture size. Encoding must use that exact size
-    // until a dedicated GPU scaling pass is introduced; CopyResource requires
-    // matching resource dimensions.
-    int width = session.captureWidth();
-    int height = session.captureHeight();
+    const int sourceWidth = session.captureWidth();
+    const int sourceHeight = session.captureHeight();
+    if (config.hasCaptureRegion &&
+        (sourceWidth != config.bounds.width || sourceHeight != config.bounds.height ||
+         !validCaptureRegion(config.captureRegion, sourceWidth, sourceHeight))) {
+        std::cerr << "ERROR: Invalid capture region; expected even dimensions inside one monitor"
+                  << std::endl;
+        return 1;
+    }
+    // Crop is a GPU copy, not a resize. The encoder receives only selected
+    // pixels. Existing whole-monitor/window behavior stays unchanged.
+    int width = config.hasCaptureRegion ? config.captureRegion.width : sourceWidth;
+    int height = config.hasCaptureRegion ? config.captureRegion.height : sourceHeight;
     width = (std::max(2, width) / 2) * 2;
     height = (std::max(2, height) / 2) * 2;
 
@@ -838,7 +977,7 @@ int wmain(int argc, wchar_t* argv[]) {
     AudioInputFormat systemAudioFormat{};
     AudioInputFormat microphoneAudioFormat{};
     if (config.captureSystemAudio) {
-        if (!loopbackCapture.initializeSystemLoopback()) {
+        if (!loopbackCapture.initializeSystemLoopback(utf8ToWide(config.systemAudioDeviceId))) {
             std::cerr << "ERROR: Failed to initialize WASAPI loopback capture" << std::endl;
             return 1;
         }
@@ -863,6 +1002,12 @@ int wmain(int argc, wchar_t* argv[]) {
                   << ",\"bitsPerSample\":" << audioFormat->bitsPerSample
                   << ",\"system\":" << (config.captureSystemAudio ? "true" : "false")
                   << ",\"microphone\":" << (config.captureMic ? "true" : "false");
+        if (config.captureSystemAudio) {
+            std::cout << ",\"systemAudioDeviceId\":\""
+                      << jsonEscape(wideToUtf8(loopbackCapture.selectedDeviceId()))
+                      << "\",\"systemAudioDeviceName\":\""
+                      << jsonEscape(wideToUtf8(loopbackCapture.selectedDeviceName())) << "\"";
+        }
         if (config.captureMic) {
             std::cout << ",\"microphoneDeviceName\":\""
                       << jsonEscape(wideToUtf8(microphoneCapture.selectedDeviceName())) << "\"";
@@ -1014,12 +1159,33 @@ int wmain(int argc, wchar_t* argv[]) {
     const bool legacyFrameCallback = useLegacyFrameCallback();
     CaptureControl control;
     std::atomic<bool> firstFrameWritten = false;
+    std::atomic<bool> firstVideoSampleSubmitted = false;
     std::atomic<bool> encodeFailed = false;
     // Frames the GPU bridge was too busy to take. Reported at stop rather than
     // per frame: a handful over a recording is normal contention, a stream of
     // them is the next bug report, and neither is worth a log line each.
     std::atomic<uint64_t> contendedFrames = 0;
     Microsoft::WRL::ComPtr<ID3D11Texture2D> latestFrameTexture;
+    const auto copyCapturedFrame = [&](ID3D11Texture2D* texture) {
+        if (config.hasCaptureRegion) {
+            if (!copyCaptureRegion(session.device(), session.context(), texture,
+                                   config.captureRegion, sourceWidth, sourceHeight, latestFrameTexture)) {
+                std::cerr << "ERROR: Region frame copy failed or display geometry changed" << std::endl;
+                return false;
+            }
+            return true;
+        }
+        if (!latestFrameTexture) {
+            D3D11_TEXTURE2D_DESC desc{};
+            texture->GetDesc(&desc);
+            desc.BindFlags = 0;
+            desc.CPUAccessFlags = 0;
+            desc.MiscFlags = 0;
+            if (FAILED(session.device()->CreateTexture2D(&desc, nullptr, &latestFrameTexture))) return false;
+        }
+        session.context()->CopyResource(latestFrameTexture.Get(), texture);
+        return true;
+    };
     std::vector<BYTE> latestWebcamFrame;
     int latestWebcamWidth = 0;
     int latestWebcamHeight = 0;
@@ -1038,19 +1204,6 @@ int wmain(int argc, wchar_t* argv[]) {
                 return;
             }
             std::scoped_lock lock(frameMutex);
-            if (!latestFrameTexture) {
-                D3D11_TEXTURE2D_DESC desc{};
-                texture->GetDesc(&desc);
-                desc.BindFlags = 0;
-                desc.CPUAccessFlags = 0;
-                desc.MiscFlags = 0;
-                if (FAILED(session.device()->CreateTexture2D(&desc, nullptr, &latestFrameTexture))) {
-                    encodeFailed = true;
-                    control.requestStop();
-                    return;
-                }
-            }
-
             // Gated on an already-arrived first frame: main() blocks up to 10s
             // waiting for firstFrameWritten before it will even print
             // recording-started, a startup budget this stall is meant to
@@ -1063,7 +1216,11 @@ int wmain(int argc, wchar_t* argv[]) {
             if (testStallFrameCallbackMs > 0 && firstFrameWritten.load()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(testStallFrameCallbackMs));
             }
-            session.context()->CopyResource(latestFrameTexture.Get(), texture);
+            if (!copyCapturedFrame(texture)) {
+                encodeFailed = true;
+                control.requestStop();
+                return;
+            }
             if (!firstFrameWritten.exchange(true)) {
                 frameCv.notify_all();
             }
@@ -1107,6 +1264,11 @@ int wmain(int argc, wchar_t* argv[]) {
             // Whether the picture this tick encodes differs from the last one:
             // a new WGC frame, or a new camera frame drawn into it. The legacy
             // callback path cannot tell, so it always reads back.
+            if (session.isSourceClosed()) {
+                control.requestStop();
+                break;
+            }
+
             bool pictureChanged = legacyFrameCallback;
 
             std::unique_lock<std::timed_mutex> legacyLock;
@@ -1126,11 +1288,17 @@ int wmain(int argc, wchar_t* argv[]) {
                         continue;
                     }
                     frameCv.wait_for(legacyLock, std::chrono::milliseconds(100), [&] {
-                        return control.stopRequested.load() ||
-                            encodeFailed.load() ||
-                            (!control.paused.load() && latestFrameTexture);
+                        return evaluateLegacyWaitPredicate(
+                            control.stopRequested.load(),
+                            encodeFailed.load(),
+                            session.isSourceClosed(),
+                            control.paused.load(),
+                            latestFrameTexture != nullptr);
                     });
-                    if (control.stopRequested || encodeFailed) {
+                    if (control.stopRequested || encodeFailed || session.isSourceClosed()) {
+                        if (session.isSourceClosed()) {
+                            control.requestStop();
+                        }
                         break;
                     }
                     if (control.paused || !latestFrameTexture) {
@@ -1141,27 +1309,37 @@ int wmain(int argc, wchar_t* argv[]) {
                     tickStartHns = recordingElapsedHns();
                 } else {
                     if (control.paused) {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        if (shouldBreakPauseForSourceClose(true, session.isSourceClosed())) {
+                            control.requestStop();
+                            break;
+                        }
+                        std::this_thread::sleep_for(std::chrono::milliseconds(50));
                         continue;
                     }
 
                     ID3D11Texture2D* wgcTexture = nullptr;
                     int64_t wgcTimestampHns = 0;
                     const bool gotFrame = session.tryGetNextFrame(&wgcTexture, &wgcTimestampHns);
-                    pictureChanged = gotFrame;
-                    if (gotFrame) {
-                        if (!latestFrameTexture) {
-                            D3D11_TEXTURE2D_DESC desc{};
-                            wgcTexture->GetDesc(&desc);
-                            desc.BindFlags = 0;
-                            desc.CPUAccessFlags = 0;
-                            desc.MiscFlags = 0;
-                            if (FAILED(session.device()->CreateTexture2D(&desc, nullptr, &latestFrameTexture))) {
-                                encodeFailed = true;
-                                control.requestStop();
-                                break;
-                            }
-                        }
+                    const auto decision = evaluatePullFrameDecision(
+                        control.stopRequested.load(),
+                        encodeFailed.load(),
+                        session.isSourceClosed(),
+                        gotFrame,
+                        latestFrameTexture != nullptr);
+
+                    if (decision == WgcPullFrameDecision::StopDueToControlOrFailure) {
+                        break;
+                    }
+                    if (decision == WgcPullFrameDecision::StopDueToSourceClosed) {
+                        control.requestStop();
+                        break;
+                    }
+                    if (decision == WgcPullFrameDecision::WaitForInitialFrame) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                        continue;
+                    }
+                    if (decision == WgcPullFrameDecision::ProcessNewFrame) {
+                        pictureChanged = true;
                         // The wedge risk this class exists to avoid: this call
                         // can block inside the display driver and never return
                         // (#252, still true of PR #305's DXGI path on some
@@ -1169,16 +1347,14 @@ int wmain(int argc, wchar_t* argv[]) {
                         // already owns deciding when to give up -- there is no
                         // separate WGC callback thread left for it to take a
                         // lock down with it.
-                        session.context()->CopyResource(latestFrameTexture.Get(), wgcTexture);
+                        if (!copyCapturedFrame(wgcTexture)) {
+                            encodeFailed = true;
+                            control.requestStop();
+                            break;
+                        }
                         firstFrameWritten = true;
-                    } else if (!latestFrameTexture) {
-                        // No frame captured yet at all: nothing to encode
-                        // this iteration, and nothing gated on it either (the
-                        // first-frame wait below polls firstFrameWritten
-                        // directly, not a condition variable this thread
-                        // would need to notify).
-                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                        continue;
+                    } else {
+                        // RepeatStaticFrame: pictureChanged remains false (unless camera updated)
                     }
                 }
                 if (webcamActive) {
@@ -1313,6 +1489,9 @@ int wmain(int argc, wchar_t* argv[]) {
                 encodeFailed = true;
                 control.requestStop();
                 break;
+            }
+            if (hasVideoSample) {
+                firstVideoSampleSubmitted = true;
             }
 
             frameIndex += 1;
@@ -1497,24 +1676,32 @@ int wmain(int argc, wchar_t* argv[]) {
     control.recordingStartedAt = std::chrono::steady_clock::now();
     startVideoWriter();
 
-    // firstFrameWritten is set by writeVideoFrames on its own thread; this
-    // just polls it with the same 10s ceiling the old condition-variable wait
-    // used.
+    // firstVideoSampleSubmitted is set by writeVideoFrames only after at least
+    // one video sample has been successfully submitted to the sink writer
+    // (distinguishing texture copy from actual writer submission). This polls
+    // it alongside stopRequested and session.isSourceClosed() with the same 10s
+    // ceiling the old condition-variable wait used.
     bool firstFrameArrived = false;
     {
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-        while (!firstFrameWritten.load() && !control.stopRequested.load() &&
+        while (shouldContinueStartupWait(
+                   firstVideoSampleSubmitted.load(),
+                   control.stopRequested.load(),
+                   session.isSourceClosed()) &&
                std::chrono::steady_clock::now() < deadline) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        firstFrameArrived = firstFrameWritten.load();
+        firstFrameArrived = firstVideoSampleSubmitted.load();
     }
     if (!firstFrameArrived) {
         control.requestStop();
         if (stdinThread.joinable()) {
             stdinThread.detach();
         }
-        stopVideoWriter();
+        if (audioMixer) {
+            audioMixer->setPaused(true);
+        }
+        const bool wgcDrained = session.quiesceLegacyCallback();
         microphoneCapture.stop();
         loopbackCapture.stop();
         stopDeviceWatchIfActive();
@@ -1523,15 +1710,66 @@ int wmain(int argc, wchar_t* argv[]) {
         if (audioMixer) {
             audioMixer->stop();
         }
+        if (!wgcDrained) {
+            std::cerr << "ERROR: A WGC frame callback did not finish during startup abort; terminating process"
+                      << std::endl;
+            std::cout << "{\"event\":\"stop-timeout\",\"schemaVersion\":2,\"step\":\"wgc-quiesce-startup\"}"
+                      << std::endl;
+            std::cout.flush();
+            std::cerr.flush();
+            TerminateProcess(GetCurrentProcess(), 3);
+            _exit(3);
+        }
+        stopVideoWriter();
         session.stop();
-        std::cerr << "ERROR: Timed out waiting for first WGC frame" << std::endl;
+        if (session.isSourceClosed()) {
+            std::cerr << "ERROR: Source window closed before first video sample was submitted (reason: "
+                      << wgcSourceCloseReasonToString(session.sourceCloseReason()) << ")" << std::endl;
+        } else {
+            std::cerr << "ERROR: Timed out waiting for first WGC frame" << std::endl;
+        }
         return 1;
     }
 
     std::cout << "{\"event\":\"recording-started\",\"schemaVersion\":2}" << std::endl;
     std::cout << "Recording started" << std::endl;
 
-    control.waitForStop();
+    RECT lastSourceBounds{};
+    bool hasLastSourceBounds = false;
+    while (!control.stopRequested.load()) {
+        if (session.isSourceClosed()) {
+            control.requestStop();
+            break;
+        }
+        // Window capture follows resize/move natively. Report the physical Win32
+        // rectangle only when it changes so the main process can keep its protected
+        // border on the same pixels without polling through a second helper.
+        if (capturedWindow && IsWindow(capturedWindow)) {
+            RECT sourceBounds{};
+            if (GetWindowRect(capturedWindow, &sourceBounds) &&
+                sourceBounds.right > sourceBounds.left && sourceBounds.bottom > sourceBounds.top &&
+                (!hasLastSourceBounds || sourceBounds.left != lastSourceBounds.left ||
+                 sourceBounds.top != lastSourceBounds.top || sourceBounds.right != lastSourceBounds.right ||
+                 sourceBounds.bottom != lastSourceBounds.bottom)) {
+                lastSourceBounds = sourceBounds;
+                hasLastSourceBounds = true;
+                writeProtocolLine(
+                    "{\"event\":\"source-bounds\",\"schemaVersion\":2,\"x\":" +
+                    std::to_string(sourceBounds.left) + ",\"y\":" + std::to_string(sourceBounds.top) +
+                    ",\"width\":" + std::to_string(sourceBounds.right - sourceBounds.left) +
+                    ",\"height\":" + std::to_string(sourceBounds.bottom - sourceBounds.top) + "}");
+            }
+        }
+        std::unique_lock lock(control.stopMutex);
+        control.stopCv.wait_for(lock, std::chrono::milliseconds(50), [&] {
+            return control.stopRequested.load();
+        });
+    }
+
+    if (session.isSourceClosed()) {
+        std::cerr << "[wgc-capture] Source closed (reason: "
+                  << wgcSourceCloseReasonToString(session.sourceCloseReason()) << ")" << std::endl;
+    }
 
     // The take ends here, for the sound as for the picture: the video writer
     // stops on this same request. The mixer is clock-driven, so left running
@@ -1812,6 +2050,11 @@ int wmain(int argc, wchar_t* argv[]) {
         return 1;
     }
     if (!screenFinalized || !webcamFinalized) {
+        return 1;
+    }
+
+    if (!firstVideoSampleSubmitted.load()) {
+        std::cerr << "ERROR: Capture ended without submitting any video samples" << std::endl;
         return 1;
     }
 

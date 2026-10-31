@@ -5,7 +5,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { DesktopCapturerSource, Rectangle, WebContents } from "electron";
+import type { DesktopCapturerSource, Rectangle, WebContents, WebFrameMain } from "electron";
 import {
 	app,
 	BrowserWindow,
@@ -118,8 +118,13 @@ import {
 } from "../native-bridge/screen/macPickerSession";
 import { CompositorViewService } from "../native-bridge/services/compositorViewService";
 import { getMacPermissions, showPermissionsWindow } from "../permissions";
+import {
+	BoundedRetainedText,
+	WINDOWS_HELPER_OUTPUT_MAX_CODE_UNITS,
+} from "../recording/boundedRetainedText";
 import { scoreDeviceNameMatch } from "../recording/deviceNameMatching";
 import { recordingStorageProblem } from "../recording/diskSpaceCheck";
+import { createNativeHelperEventLineParser } from "../recording/nativeHelperEventLineParser";
 import {
 	describeSalvagedTake,
 	nativeMacSalvageTarget,
@@ -143,9 +148,45 @@ import {
 	terminateNativeWindowsCapture,
 	waitForNativeWindowsCaptureStop,
 } from "../recording/nativeWindowsCaptureStop";
+import {
+	createNativeWindowsMidCaptureWatch,
+	createNativeWindowsTakeSession,
+	executeTakeStop,
+	isTakeOwnerValid,
+	type NativeWindowsTakeSession,
+	queryTakeStatus,
+} from "../recording/nativeWindowsMidCaptureWatch";
 import { removeEmptyCaptureOutput } from "../recording/removeEmptyCaptureOutput";
+import { createSavedRecordingActions } from "../recording/savedRecording";
+import {
+	SavedRecordingCopies,
+	type SavedRecordingCopyOwner,
+} from "../recording/savedRecordingCopy";
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
 import { reindexRecordingOnDisk } from "../recording/webm-seek-index";
+import { resolveWindowsAudioOutputForRecording } from "../recording/windowsAudioOutputs";
+import { isWindowsCaptureBusy } from "../recording/windowsCaptureBusy";
+import { WindowsCaptureProcessOwnership } from "../recording/windowsCaptureProcessOwnership";
+import { terminateOrphanedWindowsCaptureForQuit } from "../recording/windowsCaptureQuit";
+import { WindowsCaptureStartGate } from "../recording/windowsCaptureStartGate";
+import {
+	assertWindowsCapturePreSpawnValid,
+	type WindowsCapturePreSpawnSnapshot,
+} from "../recording/windowsCaptureStartupValidation";
+import { WindowsMeterCaptureGuard } from "../recording/windowsMeterCaptureGuard";
+import { WindowsOutputMeter } from "../recording/windowsOutputMeter";
+import {
+	sourceBoundsFromHelperEvent,
+	WindowsRegionIndicator,
+	windowsCaptureIndicatorBounds,
+} from "../recording/windowsRegionIndicator";
+import {
+	isWindowsRegionCurrent,
+	supportsWindowsRegion,
+	type TrustedWindowsRegion,
+	WindowsRegionPicker,
+} from "../recording/windowsRegionPicker";
+import { canSelectWindowsRegion } from "../recording/windowsRegionSelectionAdmission";
 import {
 	describeMacPickerSource,
 	describeRecordingSource,
@@ -157,13 +198,20 @@ import {
 	shouldEnumerateRecordingSources,
 	shouldPersistSelectedSource,
 } from "../recording-source-settings";
-import { createRunnerWindow } from "../windows";
+import { createRegionIndicatorWindow, createRunnerWindow } from "../windows";
 import { getSourcesByType, shouldEnumerateSourceTypesSeparately } from "./desktopSourceTypes";
 import { registerNativeBridgeHandlers } from "./nativeBridge";
 import { createNativeMacMidCaptureErrorWatch } from "./nativeMacMidCaptureErrorWatch";
 import { registerRecordingPrefsHandlers } from "./recordingPrefs";
 import { RecordingStreamRegistry, registerRecordingStreamHandlers } from "./recordingStream";
+import { isRecordingResultOwner, registerSavedRecordingGifHandlers } from "./savedRecordingGif";
 import { type SelectSourceContext, selectSourceWithOwnership } from "./selectSourceOwnership";
+import {
+	isWindowsAudioOutputFrameOwner,
+	isWindowsAudioOutputOwner,
+	registerWindowsAudioOutputHandlers,
+} from "./windowsAudioOutputs";
+import { registerWindowsOutputMeterHandlers } from "./windowsOutputMeter";
 
 const PROJECT_FILE_EXTENSION = "openscreen";
 export const SHORTCUTS_FILE = path.join(app.getPath("userData"), "shortcuts.json");
@@ -638,8 +686,11 @@ type SelectedSource = {
 	name: string;
 	id?: string;
 	display_id?: string;
+	captureRegion?: import("../../src/lib/windowsCaptureRegion").WindowsCaptureRegion;
 	[key: string]: unknown;
 };
+
+let trustedWindowsRegion: TrustedWindowsRegion | null = null;
 
 type AttachNativeMacWebcamRecordingInput = {
 	screenVideoPath?: string;
@@ -691,6 +742,7 @@ export interface RecordingPrefs {
 	/** Capture resolution for the camera. See WEBCAM_QUALITY_PRESETS. */
 	camQuality: WebcamQualityId;
 	systemAudioEnabled: boolean;
+	windowsSystemAudioDeviceId?: string | null;
 	cursorCaptureMode: CursorCaptureMode;
 	hideDesktopIcons: boolean;
 	/** Whether a fresh take gets automatic zooms on import. Persisted; defaults on. */
@@ -704,7 +756,8 @@ const defaultRecordingPrefs: RecordingPrefs = {
 	camDeviceId: null,
 	camDeviceName: null,
 	camQuality: DEFAULT_WEBCAM_QUALITY,
-	systemAudioEnabled: false,
+	systemAudioEnabled: true,
+	windowsSystemAudioDeviceId: null,
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
@@ -754,7 +807,11 @@ const MAX_CURSOR_SAMPLES = 60 * 60 * 30; // 1 hour @ 30Hz
 let cursorRecordingSession: CursorRecordingSession | null = null;
 let pendingCursorRecordingData: CursorRecordingData | null = null;
 let nativeWindowsCaptureProcess: ChildProcessWithoutNullStreams | null = null;
-let nativeWindowsCaptureOutput = "";
+const nativeWindowsStartGate = new WindowsCaptureStartGate();
+const nativeWindowsProcessOwnership =
+	new WindowsCaptureProcessOwnership<ChildProcessWithoutNullStreams>();
+const windowsRegionIndicator = new WindowsRegionIndicator(createRegionIndicatorWindow);
+const nativeWindowsCaptureOutput = new BoundedRetainedText();
 let nativeWindowsCaptureTargetPath: string | null = null;
 let nativeWindowsCaptureWebcamTargetPath: string | null = null;
 let nativeWindowsCaptureRecordingId: number | null = null;
@@ -772,13 +829,23 @@ let nativeWindowsIsPaused = false;
 let nativeWindowsCaptureContainer: string | null = null;
 /** Cuts a surviving helper's output loose so it cannot pollute the next recording. */
 let nativeWindowsCaptureDrainCleanup: (() => void) | null = null;
+let currentWindowsCaptureTake: NativeWindowsTakeSession | null = null;
+let windowsCaptureTakeGeneration = 0;
+let nativeWindowsCaptureWatcherDetach: (() => void) | null = null;
 
 function detachNativeWindowsCaptureOutputDrain() {
 	nativeWindowsCaptureDrainCleanup?.();
 	nativeWindowsCaptureDrainCleanup = null;
 }
 
+function detachNativeWindowsCaptureWatcher() {
+	nativeWindowsCaptureWatcherDetach?.();
+	nativeWindowsCaptureWatcherDetach = null;
+}
+
 function resetNativeWindowsCaptureState() {
+	windowsRegionIndicator.clear(nativeWindowsCaptureProcess ?? undefined);
+	detachNativeWindowsCaptureWatcher();
 	nativeWindowsCaptureDrainCleanup = null;
 	nativeWindowsCaptureProcess = null;
 	nativeWindowsCaptureTargetPath = null;
@@ -1326,8 +1393,22 @@ async function startCursorRecording(recordingId?: number) {
 	}
 
 	pendingCursorRecordingData = null;
+	const cursorRegion = selectedSource?.captureRegion ? trustedWindowsRegion : null;
 	cursorRecordingSession = createCursorRecordingSession({
 		getDisplayBounds: getSelectedSourceBounds,
+		getPhysicalBounds: () => {
+			if (!cursorRegion) return null;
+			const {
+				boundsPx,
+				region: { regionPx },
+			} = cursorRegion;
+			return {
+				x: boundsPx.x + regionPx.x,
+				y: boundsPx.y + regionPx.y,
+				width: regionPx.width,
+				height: regionPx.height,
+			};
+		},
 		maxSamples: MAX_CURSOR_SAMPLES,
 		platform: process.platform,
 		sampleIntervalMs: CURSOR_SAMPLE_INTERVAL_MS,
@@ -1490,10 +1571,14 @@ function waitForNativeWindowsCaptureStart(proc: ChildProcessWithoutNullStreams) 
 		}, 12000);
 
 		// Observes only. `attachNativeWindowsCaptureOutputDrain` is the single
-		// writer of `nativeWindowsCaptureOutput` and is registered first, so the
-		// chunk that triggers this call is already in the buffer.
-		const onOutput = () => {
-			if (nativeWindowsCaptureOutput.includes("Recording started")) {
+		// writer of `nativeWindowsCaptureOutput` and is registered first. Inspect
+		// this event too so a giant chunk cannot hide the marker in the omitted
+		// middle of the bounded transcript.
+		const onOutput = (chunk: Buffer) => {
+			if (
+				chunk.toString().includes("Recording started") ||
+				nativeWindowsCaptureOutput.value().includes("Recording started")
+			) {
 				cleanup();
 				resolve();
 			}
@@ -1506,7 +1591,7 @@ function waitForNativeWindowsCaptureStart(proc: ChildProcessWithoutNullStreams) 
 			cleanup();
 			reject(
 				new Error(
-					nativeWindowsCaptureOutput.trim() ||
+					nativeWindowsCaptureOutput.value().trim() ||
 						`Native Windows capture exited before recording started (code=${code ?? "unknown"})`,
 				),
 			);
@@ -1536,17 +1621,28 @@ function waitForNativeWindowsCaptureStart(proc: ChildProcessWithoutNullStreams) 
  * reproduced by driving the .exe by hand. macOS has had this since it shipped
  * (`attachNativeMacCaptureOutputDrain`); Windows never did.
  */
-function attachNativeWindowsCaptureOutputDrain(proc: ChildProcessWithoutNullStreams) {
-	const drain = (chunk: Buffer) => {
-		nativeWindowsCaptureOutput += chunk.toString();
+function attachNativeWindowsCaptureOutputDrain(
+	proc: ChildProcessWithoutNullStreams,
+	onEvent?: (event: Record<string, unknown>) => void,
+) {
+	const parseEventLines = createNativeHelperEventLineParser(tryParseNativeHelperEvent, (event) =>
+		onEvent?.(event),
+	);
+	const drainStdout = (chunk: Buffer) => {
+		const text = chunk.toString();
+		nativeWindowsCaptureOutput.append(text);
+		parseEventLines(text);
+	};
+	const drainStderr = (chunk: Buffer) => {
+		nativeWindowsCaptureOutput.append(chunk.toString());
 	};
 	const cleanup = () => {
-		proc.stdout.off("data", drain);
-		proc.stderr.off("data", drain);
+		proc.stdout.off("data", drainStdout);
+		proc.stderr.off("data", drainStderr);
 	};
 
-	proc.stdout.on("data", drain);
-	proc.stderr.on("data", drain);
+	proc.stdout.on("data", drainStdout);
+	proc.stderr.on("data", drainStderr);
 	proc.once("close", cleanup);
 	// An 'error' event with no listener throws, and in the main process that is
 	// an uncaught exception rather than a rejected promise. Both streams need a
@@ -1957,7 +2053,7 @@ export async function exportDiagnosticFile(payload: {
 		projectState: payload.projectState,
 		recentLogs: payload.logs,
 		helperOutput: {
-			windows: tail(nativeWindowsCaptureOutput, HELPER_OUTPUT_MAX_BYTES),
+			windows: tail(nativeWindowsCaptureOutput.value(), WINDOWS_HELPER_OUTPUT_MAX_CODE_UNITS),
 			mac: tail(nativeMacCaptureOutput, HELPER_OUTPUT_MAX_BYTES),
 		},
 		mainProcessLogs: mainLogBuffer.snapshot(),
@@ -1973,7 +2069,7 @@ export async function exportDiagnosticFile(payload: {
 }
 
 export function registerIpcHandlers(
-	createEditorWindow: () => void,
+	createEditorWindow: (query?: Record<string, string>) => void,
 	createSourceSelectorWindow: () => BrowserWindow,
 	createCountdownOverlayWindow: () => BrowserWindow,
 	createNotesWindowWrapper: () => BrowserWindow,
@@ -1988,6 +2084,9 @@ export function registerIpcHandlers(
 ) {
 	/** The HUD is recording a take, the user's or an MCP client's (`set-recording-state`). */
 	let appRecording = false;
+	const windowsOutputMeter = new WindowsOutputMeter(findNativeWindowsCaptureHelperPath);
+	const windowsMeterCaptureGuard = new WindowsMeterCaptureGuard(windowsOutputMeter);
+	const regionPicker = new WindowsRegionPicker();
 	const appSettings = new AppSettingsStore(app.getPath("userData"));
 	const broadcastSelectedSource = (source: SelectedSource | null) => {
 		for (const window of BrowserWindow.getAllWindows()) {
@@ -2065,8 +2164,9 @@ export function registerIpcHandlers(
 			: null;
 		if (currentLive) {
 			selectedSource = {
+				...selectedSource,
 				id: currentLive.id,
-				name: currentLive.name,
+				name: selectedSource?.captureRegion ? selectedSource.name : currentLive.name,
 				display_id: currentLive.display_id,
 			};
 			selectedDesktopSource = currentLive;
@@ -2079,7 +2179,7 @@ export function registerIpcHandlers(
 				sources,
 				{ waylandPortal: process.platform === "linux" && Boolean(findPipeWireCursorHelperPath()) },
 			);
-			if (restored) {
+			if (restored && !previousSelectedSource?.captureRegion) {
 				selectedSource = {
 					id: restored.id,
 					name: restored.name,
@@ -2087,6 +2187,11 @@ export function registerIpcHandlers(
 				};
 				selectedDesktopSource = lastEnumeratedSources.get(restored.id) ?? null;
 			}
+		}
+		if (previousSelectedSource?.captureRegion && !currentLive) {
+			// Keep a stale region explicit until the user chooses a replacement.
+			// Restoring lastSource later must not turn it into full-screen capture.
+			selectedSource = previousSelectedSource;
 		}
 		if (!sameSelectedSource(previousSelectedSource, selectedSource)) {
 			broadcastSelectedSource(selectedSource);
@@ -2114,11 +2219,20 @@ export function registerIpcHandlers(
 		},
 	};
 
-	async function selectSource(source: SelectedSource, options?: { persist?: boolean }) {
+	async function selectSource(
+		source: SelectedSource,
+		options?: { persist?: boolean },
+		region?: TrustedWindowsRegion,
+	) {
+		const persistence = region
+			? "clear"
+			: shouldPersistSelectedSource(options)
+				? "persist"
+				: "preserve";
 		const next = await selectSourceWithOwnership(
 			selectSourceContext,
 			{ id: source.id, name: source.name, display_id: source.display_id },
-			options,
+			persistence,
 			{
 				getSources: () =>
 					desktopCapturer.getSources({
@@ -2131,8 +2245,25 @@ export function registerIpcHandlers(
 						describeRecordingSource(process.platform, live as Required<SelectedSource>),
 					);
 				},
+				clearPersisted: () => {
+					appSettings.setLastSource(null);
+				},
 				broadcast: broadcastSelectedSource,
-				shouldPersist: shouldPersistSelectedSource,
+				decorate: (live) => {
+					if (region && (live.id !== region.sourceId || !isWindowsRegionCurrent(region))) {
+						throw new Error("Display changed. Select the area again.");
+					}
+					return region
+						? {
+								...live,
+								name: `${live.name} · ${region.region.regionPx.width} × ${region.region.regionPx.height}`,
+								captureRegion: region.region,
+							}
+						: live;
+				},
+				beforeCommit: () => {
+					trustedWindowsRegion = region ?? null;
+				},
 			},
 		);
 		if (next) {
@@ -2146,6 +2277,59 @@ export function registerIpcHandlers(
 	ipcMain.handle("select-source", (_, source: SelectedSource, options?: { persist?: boolean }) =>
 		selectSource(source, options),
 	);
+	ipcMain.handle("select-source-region", async (event, sourceId: string) => {
+		const owner = getSourceSelectorWindow();
+		if (
+			process.platform !== "win32" ||
+			!owner ||
+			owner.webContents !== event.sender ||
+			!canSelectWindowsRegion({
+				appRecording,
+				processReferenced: !!nativeWindowsCaptureProcess,
+				processOwned: nativeWindowsProcessOwnership.hasOwner(),
+			})
+		) {
+			throw new Error("Region selection is not available.");
+		}
+		const source = lastEnumeratedSources.get(sourceId);
+		const display = screen.getAllDisplays().find((item) => String(item.id) === source?.display_id);
+		const helper = await findNativeWindowsCaptureHelperPath();
+		if (
+			!source?.id.startsWith("screen:") ||
+			!display ||
+			!helper ||
+			!(await supportsWindowsRegion(helper))
+		) {
+			throw new Error("A compatible Windows region capture helper is required.");
+		}
+		const generation = selectSourceGeneration.value;
+		if (owner.isDestroyed() || getSourceSelectorWindow() !== owner) {
+			throw new Error("Source picker closed before region selection.");
+		}
+		const hud = getMainWindow();
+		const restoreHud = hud && !hud.isDestroyed() && hud.isVisible();
+		if (restoreHud) hud.hide();
+		try {
+			const region = await regionPicker.pick(source.id, display, owner);
+			if (!region || generation !== selectSourceGeneration.value) return { selected: false };
+			if (
+				!canSelectWindowsRegion({
+					appRecording,
+					processReferenced: !!nativeWindowsCaptureProcess,
+					processOwned: nativeWindowsProcessOwnership.hasOwner(),
+				})
+			)
+				throw new Error("Recording already started.");
+			const next = await selectSource(
+				{ id: source.id, name: source.name, display_id: source.display_id },
+				{ persist: false },
+				region,
+			);
+			return { selected: !!next?.captureRegion };
+		} finally {
+			if (restoreHud && !hud.isDestroyed()) hud.showInactive();
+		}
+	});
 
 	/**
 	 * The HUD and the notes window belong to this process, not to the helper, so a display
@@ -2218,6 +2402,9 @@ export function registerIpcHandlers(
 	);
 
 	ipcMain.handle("get-selected-source", async () => {
+		// A region is session-local. Never restore its monitor as a full-screen
+		// source if it becomes stale: native start validates the snapshot and fails.
+		if (selectedSource?.captureRegion) return selectedSource;
 		const previousSelectedSource = selectedSource;
 		if (process.platform === "linux" && findPipeWireCursorHelperPath()) {
 			selectedSource = null;
@@ -2302,6 +2489,13 @@ export function registerIpcHandlers(
 		getMainWindow,
 		() => BrowserWindow.getAllWindows(),
 		(previous, next) => {
+			if (
+				previous.windowsSystemAudioDeviceId !== next.windowsSystemAudioDeviceId ||
+				previous.systemAudioEnabled !== next.systemAudioEnabled
+			) {
+				const pause = windowsOutputMeter.pauseAndDrain();
+				void pause.settled.finally(() => pause.resume());
+			}
 			// Apple's picker bakes the exclusions into the filter it hands back, so a pick made
 			// before "Hide desktop icons" changed would still record the desktop the old way.
 			// Dropping it makes the HUD ask for a new pick instead of ignoring the toggle.
@@ -2320,6 +2514,15 @@ export function registerIpcHandlers(
 					.catch((error) => console.warn("[permissions] system audio request failed:", error));
 			}
 		},
+		(event) =>
+			isWindowsAudioOutputOwner(getMainWindow(), event) &&
+			windowsMeterCaptureGuard.canPreview() &&
+			!appRecording &&
+			!isWindowsCaptureBusy({
+				processReferenced: !!nativeWindowsCaptureProcess,
+				processOwned: nativeWindowsProcessOwnership.hasOwner(),
+			}) &&
+			!nativeWindowsStartGate.isBusy(),
 	);
 
 	// Asked before every take starts. A disk that fills up mid-take used to be found only
@@ -2488,13 +2691,107 @@ export function registerIpcHandlers(
 	});
 
 	ipcMain.handle("switch-to-editor", () => {
+		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+			throw new Error("A recording derivative is still running.");
 		// createEditorWindow already closes the current mainWindow (the HUD) before
 		// opening the editor. Closing it here too double-closes, leaving ghost
 		// transparent windows and compounding the HUD shadow each cycle.
 		createEditorWindow();
 	});
+	const recordingBusy = () =>
+		appRecording ||
+		isWindowsCaptureBusy({
+			processReferenced: !!nativeWindowsCaptureProcess,
+			processOwned: nativeWindowsProcessOwnership.hasOwner(),
+		}) ||
+		!!nativeMacCaptureProcess ||
+		!!linuxNativeCaptureSession ||
+		(editorHasUnsavedChanges?.() ?? false);
+	const copyOwnerCurrent = (owner: SavedRecordingCopyOwner) =>
+		isRecordingResultOwner(getMainWindow(), owner);
+	const currentSavedSource = () =>
+		currentVideoPath && isPathAllowed(currentVideoPath)
+			? {
+					key: `${currentRecordingSession?.createdAt ?? 0}:${currentVideoPath}`,
+					path: currentVideoPath,
+				}
+			: null;
+	const savedRecordingCopies = new SavedRecordingCopies({
+		current: currentSavedSource,
+		isBusy: () => recordingBusy() || savedRecordingGifs.isBusy(),
+		isOwnerCurrent: copyOwnerCurrent,
+		pick: async (owner, name, extension) => {
+			if (!copyOwnerCurrent(owner)) throw new Error("Recording result window changed.");
+			const result = await showSaveDialogOver(getMainWindow(), {
+				title: mainT("dialogs", "fileDialogs.saveVideo"),
+				defaultPath: path.join(app.getPath("downloads"), name),
+				filters: [{ name: mainT("dialogs", "fileDialogs.videoFiles"), extensions: [extension] }],
+				properties: ["createDirectory", "showOverwriteConfirmation"],
+			});
+			return result.canceled || !result.filePath ? null : result.filePath;
+		},
+	});
+	const savedRecordingGifs = registerSavedRecordingGifHandlers({
+		ipc: ipcMain,
+		window: getMainWindow,
+		current: currentSavedSource,
+		isBusy: () => recordingBusy() || savedRecordingCopies.isBusy(),
+		compositor: new CompositorViewService(),
+		pick: async (owner, name) => {
+			if (!copyOwnerCurrent(owner)) throw new Error("Recording result window changed.");
+			const result = await showSaveDialogOver(getMainWindow(), {
+				title: mainT("dialogs", "fileDialogs.saveVideo"),
+				defaultPath: path.join(app.getPath("downloads"), name),
+				filters: [{ name: "GIF", extensions: ["gif"] }],
+				properties: ["createDirectory", "showOverwriteConfirmation"],
+			});
+			return result.canceled || !result.filePath ? null : result.filePath;
+		},
+	});
+	const savedRecordingActions = createSavedRecordingActions({
+		getCurrentPath: () => currentVideoPath,
+		isAllowed: isPathAllowed,
+		isRecording: () =>
+			appRecording ||
+			isWindowsCaptureBusy({
+				processReferenced: !!nativeWindowsCaptureProcess,
+				processOwned: nativeWindowsProcessOwnership.hasOwner(),
+			}) ||
+			!!nativeMacCaptureProcess ||
+			!!linuxNativeCaptureSession ||
+			savedRecordingCopies.isBusy() ||
+			savedRecordingGifs.isBusy(),
+		isEditorDirty: () => editorHasUnsavedChanges?.() ?? false,
+		stat: (file) => fs.stat(file),
+		reveal: (file) => shell.showItemInFolder(file),
+		openResult: () => {
+			// MCP clients need the editor's document host after a take. Preserve
+			// that automation contract while manual captures get the simple view.
+			createEditorWindow(
+				mcpAppRecorder.isClientTakeActive() ? undefined : { windowType: "recording-result" },
+			);
+		},
+		prepareCapture: () => {
+			if (!_switchToHud) throw new Error("Capture preparation is unavailable.");
+			_switchToHud();
+		},
+	});
+	ipcMain.handle("show-recording-result", () => savedRecordingActions.showResult());
+	ipcMain.handle("get-saved-recording-info", () => savedRecordingActions.getInfo());
+	ipcMain.handle("reveal-saved-recording", (_, expectedPath: string) =>
+		savedRecordingActions.reveal(expectedPath),
+	);
+	ipcMain.handle("prepare-new-capture", () => savedRecordingActions.prepare());
+	ipcMain.handle("copy-saved-recording", (event, expectedPath: string) =>
+		savedRecordingCopies.copy(event.sender, expectedPath),
+	);
+	ipcMain.handle("cancel-saved-recording-copy", (event) => ({
+		accepted: savedRecordingCopies.cancel(event.sender),
+	}));
 
 	ipcMain.handle("switch-to-hud", () => {
+		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+			throw new Error("A recording derivative is still running.");
 		_switchToHud?.();
 		return { success: true };
 	});
@@ -2513,6 +2810,8 @@ export function registerIpcHandlers(
 		}
 	}
 	ipcMain.handle("start-new-recording", () => {
+		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+			throw new Error("A recording derivative is still running.");
 		startNewRecording();
 		return { success: true };
 	});
@@ -2557,6 +2856,28 @@ export function registerIpcHandlers(
 		overlayWindow.hide();
 	});
 
+	registerWindowsAudioOutputHandlers({
+		ipc: ipcMain,
+		window: getMainWindow,
+		isSupported: isWindowsGraphicsCaptureOsSupported,
+		helper: findNativeWindowsCaptureHelperPath,
+	});
+	registerWindowsOutputMeterHandlers({
+		ipc: ipcMain,
+		window: getMainWindow,
+		isSupported: isWindowsGraphicsCaptureOsSupported,
+		canPreview: () =>
+			windowsMeterCaptureGuard.canPreview() &&
+			!appRecording &&
+			!isWindowsCaptureBusy({
+				processReferenced: !!nativeWindowsCaptureProcess,
+				processOwned: nativeWindowsProcessOwnership.hasOwner(),
+			}) &&
+			!nativeWindowsStartGate.isBusy(),
+		prefs: () => recordingPrefs.get(),
+		meter: windowsOutputMeter,
+	});
+
 	ipcMain.handle("is-native-windows-capture-available", async () => {
 		if (!isWindowsGraphicsCaptureOsSupported()) {
 			return { success: true, available: false, reason: "unsupported-os" };
@@ -2564,7 +2885,12 @@ export function registerIpcHandlers(
 
 		const helperPath = await findNativeWindowsCaptureHelperPath();
 		return helperPath
-			? { success: true, available: true, helperPath }
+			? {
+					success: true,
+					available: true,
+					helperPath,
+					supportsRegion: await supportsWindowsRegion(helperPath),
+				}
 			: { success: true, available: false, reason: "missing-helper" };
 	});
 
@@ -2871,15 +3197,53 @@ export function registerIpcHandlers(
 
 	ipcMain.handle(
 		"start-native-windows-recording",
-		async (_, request: NativeWindowsRecordingRequest) => {
+		async (event, request: NativeWindowsRecordingRequest) => {
+			if (
+				!event.senderFrame ||
+				!isWindowsAudioOutputFrameOwner(getMainWindow(), event.sender, event.senderFrame)
+			) {
+				return { success: false, error: "Unauthorized Windows capture caller." };
+			}
+			if (
+				nativeWindowsCaptureProcess ||
+				nativeWindowsProcessOwnership.hasOwner() ||
+				(currentWindowsCaptureTake && currentWindowsCaptureTake.stopState !== "stopped")
+			)
+				return { success: false, error: "Native Windows capture is already running." };
+			const releaseStart = nativeWindowsStartGate.tryAcquire();
+			if (!releaseStart)
+				return { success: false, error: "Native Windows capture is being prepared." };
+			let meterCapture: ReturnType<WindowsMeterCaptureGuard["beginNative"]>;
 			try {
+				meterCapture = windowsMeterCaptureGuard.beginNative();
+			} catch {
+				releaseStart();
+				return { success: false, error: "Windows capture is active or shutting down." };
+			}
+			const initialPreSpawnSnapshot: WindowsCapturePreSpawnSnapshot = {
+				initialSourceGeneration: selectSourceGeneration.value,
+				initialSelectedSource: selectedSource
+					? {
+							id: selectedSource.id,
+							display_id: selectedSource.display_id,
+						}
+					: null,
+				initialTrustedRegion: trustedWindowsRegion,
+			};
+			try {
+				await meterCapture.settled;
+				if (!meterCapture.isCurrent()) throw new Error("Windows capture preparation cancelled.");
 				if (!isWindowsGraphicsCaptureOsSupported()) {
 					return {
 						success: false,
 						error: "Windows Graphics Capture requires Windows 10 build 19041 or newer.",
 					};
 				}
-				if (nativeWindowsCaptureProcess) {
+				if (
+					nativeWindowsCaptureProcess ||
+					nativeWindowsProcessOwnership.hasOwner() ||
+					(currentWindowsCaptureTake && currentWindowsCaptureTake.stopState !== "stopped")
+				) {
 					return { success: false, error: "Native Windows capture is already running." };
 				}
 
@@ -2915,6 +3279,24 @@ export function registerIpcHandlers(
 				// `getSelectedSourceBounds` — the cursor session shares that getter and
 				// converts on its own side.
 				const helperBounds = toHelperRect(bounds);
+				const regionSelection = trustedWindowsRegion;
+				const regionRequested =
+					request.source.captureRegion === true || !!selectedSource?.captureRegion;
+				if (
+					regionRequested &&
+					(!regionSelection ||
+						request.source.type !== "display" ||
+						request.source.sourceId !== regionSelection.sourceId ||
+						!sourceDisplay ||
+						sourceDisplay.id !== regionSelection.region.displayId ||
+						!isWindowsRegionCurrent(regionSelection) ||
+						!(await supportsWindowsRegion(helperPath)))
+				) {
+					throw new Error(
+						"Capture region is no longer valid. Select the area again; full-screen fallback is disabled.",
+					);
+				}
+				const crop = regionRequested ? regionSelection?.region.regionPx : undefined;
 				const displayId =
 					typeof request.source.displayId === "number" && Number.isFinite(request.source.displayId)
 						? request.source.displayId
@@ -2931,6 +3313,13 @@ export function registerIpcHandlers(
 					request.preferSoftwareEncoder === true ||
 					envPreferSoftwareEncoder === "true" ||
 					envPreferSoftwareEncoder === "1";
+				const outputChoice = recordingPrefs.get().windowsSystemAudioDeviceId ?? null;
+				const systemAudioDeviceId = request.audio.system.enabled
+					? await resolveWindowsAudioOutputForRecording(helperPath, outputChoice)
+					: undefined;
+				if ((recordingPrefs.get().windowsSystemAudioDeviceId ?? null) !== outputChoice) {
+					throw new Error("System audio output changed during preparation. Try again.");
+				}
 				const config = {
 					schemaVersion: 2,
 					recordingId,
@@ -2948,7 +3337,13 @@ export function registerIpcHandlers(
 					displayW: helperBounds.width,
 					displayH: helperBounds.height,
 					hasDisplayBounds: true,
+					hasCaptureRegion: !!crop,
+					regionX: crop?.x,
+					regionY: crop?.y,
+					regionWidth: crop?.width,
+					regionHeight: crop?.height,
 					captureSystemAudio: request.audio.system.enabled,
+					...(systemAudioDeviceId ? { systemAudioDeviceId } : {}),
 					captureMic: request.audio.microphone.enabled,
 					microphoneDeviceId: request.audio.microphone.deviceId ?? null,
 					microphoneDeviceName: request.audio.microphone.deviceName ?? null,
@@ -3001,7 +3396,7 @@ export function registerIpcHandlers(
 				});
 
 				await fs.mkdir(RECORDINGS_DIR, { recursive: true });
-				nativeWindowsCaptureOutput = "";
+				nativeWindowsCaptureOutput.reset();
 				nativeWindowsCaptureTargetPath = outputPath;
 				nativeWindowsCaptureWebcamTargetPath = request.webcam.enabled ? webcamOutputPath : null;
 				nativeWindowsCaptureRecordingId = recordingId;
@@ -3024,23 +3419,153 @@ export function registerIpcHandlers(
 					pendingCursorRecordingData = null;
 				}
 
+				if ((recordingPrefs.get().windowsSystemAudioDeviceId ?? null) !== outputChoice) {
+					throw new Error("System audio output changed during preparation. Try again.");
+				}
+				if (!meterCapture.isCurrent()) throw new Error("Windows capture preparation cancelled.");
+				assertWindowsCapturePreSpawnValid(
+					initialPreSpawnSnapshot,
+					{
+						sourceType: config.sourceType,
+						sourceId: config.sourceId,
+						effectiveDisplayId: sourceDisplay?.id ?? null,
+						displayX: config.displayX,
+						displayY: config.displayY,
+						displayW: config.displayW,
+						displayH: config.displayH,
+						hasCaptureRegion: config.hasCaptureRegion,
+						regionX: config.regionX,
+						regionY: config.regionY,
+						regionWidth: config.regionWidth,
+						regionHeight: config.regionHeight,
+					},
+					{
+						currentSourceGeneration: selectSourceGeneration.value,
+						currentSelectedSource: selectedSource,
+						currentTrustedRegion: trustedWindowsRegion,
+						displays: screen.getAllDisplays(),
+						toHelperBounds: toHelperRect,
+						isRegionCurrent: isWindowsRegionCurrent,
+					},
+				);
+				if (
+					!event.senderFrame ||
+					!isWindowsAudioOutputFrameOwner(getMainWindow(), event.sender, event.senderFrame)
+				) {
+					throw new Error("Windows capture caller invalidated during preparation.");
+				}
+				if (nativeWindowsProcessOwnership.hasOwner()) {
+					throw new Error("A previous Windows capture helper has not closed yet.");
+				}
+				windowsCaptureTakeGeneration += 1;
+				const takeGeneration = windowsCaptureTakeGeneration;
+				const ownerWebContents = event.sender;
+				const ownerWebContentsId = event.sender.id;
+				const ownerFrame = event.senderFrame;
+				const ownerFrameRoutingId = event.senderFrame.routingId;
+				const ownerDocumentUrl = event.senderFrame.url;
+
 				const proc = spawn(helperPath, [JSON.stringify(config)], {
 					cwd: RECORDINGS_DIR,
 					stdio: ["pipe", "pipe", "pipe"],
 					windowsHide: true,
 				});
 				nativeWindowsCaptureProcess = proc;
-				nativeWindowsCaptureDrainCleanup = attachNativeWindowsCaptureOutputDrain(proc);
+				nativeWindowsProcessOwnership.attach(proc);
+				if (!nativeWindowsProcessOwnership.owns(proc)) {
+					throw new Error("Native Windows capture helper closed during startup.");
+				}
+				meterCapture.bind(proc);
+				proc.once("exit", () => windowsRegionIndicator.clear(proc));
+				nativeWindowsCaptureDrainCleanup = attachNativeWindowsCaptureOutputDrain(
+					proc,
+					(helperEvent) => {
+						if (
+							request.source.type !== "window" ||
+							nativeWindowsCaptureProcess !== proc ||
+							!nativeWindowsProcessOwnership.owns(proc)
+						) {
+							return;
+						}
+						const physicalBounds = sourceBoundsFromHelperEvent(helperEvent);
+						if (!physicalBounds) return;
+						try {
+							const dipBounds = screen.screenToDipRect(null, physicalBounds);
+							if (!windowsRegionIndicator.updateBounds(proc, dipBounds)) {
+								windowsRegionIndicator.showBounds(proc, dipBounds);
+								if (nativeWindowsIsPaused) windowsRegionIndicator.setPaused(proc, true);
+							}
+						} catch (error) {
+							console.warn("[native-wgc] window indicator bounds unavailable", error);
+						}
+					},
+				);
+
+				const take = createNativeWindowsTakeSession({
+					recordingId,
+					generation: takeGeneration,
+					proc,
+					ownerWebContentsId,
+					ownerFrameRoutingId,
+					ownerDocumentUrl,
+				});
+				currentWindowsCaptureTake = take;
+
+				const watcher = createNativeWindowsMidCaptureWatch(take, {
+					isCurrentTake: () =>
+						currentWindowsCaptureTake === take && windowsCaptureTakeGeneration === takeGeneration,
+					onTakeEnded: (payload) => {
+						try {
+							const caller = {
+								webContents: ownerWebContents,
+								frame: ownerFrame,
+							};
+							if (isTakeOwnerValid(take, caller)) {
+								ownerFrame.send("native-windows-capture-ended", payload);
+							}
+						} catch (sendError) {
+							console.warn(
+								"[native-wgc] failed to dispatch mid-capture end event to owner:",
+								sendError,
+							);
+						}
+					},
+				});
+				const onHelperClose = (code: number | null, signal: NodeJS.Signals | null) =>
+					watcher.onHelperClose(code, signal);
+				proc.once("close", onHelperClose);
+				nativeWindowsCaptureWatcherDetach = () => {
+					watcher.detach();
+					proc.off("close", onHelperClose);
+				};
+
 				console.info("[native-wgc] helper spawned", { pid: proc.pid });
 
 				await waitForNativeWindowsCaptureStart(proc);
+				watcher.onRecordingStarted();
+				const indicatorBounds = windowsCaptureIndicatorBounds(
+					request.source.type,
+					bounds,
+					regionSelection,
+					Boolean(crop),
+				);
+				if (indicatorBounds && proc.exitCode === null && proc.signalCode === null) {
+					try {
+						windowsRegionIndicator.showBounds(proc, indicatorBounds);
+					} catch (error) {
+						// An indicator failure must not destroy a recording already started.
+						console.warn("[native-wgc] capture indicator unavailable", error);
+					}
+				}
 				const captureStartedAtMs = Date.now();
 				nativeWindowsCursorOffsetMs =
 					cursorCaptureMode === "editable-overlay"
 						? Math.max(0, captureStartedAtMs - cursorStartTimeMs)
 						: 0;
-				const webcamFormat = readWebcamFormat(nativeWindowsCaptureOutput);
-				const encoderSelection = readNativeWindowsEncoderSelection(nativeWindowsCaptureOutput);
+				const webcamFormat = readWebcamFormat(nativeWindowsCaptureOutput.value());
+				const encoderSelection = readNativeWindowsEncoderSelection(
+					nativeWindowsCaptureOutput.value(),
+				);
 				// Captured now because stop may have no helper left to ask. A helper
 				// killed mid-recording is exactly the case where this matters most.
 				nativeWindowsCaptureContainer = encoderSelection?.container ?? null;
@@ -3051,7 +3576,7 @@ export function registerIpcHandlers(
 					encoderSelection,
 					// Logged only: menus missing from a window take on Windows before 11
 					// 24H2 are a platform limit, not something to put in front of the user.
-					secondaryWindowsApplied: readSecondaryWindowsApplied(nativeWindowsCaptureOutput),
+					secondaryWindowsApplied: readSecondaryWindowsApplied(nativeWindowsCaptureOutput.value()),
 				});
 
 				const source = selectedSource || { name: "Screen" };
@@ -3068,12 +3593,13 @@ export function registerIpcHandlers(
 				// line could not be parsed", which would put a red toast on a recording
 				// whose camera is working perfectly.
 				const webcamUnavailable =
-					request.webcam.enabled && readWebcamUnavailable(nativeWindowsCaptureOutput);
+					request.webcam.enabled && readWebcamUnavailable(nativeWindowsCaptureOutput.value());
 				// Same shape as the camera notice: the helper records the Windows
 				// default input rather than failing, so this take is usable but is
 				// almost certainly the wrong microphone.
 				const microphoneDefaulted =
-					request.audio.microphone.enabled && readMicrophoneDefaulted(nativeWindowsCaptureOutput);
+					request.audio.microphone.enabled &&
+					readMicrophoneDefaulted(nativeWindowsCaptureOutput.value());
 				if (microphoneDefaulted) {
 					console.warn("[native-wgc] recording the default input; the microphone was not named", {
 						deviceId: request.audio.microphone.deviceId,
@@ -3099,25 +3625,45 @@ export function registerIpcHandlers(
 				};
 			} catch (error) {
 				console.error("Failed to start native Windows recording:", error);
+				if (currentWindowsCaptureTake) {
+					currentWindowsCaptureTake.stopState = "stopped";
+					currentWindowsCaptureTake = null;
+				}
 				const failedProc = nativeWindowsCaptureProcess;
 				const failedOutputPaths = [
 					nativeWindowsCaptureTargetPath,
 					nativeWindowsCaptureWebcamTargetPath,
 				];
+				let exited = !failedProc;
 				detachNativeWindowsCaptureOutputDrain();
-				resetNativeWindowsCaptureState();
 				// Awaited, not just killed: a helper still alive holds its mp4 open, and
 				// the empty one it created could not be removed below.
 				if (failedProc) {
-					await terminateNativeWindowsCapture(failedProc).catch(() => false);
+					exited = await terminateNativeWindowsCapture(failedProc).catch(() => false);
 				}
-				for (const outputPath of failedOutputPaths) {
-					if (outputPath) {
-						await removeEmptyCaptureOutput(outputPath);
+				const ownershipRetained =
+					failedProc !== null && nativeWindowsProcessOwnership.owns(failedProc);
+				if (exited || ownershipRetained) {
+					// A surviving helper may leave the logical take state only because the
+					// independent owner still blocks every replacement until exact close.
+					resetNativeWindowsCaptureState();
+					for (const outputPath of failedOutputPaths) {
+						if (outputPath) {
+							await removeEmptyCaptureOutput(outputPath);
+						}
 					}
+				} else {
+					// Listener registration failed and termination was not confirmed. Keep
+					// the process reference itself as the final fail-closed start gate.
+					console.error("[native-wgc] helper ownership is uncertain; restart is blocked", {
+						pid: failedProc?.pid,
+					});
 				}
 				await stopCursorRecording();
 				return { success: false, error: String(error) };
+			} finally {
+				meterCapture.finishPreparation();
+				releaseStart();
 			}
 		},
 	);
@@ -3422,6 +3968,7 @@ export function registerIpcHandlers(
 			proc.stdin.write("pause\n");
 			nativeWindowsIsPaused = true;
 			nativeWindowsPauseStartedAtMs = Date.now();
+			windowsRegionIndicator.setPaused(proc, true);
 			return { success: true };
 		} catch (error) {
 			return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -3444,212 +3991,265 @@ export function registerIpcHandlers(
 			proc.stdin.write("resume\n");
 			completeNativeWindowsCursorPauseRange();
 			nativeWindowsIsPaused = false;
+			windowsRegionIndicator.setPaused(proc, false);
 			return { success: true };
 		} catch (error) {
 			return { success: false, error: error instanceof Error ? error.message : String(error) };
 		}
 	});
 
-	ipcMain.handle("stop-native-windows-recording", async (_, discard?: boolean) => {
-		const proc = nativeWindowsCaptureProcess;
-		const preferredPath = nativeWindowsCaptureTargetPath;
-		const preferredWebcamPath = nativeWindowsCaptureWebcamTargetPath;
-		const recordingId = nativeWindowsCaptureRecordingId ?? Date.now();
-		const cursorCaptureMode = nativeWindowsCursorCaptureMode;
-
-		if (!proc) {
-			return { success: false, error: "Native Windows capture is not running." };
-		}
-
-		// Discarding does not need a finalized file, so it must not wait for one.
-		// Cancel and Restart both route here, and making them sit through the
-		// full stop handshake meant a wedged helper could not be escaped from at
-		// all -- the user waited out the timeout only to be told the recording
-		// failed, then waited it out again to cancel. Linux has always done this;
-		// Windows never did.
-		if (discard) {
-			try {
-				completeNativeWindowsCursorPauseRange();
-				await stopCursorRecording();
-				pendingCursorRecordingData = null;
-				const exited = await terminateNativeWindowsCapture(proc);
-				if (!exited) {
-					detachNativeWindowsCaptureOutputDrain();
-				}
-				await removeNativeWindowsCaptureOutputs(preferredPath, preferredWebcamPath);
-				return { success: true, discarded: true };
-			} finally {
-				// Unconditional. Killing a wedged helper can itself throw, and
-				// leaving the handle set would make every later recording fail
-				// with "already running" against a process nobody can stop.
-				resetNativeWindowsCaptureState();
-				if (onRecordingStateChange) {
-					onRecordingStateChange(false, (selectedSource || { name: "Screen" }).name);
-				}
-			}
-		}
-
-		// Set when the helper failed its stop handshake but left a playable
-		// fragmented file. Reported so a bug report can tell a clean stop from a
-		// recovered one; the user-facing path is deliberately identical.
-		let recovered = false;
-
-		try {
-			completeNativeWindowsCursorPauseRange();
-			const stopPromise = waitForNativeWindowsCaptureStop({
-				proc,
-				targetPath: preferredPath,
-				readOutput: () => nativeWindowsCaptureOutput,
-			});
-			if (!sendNativeWindowsStopCommand(proc)) {
-				console.warn("[native-wgc] stop command channel was already closed");
-			}
-			const stopResult = await stopPromise;
-			if (!stopResult.ok) {
-				console.error("[native-wgc] stop failed", {
-					reason: stopResult.reason,
-					exited: stopResult.exited,
-					pid: proc.pid,
-					output: stopResult.message,
-				});
-				if (!stopResult.exited) {
-					detachNativeWindowsCaptureOutputDrain();
-				}
-
-				// A failed stop stopped meaning a lost take when the helper started
-				// writing fragmented MP4. The file on disk is already playable, so
-				// the only thing standing between the user and their recording is
-				// this function deciding to throw it away and say so. Fall through
-				// into the normal save path instead: same manifest, same media
-				// links, same editor. From the user's side it simply worked, minus
-				// at most the last incomplete fragment.
-				//
-				// Only once the helper is actually dead. `exited: false` means it
-				// survived even the forced kill -- stuck somewhere `TerminateProcess`
-				// could not reach -- and on Windows such a process still holds the
-				// MP4 open and may still be appending to it. Handing that file to
-				// the editor trades an honest failure for a sharing violation on a
-				// file that is still moving, so a wedged helper keeps the old answer.
-				if (stopResult.exited && (await salvageNativeWindowsFragmentedCapture(preferredPath))) {
-					console.warn("[native-wgc] stop failed but the fragmented output is playable", {
-						reason: stopResult.reason,
-						path: preferredPath,
-					});
-					recovered = true;
-				} else {
-					await stopCursorRecording();
-					// Same as the discard path. `startCursorRecording` clears this on
-					// the next recording anyway, so this is not what keeps the samples
-					// from being written next to someone else's video -- it just stops
-					// a lost take's telemetry from sitting in memory until then.
-					pendingCursorRecordingData = null;
-					// Reaching here means the container was the plain one, whose only
-					// index is written by the `Finalize()` this stop never reached, so
-					// what is on disk really is an unindexed stub and leaving those
-					// behind just accumulates unplayable recordings the user cannot
-					// explain. Size-gate it anyway: throwing away a recording to tidy
-					// up after a failed stop is the worse mistake of the two, and the
-					// gate is the same one the salvage check above uses.
-					await removeNativeWindowsCaptureOutputs(preferredPath, preferredWebcamPath, {
-						onlyIfUnusable: true,
-					});
-					// The helper log goes to console/diagnostics above, not into this
-					// string: it ends up in a toast, and pasting an entire capture log
-					// into the HUD tells the user nothing they can act on.
-					return {
-						success: false,
-						reason: stopResult.reason,
-						error:
-							stopResult.reason === "stop-timeout"
-								? "Timed out waiting for native Windows capture to stop. The recording could not be saved."
-								: stopResult.message.split(/\r?\n/).filter(Boolean).at(-1) ||
-									"Native Windows capture failed.",
-					};
-				}
-			}
-
-			// Only a successful stop names the file; the salvage path above falls
-			// through with `ok: false` and nothing but the path we asked for.
-			const screenVideoPath = (stopResult.ok ? stopResult.screenVideoPath : null) || preferredPath;
-			if (!screenVideoPath) {
-				throw new Error("Native Windows capture did not return an output path.");
-			}
-
-			if (cursorCaptureMode === "editable-overlay") {
-				await stopCursorRecording();
-			} else {
-				pendingCursorRecordingData = null;
-			}
-
-			if (cursorCaptureMode === "editable-overlay") {
-				compactPendingCursorTelemetryPauseRanges(nativeWindowsPauseRanges);
-				shiftPendingCursorTelemetry(nativeWindowsCursorOffsetMs);
-				await writePendingCursorTelemetry(screenVideoPath);
-			}
-			let webcamVideoPath: string | undefined;
-			if (preferredWebcamPath) {
-				try {
-					// Size, not just existence. A camera that opened but delivered no
-					// frame still gets a file created for it, and its `Finalize()` then
-					// fails, leaving nought bytes on disk. Admitting that file put a
-					// camera track in the document pointing at something no demuxer can
-					// read, and the preview compositor answers an unreadable camera by
-					// drawing the SCREEN recording inside the little camera rectangle —
-					// which is how a webcam that never recorded showed up as the desktop
-					// duplicated into its own corner (getopenscreen/openscreen#387).
-					const webcamStat = await fs.stat(preferredWebcamPath);
-					webcamVideoPath = webcamStat.size > 0 ? preferredWebcamPath : undefined;
-					if (!webcamVideoPath) {
-						console.warn("[native-wgc] the webcam file is empty; saving without a camera", {
-							path: preferredWebcamPath,
-						});
-					}
-				} catch {
-					webcamVideoPath = undefined;
-				}
-			}
-			const session: RecordingSession = webcamVideoPath
-				? { screenVideoPath, webcamVideoPath, createdAt: recordingId, cursorCaptureMode }
-				: { screenVideoPath, createdAt: recordingId, cursorCaptureMode };
-			setCurrentRecordingSessionState(session);
-			currentProjectPath = null;
-
-			const sessionManifestPath = path.join(
-				RECORDINGS_DIR,
-				`${path.parse(screenVideoPath).name}${RECORDING_SESSION_SUFFIX}`,
-			);
-			await fs.writeFile(sessionManifestPath, JSON.stringify(session, null, 2), "utf-8");
-			await registerRecordingMediaLinks(screenVideoPath, { webcamVideoPath, cursorCaptureMode });
-
-			return {
-				success: true,
-				path: screenVideoPath,
-				session,
-				recovered,
-				// `preferredWebcamPath` is non-null only for a take that asked for a
-				// camera, so the pair means "a camera was requested and none survived".
-				// This is the second, quieter way to lose one: the helper opened the
-				// device happily and then never got a frame out of it, so it reports no
-				// `webcam-unavailable` and the start-time notice stays silent. Left
-				// unreported, the user would find out in the editor — which is exactly
-				// the silence this change exists to end.
-				webcamDropped: Boolean(preferredWebcamPath) && !webcamVideoPath,
-				message: recovered
-					? "Native Windows recording recovered from a failed stop"
-					: "Native Windows recording session stored successfully",
-			};
-		} catch (error) {
-			console.error("Failed to stop native Windows recording:", error);
-			await stopCursorRecording();
-			return { success: false, error: String(error) };
-		} finally {
-			resetNativeWindowsCaptureState();
-			const source = selectedSource || { name: "Screen" };
-			if (onRecordingStateChange) {
-				onRecordingStateChange(false, source.name);
-			}
-		}
+	ipcMain.handle("query-native-windows-capture-status", (event, expectedRecordingId: number) => {
+		return queryTakeStatus(
+			currentWindowsCaptureTake,
+			{
+				webContents: event.sender,
+				frame: event.senderFrame,
+			},
+			expectedRecordingId,
+		);
 	});
+
+	ipcMain.handle(
+		"stop-native-windows-recording",
+		async (event, discard?: boolean, expectedRecordingId?: number) => {
+			const take = currentWindowsCaptureTake;
+			const proc = nativeWindowsCaptureProcess;
+			const preferredPath = nativeWindowsCaptureTargetPath;
+			const preferredWebcamPath = nativeWindowsCaptureWebcamTargetPath;
+			const recordingId = nativeWindowsCaptureRecordingId ?? Date.now();
+			const cursorCaptureMode = nativeWindowsCursorCaptureMode;
+
+			if (!proc || !take) {
+				return { success: false, error: "Native Windows capture is not running." };
+			}
+
+			const caller = {
+				webContents: event.sender,
+				frame: event.senderFrame,
+			};
+			if (!isTakeOwnerValid(take, caller)) {
+				return { success: false, error: "Unauthorized recording stop request." };
+			}
+
+			if (expectedRecordingId !== undefined) {
+				if (
+					typeof expectedRecordingId !== "number" ||
+					!Number.isSafeInteger(expectedRecordingId) ||
+					expectedRecordingId !== take.recordingId
+				) {
+					return { success: false, error: "Stale recording stop request." };
+				}
+			}
+
+			const stopCoordination = executeTakeStop(take, expectedRecordingId, async () => {
+				if (proc) windowsRegionIndicator.clear(proc);
+
+				// Discarding does not need a finalized file, so it must not wait for one.
+				// Cancel and Restart both route here, and making them sit through the
+				// full stop handshake meant a wedged helper could not be escaped from at
+				// all -- the user waited out the timeout only to be told the recording
+				// failed, then waited it out again to cancel. Linux has always done this;
+				// Windows never did.
+				if (discard) {
+					try {
+						completeNativeWindowsCursorPauseRange();
+						await stopCursorRecording();
+						pendingCursorRecordingData = null;
+						const exited = await terminateNativeWindowsCapture(proc);
+						if (!exited) {
+							detachNativeWindowsCaptureOutputDrain();
+						}
+						await removeNativeWindowsCaptureOutputs(preferredPath, preferredWebcamPath);
+						return { success: true, discarded: true };
+					} finally {
+						if (
+							currentWindowsCaptureTake === take &&
+							windowsCaptureTakeGeneration === take.generation
+						) {
+							resetNativeWindowsCaptureState();
+							currentWindowsCaptureTake = null;
+							const source = selectedSource || { name: "Screen" };
+							if (onRecordingStateChange) {
+								onRecordingStateChange(false, source.name);
+							}
+						}
+					}
+				}
+
+				// Set when the helper failed its stop handshake but left a playable
+				// fragmented file. Reported so a bug report can tell a clean stop from a
+				// recovered one; the user-facing path is deliberately identical.
+				let recovered = false;
+
+				try {
+					completeNativeWindowsCursorPauseRange();
+					const stopPromise = waitForNativeWindowsCaptureStop({
+						proc,
+						targetPath: preferredPath,
+						readOutput: () => nativeWindowsCaptureOutput.value(),
+					});
+					if (!sendNativeWindowsStopCommand(proc)) {
+						console.warn("[native-wgc] stop command channel was already closed");
+					}
+					const stopResult = await stopPromise;
+					if (!stopResult.ok) {
+						console.error("[native-wgc] stop failed", {
+							reason: stopResult.reason,
+							exited: stopResult.exited,
+							pid: proc.pid,
+							output: stopResult.message,
+						});
+						if (!stopResult.exited) {
+							detachNativeWindowsCaptureOutputDrain();
+						}
+
+						// A failed stop stopped meaning a lost take when the helper started
+						// writing fragmented MP4. The file on disk is already playable, so
+						// the only thing standing between the user and their recording is
+						// this function deciding to throw it away and say so. Fall through
+						// into the normal save path instead: same manifest, same media
+						// links, same editor. From the user's side it simply worked, minus
+						// at most the last incomplete fragment.
+						//
+						// Only once the helper is actually dead. `exited: false` means it
+						// survived even the forced kill -- stuck somewhere `TerminateProcess`
+						// could not reach -- and on Windows such a process still holds the
+						// MP4 open and may still be appending to it. Handing that file to
+						// the editor trades an honest failure for a sharing violation on a
+						// file that is still moving, so a wedged helper keeps the old answer.
+						if (stopResult.exited && (await salvageNativeWindowsFragmentedCapture(preferredPath))) {
+							console.warn("[native-wgc] stop failed but the fragmented output is playable", {
+								reason: stopResult.reason,
+								path: preferredPath,
+							});
+							recovered = true;
+						} else {
+							await stopCursorRecording();
+							// Same as the discard path. `startCursorRecording` clears this on
+							// the next recording anyway, so this is not what keeps the samples
+							// from being written next to someone else's video -- it just stops
+							// a lost take's telemetry from sitting in memory until then.
+							pendingCursorRecordingData = null;
+							// Reaching here means the container was the plain one, whose only
+							// index is written by the `Finalize()` this stop never reached, so
+							// what is on disk really is an unindexed stub and leaving those
+							// behind just accumulates unplayable recordings the user cannot
+							// explain. Size-gate it anyway: throwing away a recording to tidy
+							// up after a failed stop is the worse mistake of the two, and the
+							// gate is the same one the salvage check above uses.
+							await removeNativeWindowsCaptureOutputs(preferredPath, preferredWebcamPath, {
+								onlyIfUnusable: true,
+							});
+							// The helper log goes to console/diagnostics above, not into this
+							// string: it ends up in a toast, and pasting an entire capture log
+							// into the HUD tells the user nothing they can act on.
+							return {
+								success: false,
+								reason: stopResult.reason,
+								error:
+									stopResult.reason === "stop-timeout"
+										? "Timed out waiting for native Windows capture to stop. The recording could not be saved."
+										: stopResult.message.split(/\r?\n/).filter(Boolean).at(-1) ||
+											"Native Windows capture failed.",
+							};
+						}
+					}
+
+					const screenVideoPath =
+						(stopResult.ok ? stopResult.screenVideoPath : null) || preferredPath;
+					if (!screenVideoPath) {
+						throw new Error("Native Windows capture did not return an output path.");
+					}
+
+					if (cursorCaptureMode === "editable-overlay") {
+						await stopCursorRecording();
+					} else {
+						pendingCursorRecordingData = null;
+					}
+
+					if (cursorCaptureMode === "editable-overlay") {
+						compactPendingCursorTelemetryPauseRanges(nativeWindowsPauseRanges);
+						shiftPendingCursorTelemetry(nativeWindowsCursorOffsetMs);
+						await writePendingCursorTelemetry(screenVideoPath);
+					}
+					let webcamVideoPath: string | undefined;
+					if (preferredWebcamPath) {
+						try {
+							// Size, not just existence. A camera that opened but delivered no
+							// frame still gets a file created for it, and its `Finalize()` then
+							// fails, leaving nought bytes on disk. Admitting that file put a
+							// camera track in the document pointing at something no demuxer can
+							// read, and the preview compositor answers an unreadable camera by
+							// drawing the SCREEN recording inside the little camera rectangle —
+							// which is how a webcam that never recorded showed up as the desktop
+							// duplicated into its own corner (getopenscreen/openscreen#387).
+							const webcamStat = await fs.stat(preferredWebcamPath);
+							webcamVideoPath = webcamStat.size > 0 ? preferredWebcamPath : undefined;
+							if (!webcamVideoPath) {
+								console.warn("[native-wgc] the webcam file is empty; saving without a camera", {
+									path: preferredWebcamPath,
+								});
+							}
+						} catch {
+							webcamVideoPath = undefined;
+						}
+					}
+					const session: RecordingSession = webcamVideoPath
+						? {
+								screenVideoPath,
+								webcamVideoPath,
+								createdAt: recordingId,
+								cursorCaptureMode,
+							}
+						: { screenVideoPath, createdAt: recordingId, cursorCaptureMode };
+					setCurrentRecordingSessionState(session);
+					currentProjectPath = null;
+
+					const sessionManifestPath = path.join(
+						RECORDINGS_DIR,
+						`${path.parse(screenVideoPath).name}${RECORDING_SESSION_SUFFIX}`,
+					);
+					await fs.writeFile(sessionManifestPath, JSON.stringify(session, null, 2), "utf-8");
+					await registerRecordingMediaLinks(screenVideoPath, {
+						webcamVideoPath,
+						cursorCaptureMode,
+					});
+
+					return {
+						success: true,
+						path: screenVideoPath,
+						session,
+						recovered,
+						webcamDropped: Boolean(preferredWebcamPath) && !webcamVideoPath,
+						message: recovered
+							? "Native Windows recording recovered from a failed stop"
+							: "Native Windows recording session stored successfully",
+					};
+				} catch (error) {
+					console.error("Failed to stop native Windows recording:", error);
+					await stopCursorRecording();
+					return { success: false, error: String(error) };
+				} finally {
+					if (
+						currentWindowsCaptureTake === take &&
+						windowsCaptureTakeGeneration === take.generation
+					) {
+						resetNativeWindowsCaptureState();
+						currentWindowsCaptureTake = null;
+						const source = selectedSource || { name: "Screen" };
+						if (onRecordingStateChange) {
+							onRecordingStateChange(false, source.name);
+						}
+					}
+				}
+			});
+
+			if (!stopCoordination.accepted) {
+				return { success: false, error: stopCoordination.error };
+			}
+			return await stopCoordination.promise;
+		},
+	);
 
 	ipcMain.handle("stop-native-mac-recording", async (_, discard?: boolean) => {
 		if (process.platform !== "darwin") {
@@ -4121,7 +4721,15 @@ export function registerIpcHandlers(
 
 	ipcMain.handle(
 		"set-recording-state",
-		async (_, recording: boolean, recordingId?: number, cursorCaptureMode?: CursorCaptureMode) => {
+		async (
+			event,
+			recording: boolean,
+			recordingId?: number,
+			cursorCaptureMode?: CursorCaptureMode,
+		) => {
+			// Freeze preview admission before cursor initialization yields.
+			appRecording = recording;
+			if (!recording) windowsMeterCaptureGuard.endBrowser(event.sender);
 			const normalizedCursorCaptureMode =
 				normalizeCursorCaptureMode(cursorCaptureMode) ?? "editable-overlay";
 			if (recording && normalizedCursorCaptureMode === "editable-overlay") {
@@ -4131,7 +4739,6 @@ export function registerIpcHandlers(
 			}
 
 			const source = selectedSource || { name: "Screen" };
-			appRecording = recording;
 			mcpAppRecorder.recordingChanged(recording);
 			if (onRecordingStateChange) {
 				onRecordingStateChange(recording, source.name);
@@ -5253,6 +5860,44 @@ export function registerIpcHandlers(
 	// `openscreen mcp` serves the same tools on stdio, from the CLI process.
 	return {
 		mcpController,
+		prepareWindowsBrowserCapture: async (frame: WebFrameMain | null, audioRequested: boolean) => {
+			const window = getMainWindow();
+			const allowed = () =>
+				!selectedSource?.captureRegion &&
+				(!audioRequested || (recordingPrefs.get().windowsSystemAudioDeviceId ?? null) === null) &&
+				!appRecording &&
+				!isWindowsCaptureBusy({
+					processReferenced: !!nativeWindowsCaptureProcess,
+					processOwned: nativeWindowsProcessOwnership.hasOwner(),
+				}) &&
+				!nativeWindowsStartGate.isBusy() &&
+				isWindowsAudioOutputFrameOwner(getMainWindow(), window!.webContents, frame);
+			if (!window || !allowed()) throw new Error("Invalid Windows capture owner or state");
+			return windowsMeterCaptureGuard.beginBrowser(window.webContents, allowed);
+		},
+		pauseRecordingDerivatives: () => {
+			const orphanedWindowsCapture = terminateOrphanedWindowsCaptureForQuit({
+				referencedProcess: nativeWindowsCaptureProcess,
+				ownedProcess: nativeWindowsProcessOwnership.currentProcess(),
+				terminate: terminateNativeWindowsCapture,
+			});
+			const meter = windowsMeterCaptureGuard.pauseForQuit();
+			const copies = savedRecordingCopies.pauseAndDrain();
+			const gifs = savedRecordingGifs.pauseAndDrain();
+			return {
+				settled: Promise.all([
+					copies.settled,
+					gifs.settled,
+					meter.settled,
+					orphanedWindowsCapture,
+				]).then(() => undefined),
+				resume: () => {
+					meter.resume();
+					copies.resume();
+					gifs.resume();
+				},
+			};
+		},
 		mcpAppChannel: { deps: mcpToolDeps, runTool: mcpRunTool },
 		agentServices: {
 			mcpToolDeps,

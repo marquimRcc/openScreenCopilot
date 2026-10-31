@@ -57,6 +57,7 @@ describe("CliRecordRunner camera isolation", () => {
 			cliLog: vi.fn(),
 			cliDone: vi.fn(async () => undefined),
 			onCliStopRecording: vi.fn(() => () => undefined),
+			onCliSetRecordingPaused: vi.fn(() => () => undefined),
 			getCurrentRecordingSession: vi.fn(async () => ({ success: false, session: null })),
 			getSources: vi.fn(
 				() =>

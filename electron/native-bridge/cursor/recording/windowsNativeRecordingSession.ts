@@ -235,7 +235,9 @@ export class WindowsNativeRecordingSession implements CursorRecordingSession {
 		// physical, so use it as-is. Bounds from Electron's `screen` API (or the
 		// fallback for display captures) are in DIPs, so they go through the shared
 		// conversion the capture helper's bounds also use.
-		const physicalBounds = payload.bounds != null ? bounds : toHelperRect(bounds);
+		const physicalBounds =
+			this.options.getPhysicalBounds?.() ??
+			(payload.bounds != null ? bounds : toHelperRect(bounds));
 		const physicalX = physicalBounds.x;
 		const physicalY = physicalBounds.y;
 		const width = Math.max(1, physicalBounds.width);

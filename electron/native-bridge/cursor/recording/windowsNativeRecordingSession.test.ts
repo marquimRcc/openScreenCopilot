@@ -59,11 +59,12 @@ describe("WindowsNativeRecordingSession bounds handling", () => {
 		vi.restoreAllMocks();
 	});
 
-	const run = async (sample: Record<string, unknown>) => {
+	const run = async (sample: Record<string, unknown>, physicalBounds?: typeof PHYSICAL_BOUNDS) => {
 		const { child, stdout } = fakeHelper();
 		spawn.mockReturnValue(child);
 		const session = new WindowsNativeRecordingSession({
 			getDisplayBounds: () => DIP_BOUNDS,
+			getPhysicalBounds: () => physicalBounds ?? null,
 			maxSamples: 10,
 			sampleIntervalMs: 33,
 			startTimeMs: 1000,
@@ -91,6 +92,30 @@ describe("WindowsNativeRecordingSession bounds handling", () => {
 		// 1440/1920, not 1440/1024 — the latter is 1.40625 and lands off-frame.
 		expect(samples[0].cx).toBeCloseTo(0.75, 5);
 		expect(samples[0].cy).toBeCloseTo(538 / 1080, 5);
+	});
+	it("normalizes a crop in physical pixels without applying DPI twice", async () => {
+		const samples = await run(
+			{
+				type: "sample",
+				timestampMs: 1100,
+				x: -700,
+				y: 250,
+				visible: true,
+				handle: null,
+				asset: null,
+			},
+			{ x: -1000, y: 100, width: 600, height: 300 },
+		);
+		expect(samples[0].cx).toBeCloseTo(0.5);
+		expect(samples[0].cy).toBeCloseTo(0.5);
+		expect(dipToScreenRect).not.toHaveBeenCalled();
+	});
+	it("hides the cursor outside the physical crop", async () => {
+		const samples = await run(
+			{ type: "sample", timestampMs: 1100, x: 10, y: 10, visible: true, handle: null, asset: null },
+			{ x: 100, y: 100, width: 600, height: 300 },
+		);
+		expect(samples[0].visible).toBe(false);
 	});
 
 	it("uses the sampler's own bounds as-is for a window capture", async () => {

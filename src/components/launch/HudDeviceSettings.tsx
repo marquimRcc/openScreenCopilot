@@ -7,11 +7,16 @@ import type { MicrophoneDevice } from "../../hooks/useMicrophoneDevices";
 import { WEBCAM_QUALITY_IDS, type WebcamQualityId } from "../../hooks/webcamCaptureTarget";
 import { Tooltip } from "../ui/tooltip";
 import styles from "./LaunchWindow.module.css";
+import {
+	type WindowsAudioOutputLabels,
+	WindowsAudioOutputPicker,
+} from "./WindowsAudioOutputPicker";
 
 const LEVEL_SEGMENTS = 12;
 const LEVEL_SEGMENT_KEYS = Array.from({ length: LEVEL_SEGMENTS }, (_, i) => `segment-${i}`);
 
 export interface HudDeviceSettingsLabels {
+	windowsOutput?: WindowsAudioOutputLabels;
 	title: string;
 	close: string;
 	microphone: string;
@@ -90,6 +95,7 @@ function CameraPreview({
  */
 export const HudDeviceSettings = memo(function HudDeviceSettings({
 	showMicrophone,
+	locked = false,
 	micDevices,
 	cameraDevices,
 	activeMicId,
@@ -110,6 +116,7 @@ export const HudDeviceSettings = memo(function HudDeviceSettings({
 }: {
 	/** False where a take cannot record the microphone (see `canRecordMicrophone`). */
 	showMicrophone: boolean;
+	locked?: boolean;
 	micDevices: MicrophoneDevice[];
 	cameraDevices: CameraDevice[];
 	activeMicId: string | undefined;
@@ -167,6 +174,7 @@ export const HudDeviceSettings = memo(function HudDeviceSettings({
 				</Tooltip>
 			</div>
 
+			<WindowsAudioOutputPicker locked={locked} labels={labels.windowsOutput} />
 			{showMicrophone ? (
 				<>
 					<div className={styles.hudMenuSectionLabel}>{labels.microphone}</div>

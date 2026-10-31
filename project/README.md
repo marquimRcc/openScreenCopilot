@@ -9,6 +9,9 @@ Ordem de leitura: [situação](STATUS.md), [requisitos](REQUIREMENTS.md),
 
 A política de isolamento das automações está em [CI-POLICY.md](CI-POLICY.md).
 
+A direção de interface pós-gravação está em [SIMPLE-RECORDING-UX.md](SIMPLE-RECORDING-UX.md):
+resultado simples primeiro, edição secundária; distinguir proposta de implementação.
+
 A procedência, as licenças, o procedimento de atualização e a diferença entre
 fork GitHub e importação com histórico estão em [UPSTREAMS.md](UPSTREAMS.md).
 

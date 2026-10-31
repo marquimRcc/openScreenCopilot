@@ -162,9 +162,20 @@ describe("importPendingRecording", () => {
 	it("seeds a placeholder clip when the imported asset has none", async () => {
 		stubElectronApi("/recordings/recording-1.webm");
 		addAsset.mockImplementationOnce(async () => {
+			const document = createEmptyDocument({ projectId: "proj_stub", title: "Recording" });
 			useProjectStore.setState({
-				// biome-ignore lint/suspicious/noExplicitAny: only the two fields the seed reads
-				document: { assets: [{ id: "a1" }], timeline: { clips: [] } } as any,
+				document: {
+					...document,
+					assets: [
+						{
+							id: "a1",
+							kind: "video",
+							label: "recording-1.webm",
+							originalPath: "/recordings/recording-1.webm",
+							cameraTrack: null,
+						},
+					],
+				},
 			});
 			return null;
 		});

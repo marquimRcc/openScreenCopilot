@@ -37,6 +37,23 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Kiểm tra âm thanh hệ thống (30 giây)",
+		"outputMeterStop": "Dừng kiểm tra",
+		"outputMeterStarting": "Đang bắt đầu…",
+		"outputMeterActive": "Hoạt động đầu ra — không phải bản ghi",
+		"outputMeterStopping": "Đang dừng kiểm tra…",
+		"outputMeterStopped": "Đã kết thúc kiểm tra",
+		"outputMeterError": "Không thể kiểm tra. Hãy thử lại.",
+		"outputMeterHint": "Mức đỉnh trước âm lượng đầu ra. Chế độ độc quyền có thể hiển thị số không; hoạt động không chứng minh âm thanh đã được ghi.",
+		"outputMeterLevel": "Hoạt động âm thanh hệ thống",
+		"outputDevice": "Đầu ra âm thanh",
+		"outputDefault": "Mặc định của Windows",
+		"outputUnavailable": "Đầu ra đã chọn không khả dụng",
+		"outputRefresh": "Làm mới",
+		"outputLoading": "Đang tải đầu ra…",
+		"outputLoadFailed": "Không thể tải đầu ra. Chọn mặc định của Windows hoặc làm mới.",
+		"outputSaveFailed": "Không thể lưu đầu ra. Hãy thử lại.",
+		"outputScope": "Ghi mọi âm thanh phát qua đầu ra này, không chỉ một ứng dụng.",
 		"systemAudio": "Âm thanh hệ thống",
 		"microphone": "Micro",
 		"inputDevice": "Thiết bị đầu vào"
@@ -52,13 +69,42 @@
 		"quality1440p": "1440p",
 		"quality2160p": "4K"
 	},
+	"recordingResult": {
+		"saveCopy": "Lưu bản sao…",
+		"copying": "Đang sao chép bản gốc, không chỉnh sửa…",
+		"copySaved": "Bản sao đã lưu tại:",
+		"cancelCopy": "Hủy sao chép",
+		"copyExists": "Tệp đích đã tồn tại. Chọn tên mới; bản gốc và các tệp hiện có sẽ được giữ nguyên.",
+		"originalPreview": "Xem trước video gốc. Camera riêng, con trỏ có thể chỉnh sửa và các chỉnh sửa xuất hiện trong Chỉnh sửa.",
+		"saved": "Đã lưu bản ghi",
+		"title": "Bản ghi",
+		"loading": "Đang tải bản ghi…",
+		"unavailable": "Không tìm thấy bản ghi đã lưu. Màn hình này không xóa bản gốc.",
+		"actionFailed": "Không thể hoàn tất thao tác. Bản ghi chưa bị thay đổi.",
+		"preview": "Xem trước bản ghi",
+		"previewFailed": "Không có bản xem trước. Bạn vẫn có thể mở thư mục hoặc thử trình chỉnh sửa.",
+		"location": "Vị trí lưu",
+		"openFolder": "Mở thư mục",
+		"newCapture": "Ghi mới",
+		"edit": "Chỉnh sửa",
+		"retry": "Thử lại"
+	},
+	"regionSelection": {
+		"tab": "Vùng",
+		"monitorHint": "Chọn màn hình, rồi vẽ vùng muốn ghi.",
+		"draw": "Vẽ vùng",
+		"hint": "Kéo để đánh dấu vùng muốn ghi.",
+		"keys": "Enter: xác nhận · Esc: hủy",
+		"confirm": "Dùng vùng này",
+		"error": "Không thể chọn vùng. Hãy thử lại."
+	},
 	"sourceSelector": {
 		"loading": "Đang tải nguồn...",
 		"screens": "Màn hình ({{count}})",
 		"windows": "Cửa sổ ({{count}})",
 		"emptyTitle": "Không tìm thấy màn hình hoặc cửa sổ nào",
-		"emptyDescription": "Nếu bạn vừa cấp quyền ghi màn hình, hãy tải lại bộ chọn này. Trên macOS, bạn có thể cần mở lại OpenScreen.",
-		"loadFailedDescription": "OpenScreen không thể tải các nguồn ghi hình. Hãy tải lại bộ chọn này và thử lại.",
+		"emptyDescription": "Nếu bạn vừa cấp quyền ghi màn hình, hãy tải lại bộ chọn này. Trên macOS, bạn có thể cần mở lại openScreenCopilot.",
+		"loadFailedDescription": "openScreenCopilot không thể tải các nguồn ghi hình. Hãy tải lại bộ chọn này và thử lại.",
 		"defaultSourceName": "Màn hình"
 	},
 	"recording": {
@@ -72,7 +118,7 @@
 	"languageWithName": "Ngôn ngữ: {{language}}",
 	"systemLanguagePrompt": {
 		"title": "Sử dụng ngôn ngữ hệ thống của bạn?",
-		"description": "Chúng tôi phát hiện {{language}} là ngôn ngữ hệ thống của bạn. Bạn có muốn chuyển OpenScreen sang {{language}} không?",
+		"description": "Chúng tôi phát hiện {{language}} là ngôn ngữ hệ thống của bạn. Bạn có muốn chuyển openScreenCopilot sang {{language}} không?",
 		"switch": "Chuyển sang {{language}}",
 		"keepDefault": "Giữ ngôn ngữ hiện tại"
 	},
@@ -83,7 +129,7 @@
 	},
 	"softwareEncoderFallback": {
 		"title": "Đã chuyển sang mã hóa bằng phần mềm",
-		"description": "Bộ mã hóa GPU mặc định không khởi động được, nên OpenScreen đã chuyển sang mã hóa H.264 bằng phần mềm. Quá trình ghi vẫn tiếp tục bình thường, nhưng mức sử dụng CPU có thể cao hơn.",
+		"description": "Bộ mã hóa GPU mặc định không khởi động được, nên openScreenCopilot đã chuyển sang mã hóa H.264 bằng phần mềm. Quá trình ghi vẫn tiếp tục bình thường, nhưng mức sử dụng CPU có thể cao hơn.",
 		"dismiss": "Đã hiểu",
 		"dontShowAgain": "Không hiển thị lại"
 	},
@@ -100,7 +146,7 @@
 		"checkingForUpdates": "Đang kiểm tra…"
 	},
 	"permissions": {
-		"title": "OpenScreen cần một vài quyền",
+		"title": "openScreenCopilot cần một vài quyền",
 		"subtitle": "macOS chỉ yêu cầu bạn cấp mỗi quyền một lần. Bạn có thể thay đổi bất cứ lúc nào trong Cài đặt hệ thống.",
 		"level": {
 			"required": "Bắt buộc",
@@ -137,17 +183,17 @@
 			"continue": "Tiếp tục",
 			"allow": "Cho phép",
 			"openSettings": "Mở Cài đặt",
-			"restart": "Khởi động lại OpenScreen",
+			"restart": "Khởi động lại openScreenCopilot",
 			"start": "Bắt đầu"
 		},
 		"help": {
-			"screenPrompt": "Sau đó macOS sẽ yêu cầu bạn bật OpenScreen trong Cài đặt hệ thống.",
-			"screenSettings": "Trong Cài đặt hệ thống, hãy bật OpenScreen. Nếu macOS đề nghị thoát và mở lại, hãy đồng ý: cửa sổ này sẽ quay lại.",
-			"screenNotListed": "Không thấy OpenScreen trong danh sách? Bấm +, rồi chọn OpenScreen trong Ứng dụng.",
-			"screenRestart": "Đã cho phép. OpenScreen cần khởi động lại để sử dụng quyền này.",
-			"screenRecurring": "Ở lần ghi đầu tiên, macOS sẽ hỏi OpenScreen có được truy cập trực tiếp màn hình mà không qua bộ chọn của hệ thống hay không. Hãy bấm Cho phép. Thỉnh thoảng macOS sẽ hỏi lại; điều đó là bình thường.",
-			"systemAudioPrompt": "macOS sẽ hỏi bạn có cho phép OpenScreen ghi âm thanh của máy Mac không.",
-			"systemAudioRequested": "Nếu bạn đã từ chối, hãy bật OpenScreen trong mục “Chỉ bản ghi âm thanh hệ thống” ở Cài đặt hệ thống."
+			"screenPrompt": "Sau đó macOS sẽ yêu cầu bạn bật openScreenCopilot trong Cài đặt hệ thống.",
+			"screenSettings": "Trong Cài đặt hệ thống, hãy bật openScreenCopilot. Nếu macOS đề nghị thoát và mở lại, hãy đồng ý: cửa sổ này sẽ quay lại.",
+			"screenNotListed": "Không thấy openScreenCopilot trong danh sách? Bấm +, rồi chọn openScreenCopilot trong Ứng dụng.",
+			"screenRestart": "Đã cho phép. openScreenCopilot cần khởi động lại để sử dụng quyền này.",
+			"screenRecurring": "Ở lần ghi đầu tiên, macOS sẽ hỏi openScreenCopilot có được truy cập trực tiếp màn hình mà không qua bộ chọn của hệ thống hay không. Hãy bấm Cho phép. Thỉnh thoảng macOS sẽ hỏi lại; điều đó là bình thường.",
+			"systemAudioPrompt": "macOS sẽ hỏi bạn có cho phép openScreenCopilot ghi âm thanh của máy Mac không.",
+			"systemAudioRequested": "Nếu bạn đã từ chối, hãy bật openScreenCopilot trong mục “Chỉ bản ghi âm thanh hệ thống” ở Cài đặt hệ thống."
 		},
 		"footer": {
 			"screenRequired": "Cần quyền ghi màn hình để ghi.",

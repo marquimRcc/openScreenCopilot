@@ -37,6 +37,23 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Systemaudio testen (30 s)",
+		"outputMeterStop": "Test stoppen",
+		"outputMeterStarting": "Test startet…",
+		"outputMeterActive": "Ausgabeaktivität — keine Aufnahme",
+		"outputMeterStopping": "Test wird beendet…",
+		"outputMeterStopped": "Test beendet",
+		"outputMeterError": "Test nicht verfügbar. Erneut versuchen.",
+		"outputMeterHint": "Pegel vor der Ausgabelautstärke. Im Exklusivmodus kann er null sein; Aktivität beweist keine Audioaufnahme.",
+		"outputMeterLevel": "Systemaudio-Aktivität",
+		"outputDevice": "Audioausgabe",
+		"outputDefault": "Windows-Standard",
+		"outputUnavailable": "Gewählte Ausgabe nicht verfügbar",
+		"outputRefresh": "Aktualisieren",
+		"outputLoading": "Ausgaben werden geladen…",
+		"outputLoadFailed": "Ausgaben konnten nicht geladen werden. Windows-Standard wählen oder aktualisieren.",
+		"outputSaveFailed": "Ausgabe konnte nicht gespeichert werden. Erneut versuchen.",
+		"outputScope": "Nimmt alle Töne dieser Ausgabe auf, nicht nur eine einzelne App.",
 		"systemAudio": "Systemton",
 		"microphone": "Mikrofon",
 		"inputDevice": "Eingabegerät"
@@ -57,13 +74,42 @@
 		"editableTip": "Bearbeitbarer Cursor: wird getrennt aufgenommen, damit du im Editor sein Aussehen ändern und Auto-Zoom nutzen kannst",
 		"systemTip": "System-Cursor: dein echter Cursor, im Video aufgenommen. Aussehen nicht änderbar, kein Auto-Zoom."
 	},
+	"recordingResult": {
+		"saveCopy": "Kopie speichern…",
+		"copying": "Original wird ohne Änderungen kopiert…",
+		"copySaved": "Kopie gespeichert unter:",
+		"cancelCopy": "Kopie abbrechen",
+		"copyExists": "Dieses Ziel existiert bereits. Wählen Sie einen neuen Namen; Original und vorhandene Dateien bleiben erhalten.",
+		"originalPreview": "Vorschau des Originalvideos. Separate Kamera, bearbeitbarer Cursor und Änderungen erscheinen unter Bearbeiten.",
+		"saved": "Aufnahme gespeichert",
+		"title": "Aufnahme",
+		"loading": "Aufnahme wird geladen…",
+		"unavailable": "Die Aufnahme wurde nicht gefunden. Dieser Bildschirm hat das Original nicht gelöscht.",
+		"actionFailed": "Die Aktion konnte nicht abgeschlossen werden. Die Aufnahme wurde nicht geändert.",
+		"preview": "Aufnahmevorschau",
+		"previewFailed": "Vorschau nicht verfügbar. Öffne den Ordner oder versuche den Editor.",
+		"location": "Speicherort",
+		"openFolder": "Ordner öffnen",
+		"newCapture": "Neue Aufnahme",
+		"edit": "Bearbeiten",
+		"retry": "Erneut versuchen"
+	},
+	"regionSelection": {
+		"tab": "Bereich",
+		"monitorHint": "Wähle einen Monitor und markiere den Aufnahmebereich.",
+		"draw": "Bereich markieren",
+		"hint": "Ziehe, um den Aufnahmebereich zu markieren.",
+		"keys": "Enter: bestätigen · Esc: abbrechen",
+		"confirm": "Diesen Bereich verwenden",
+		"error": "Bereich konnte nicht ausgewählt werden. Erneut versuchen."
+	},
 	"sourceSelector": {
 		"loading": "Quellen werden geladen…",
 		"screens": "Bildschirme ({{count}})",
 		"windows": "Fenster ({{count}})",
 		"emptyTitle": "Keine Bildschirme oder Fenster gefunden",
-		"emptyDescription": "Wenn du die Berechtigung zur Bildschirmaufnahme gerade erteilt hast, lade diese Auswahl neu. Unter macOS musst du OpenScreen eventuell neu öffnen.",
-		"loadFailedDescription": "OpenScreen konnte die Aufnahmequellen nicht laden. Lade diese Auswahl neu und versuche es erneut.",
+		"emptyDescription": "Wenn du die Berechtigung zur Bildschirmaufnahme gerade erteilt hast, lade diese Auswahl neu. Unter macOS musst du openScreenCopilot eventuell neu öffnen.",
+		"loadFailedDescription": "openScreenCopilot konnte die Aufnahmequellen nicht laden. Lade diese Auswahl neu und versuche es erneut.",
 		"defaultSourceName": "Bildschirm"
 	},
 	"recording": {
@@ -77,13 +123,13 @@
 	"languageWithName": "Sprache: {{language}}",
 	"systemLanguagePrompt": {
 		"title": "Systemsprache verwenden?",
-		"description": "{{language}} wurde als deine Systemsprache erkannt. Soll OpenScreen auf {{language}} umgestellt werden?",
+		"description": "{{language}} wurde als deine Systemsprache erkannt. Soll openScreenCopilot auf {{language}} umgestellt werden?",
 		"switch": "Zu {{language}} wechseln",
 		"keepDefault": "Aktuelle Sprache behalten"
 	},
 	"softwareEncoderFallback": {
 		"title": "Auf Software-Encoding umgestellt",
-		"description": "Der Standard-GPU-Encoder konnte nicht gestartet werden, deshalb ist OpenScreen auf Software-H.264-Encoding zurückgefallen. Die Aufnahme läuft normal weiter, die CPU-Auslastung kann aber höher sein.",
+		"description": "Der Standard-GPU-Encoder konnte nicht gestartet werden, deshalb ist openScreenCopilot auf Software-H.264-Encoding zurückgefallen. Die Aufnahme läuft normal weiter, die CPU-Auslastung kann aber höher sein.",
 		"dismiss": "Verstanden",
 		"dontShowAgain": "Nicht mehr anzeigen"
 	},
@@ -100,7 +146,7 @@
 		"checkingForUpdates": "Wird geprüft…"
 	},
 	"permissions": {
-		"title": "OpenScreen benötigt einige Berechtigungen",
+		"title": "openScreenCopilot benötigt einige Berechtigungen",
 		"subtitle": "macOS fragt jede Berechtigung nur einmal ab. Du kannst sie jederzeit in den Systemeinstellungen ändern.",
 		"level": {
 			"required": "Erforderlich",
@@ -137,17 +183,17 @@
 			"continue": "Weiter",
 			"allow": "Erlauben",
 			"openSettings": "Einstellungen öffnen",
-			"restart": "OpenScreen neu starten",
+			"restart": "openScreenCopilot neu starten",
 			"start": "Los geht's"
 		},
 		"help": {
-			"screenPrompt": "macOS bittet dich anschließend, OpenScreen in den Systemeinstellungen zu aktivieren.",
-			"screenSettings": "Aktiviere OpenScreen in den Systemeinstellungen. Wenn macOS anbietet, die App zu beenden und neu zu öffnen, stimme zu: Dieses Fenster erscheint wieder.",
-			"screenNotListed": "OpenScreen fehlt in der Liste? Klicke auf + und wähle OpenScreen unter „Programme“.",
-			"screenRestart": "Erlaubt. OpenScreen muss neu starten, um die Berechtigung zu nutzen.",
-			"screenRecurring": "Bei deiner ersten Aufnahme fragt macOS, ob OpenScreen ohne die Systemauswahl direkt auf deinen Bildschirm zugreifen darf. Klicke auf „Erlauben“. macOS fragt von Zeit zu Zeit erneut – das ist normal.",
-			"systemAudioPrompt": "macOS fragt dich, ob OpenScreen den Ton deines Mac aufnehmen darf.",
-			"systemAudioRequested": "Falls du abgelehnt hast, aktiviere OpenScreen unter „Nur Aufnahme von Systemaudio“ in den Systemeinstellungen."
+			"screenPrompt": "macOS bittet dich anschließend, openScreenCopilot in den Systemeinstellungen zu aktivieren.",
+			"screenSettings": "Aktiviere openScreenCopilot in den Systemeinstellungen. Wenn macOS anbietet, die App zu beenden und neu zu öffnen, stimme zu: Dieses Fenster erscheint wieder.",
+			"screenNotListed": "openScreenCopilot fehlt in der Liste? Klicke auf + und wähle openScreenCopilot unter „Programme“.",
+			"screenRestart": "Erlaubt. openScreenCopilot muss neu starten, um die Berechtigung zu nutzen.",
+			"screenRecurring": "Bei deiner ersten Aufnahme fragt macOS, ob openScreenCopilot ohne die Systemauswahl direkt auf deinen Bildschirm zugreifen darf. Klicke auf „Erlauben“. macOS fragt von Zeit zu Zeit erneut – das ist normal.",
+			"systemAudioPrompt": "macOS fragt dich, ob openScreenCopilot den Ton deines Mac aufnehmen darf.",
+			"systemAudioRequested": "Falls du abgelehnt hast, aktiviere openScreenCopilot unter „Nur Aufnahme von Systemaudio“ in den Systemeinstellungen."
 		},
 		"footer": {
 			"screenRequired": "Zum Aufnehmen ist die Bildschirmaufnahme erforderlich.",

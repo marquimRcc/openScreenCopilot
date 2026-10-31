@@ -578,7 +578,7 @@ export function createEditorWindow(query: Record<string, string> = {}): BrowserW
 		resizable: true,
 		alwaysOnTop: false,
 		skipTaskbar: false,
-		title: "OpenScreen",
+		title: "openScreenCopilot",
 		backgroundColor: "#09090b",
 		show: false, // shown via ready-to-show to avoid white flash on first load
 		webPreferences: {
@@ -658,6 +658,92 @@ export function createEditorWindow(query: Record<string, string> = {}): BrowserW
  * Floating source-selector window for picking a screen or window to record.
  * Frameless, transparent, and follows the user across macOS Spaces.
  */
+export function createRegionIndicatorWindow(
+	bounds: Electron.Rectangle,
+): BrowserWindow & { setPausedVisual(paused: boolean): void } {
+	const win = new BrowserWindow({
+		...bounds,
+		show: false,
+		frame: false,
+		transparent: true,
+		backgroundColor: "#00000000",
+		resizable: false,
+		movable: false,
+		focusable: false,
+		hasShadow: false,
+		skipTaskbar: true,
+		alwaysOnTop: true,
+		webPreferences: { sandbox: true, nodeIntegration: false, contextIsolation: true },
+	});
+	win.setMenu(null);
+	win.setBounds(bounds);
+	win.setIgnoreMouseEvents(true);
+	// Unlike the HUD's QA override, the border must NEVER be baked into a take.
+	win.setContentProtection(true);
+	win.setAlwaysOnTop(true, "screen-saver");
+	let paused = false;
+	const applyPausedVisual = () => {
+		if (win.isDestroyed()) return;
+		void win.webContents
+			.executeJavaScript(`document.body.dataset.paused = ${paused ? '"true"' : '"false"'}`)
+			.catch(() => {
+				// Retained state is retried after the document finishes loading.
+			});
+	};
+	const indicator = Object.assign(win, {
+		setPausedVisual(nextPaused: boolean) {
+			paused = nextPaused;
+			applyPausedVisual();
+		},
+	});
+	win.webContents.on("did-finish-load", applyPausedVisual);
+	win.once("ready-to-show", () => {
+		if (!win.isDestroyed()) win.showInactive();
+	});
+	const pauseLabel = app.getLocale().toLowerCase().startsWith("pt") ? "PAUSADO" : "PAUSED";
+	void win
+		.loadURL(
+			`data:text/html;charset=utf-8,${encodeURIComponent(
+				`<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Recording region</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{box-sizing:border-box;border:2px dashed #ef4444;pointer-events:none;font:700 12px system-ui;color:#fff}.status{position:absolute;top:6px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:#b91c1c;letter-spacing:.08em}#paused{display:none}body[data-paused="true"]{border-color:#f59e0b}body[data-paused="true"] #recording{display:none}body[data-paused="true"] #paused{display:block;background:#b45309}</style><div class="status" id="recording">REC</div><div class="status" id="paused">${pauseLabel}</div>`,
+			)}`,
+		)
+		.catch(() => {
+			if (!win.isDestroyed()) win.destroy();
+		});
+	return indicator;
+}
+
+export function createRegionSelectionWindow(bounds: Electron.Rectangle): BrowserWindow {
+	const win = new BrowserWindow({
+		...bounds,
+		show: false,
+		frame: false,
+		resizable: false,
+		movable: false,
+		hasShadow: false,
+		transparent: true,
+		backgroundColor: "#00000000",
+		alwaysOnTop: true,
+		skipTaskbar: true,
+		webPreferences: {
+			preload: path.join(__dirname, "preload.mjs"),
+			additionalArguments: [ASSET_BASE_URL_ARG],
+			nodeIntegration: false,
+			contextIsolation: true,
+		},
+	});
+	win.setMenu(null);
+	win.setBounds(bounds);
+	if (VITE_DEV_SERVER_URL) {
+		void win.loadURL(VITE_DEV_SERVER_URL + "?windowType=region-selector");
+	} else {
+		void win.loadFile(path.join(RENDERER_DIST, "index.html"), {
+			query: { windowType: "region-selector" },
+		});
+	}
+	return win;
+}
+
 export function createSourceSelectorWindow(): BrowserWindow {
 	const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
@@ -762,7 +848,7 @@ export function createPermissionsWindow(): BrowserWindow {
 		minimizable: false,
 		maximizable: false,
 		fullscreenable: false,
-		title: "OpenScreen",
+		title: "openScreenCopilot",
 		backgroundColor: "#0b0c0f",
 		show: false,
 		webPreferences: {
@@ -799,7 +885,7 @@ export function createNotesWindow(): BrowserWindow {
 		minHeight: 400,
 		maxWidth: 640,
 		maxHeight: 720,
-		title: "OpenScreen - Notes",
+		title: "openScreenCopilot - Notes",
 		backgroundColor: "#09090b",
 		resizable: true,
 		alwaysOnTop: true,

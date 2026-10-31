@@ -1,9 +1,50 @@
 # Contratos propostos v0
 
-Proposta para o primeiro spike; **não existe uma API implementada** nesta inicialização.
+Proposta para o primeiro spike; existe somente um handshake executável v0 estrito
+`hello -> ready -> shutdown -> completed`, ainda sem provider/PCM/engine.
 Congelar v1 somente após um teste ponta a ponta Electron -> sidecar -> exportação.
 
+Detalhamento ainda v0 do relógio/amostras/pausas e fixtures iniciais em
+[SPEECH-TIMELINE-DRAFT.md](SPEECH-TIMELINE-DRAFT.md). Não são campos já emitidos
+pelo backend Windows ou uma autorização para conectar PCM sem mapa validado.
+
+Descritor binário CANDIDATO agora tem parsers/fixtures isolados nos dois lados:
+[AUDIO-FRAME-DRAFT.md](AUDIO-FRAME-DRAFT.md). Não é transporte ativo/v1 congelado;
+IDs/nonce não concedem permissão; adaptador isolado TSv0 agora recusa epochu64
+acima deMAX_SAFE_INTEGER antesNumber,semarredondar. Isso não congela wirev1 nem
+liga parser/adapter à captura; ver limites emAUDIO-FRAME-DRAFT.
+
 ## Transporte e isolamento
+
+Preparação isolada Rust control_lines.rs enquadra UTF-8/LF/CRLF com limite por linha
+e contrapressão de1mensagem. O executável `crates/speech-sidecar` abre somente
+stdin/stdout, valida JSON/schema/version/identidade ASCII limitada/seq u64 decimal
+monotônica e falha fechado. Aceita apenas um hello e shutdown correspondente,
+anuncia `providerAvailable:false` e não abre pipe/socket/PCM/modelo. Nonce não é
+autenticação; ACL, timeout e supervisão pelo host seguem pendentes. Caps e v0 não
+são negociação v1 congelada. Fixture compartilhada Rust/TS cobre ready/completed;
+o parser TS main-only valida campos exatos/identidade/u64/capacidades, mas não
+spawna nem autentica processo. Correlação stateful recusa ready/completed fora de
+ordem, replay ou outra sessão e exige seq exata de hello/shutdown. Detalhes nos
+READMEs dos dois crates. Decoder TS isolado de linhas aplica o mesmo teto por
+mensagem, UTF-8 fatal, LF/CRLF e contrapressão de uma mensagem com buffer fixo;
+encoder TS valida identidade ASCII limitada e u64 canônico antes de emitir
+hello/shutdown exatos. Driver de stream TS compõe framing e correlação sem fila,
+falhando fechado em protocolo/ordem/EOF. Controlador isolado acrescenta deadlines
+de handshake/shutdown e abort tipado. Ainda não inicia ou supervisiona processo.
+Binding isolado pode anexar um processo já criado ao supervisor por geração,
+preserva recibo de saída observada e encerra em stdout inválido/prematuro; spawn,
+caminho autorizado e ACL continuam pendentes.
+Stderr é drenado separadamente para buffer diagnóstico fixo de4KiB; nunca entra
+no framing stdout nem cresce sem limite.
+Launcher dormente recebe caminho absoluto autorizado pelo main, canonicaliza e
+spawna sem shell/argumentos; não está ligado ao startup e ainda não define ACL.
+Teste de integração opt-in confirmou handshake e saída real TS→Rust→TS; não é
+ativação do sidecar no produto nem prova de provider/PCM/ASR.
+Resolver isolado limita o executável ao slot exato dev/empacotado por plataforma e
+arquitetura, canonicaliza e retorna indisponível quando ausente, sem busca em PATH.
+Gerador isolado usa valores aleatórios distintos de192bits para session/nonce; nonce
+continua correlação e não substitui ACL/autenticação do SO.
 
 - Controle e eventos: NDJSON UTF-8 em stdin/stdout do sidecar supervisionado pelo main.
 - Logs técnicos: stderr, nunca misturados com mensagens do protocolo.

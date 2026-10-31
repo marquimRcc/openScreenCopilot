@@ -1,0 +1,11 @@
+.picker { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; font-size: 12px; }
+.controls { display: flex; gap: 6px; min-width: 0; }
+.controls select { min-width: 0; flex: 1; }
+.controls select, .controls button { padding: 6px; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; background: #202024; color: #fff; font: inherit; }
+.controls select:focus-visible, .controls button:focus-visible { outline: 2px solid #84ccaa; outline-offset: 2px; }
+.controls select:disabled, .controls button:disabled { opacity: .5; }
+.hint { opacity: .65; line-height: 1.4; }
+.meterTest { display: flex; flex-direction: column; gap: 6px; }
+.meterTest button { align-self: flex-start; padding: 5px 8px; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; background: #202024; color: #fff; font: inherit; }
+.meterTest button:disabled { opacity: .5; }
+.meterTest button:focus-visible { outline: 2px solid #84ccaa; outline-offset: 2px; }

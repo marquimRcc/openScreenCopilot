@@ -21,9 +21,17 @@ import type {
 	SttWordSegment,
 } from "./transcriptionContract";
 import { cleanupWav, writeSamplesAsWav } from "./wav";
+import {
+	type ScheduleTimerFn,
+	type SupervisorState,
+	WorkerProcessSupervisor,
+} from "./workerProcessSupervisor";
 
 /** whisper.cpp helper is stdio-shaped: stdin ignored, stdout/stderr captured. */
 type WhisperChild = ChildProcessByStdio<null, Readable, Readable>;
+
+/** Validated child process with an integer pid, owned by the supervisor. */
+type AttachedWhisperChild = WhisperChild & { readonly pid: number };
 
 /**
  * Per-request ceiling. whisper answers `/inference` only once the WHOLE upload
@@ -133,19 +141,44 @@ interface WhisperJsonResponse {
 	speech?: Array<{ start?: number | string; end?: number | string }>;
 }
 
+export interface WhisperServerManagerOptions {
+	/** Timeout for graceful SIGTERM exit (default 5000ms). */
+	readonly termTimeoutMs?: number;
+	/** Timeout for SIGKILL escalation exit (default 2000ms). */
+	readonly killTimeoutMs?: number;
+	/** Injected timer scheduler (for testing). */
+	readonly scheduleTimer?: ScheduleTimerFn;
+}
+
+interface WhisperServerStartAttempt {
+	cancelled: boolean;
+}
+
 export class WhisperServerManager {
 	private process: WhisperChild | null = null;
 	private shuttingDown = false;
+	private stopping = false;
 	private port: number | null = null;
 	private backend: SttBackend | null = null;
 	private lastError: string | null = null;
 	private startedAtMs: number | null = null;
 	private inFlight: Promise<unknown> = Promise.resolve();
 	private starting: Promise<{ port: number; backend: SttBackend }> | null = null;
+	private currentStartAttempt: WhisperServerStartAttempt | null = null;
+
+	private readonly supervisor: WorkerProcessSupervisor<AttachedWhisperChild>;
 
 	/** Buffered stderr from the helper; surfaced on shutdown + poll failures. */
 	private stderrTail = "";
 	private readonly stderrTailMax = 64 * 1024;
+
+	constructor(options?: WhisperServerManagerOptions) {
+		this.supervisor = new WorkerProcessSupervisor<AttachedWhisperChild>({
+			termTimeoutMs: options?.termTimeoutMs ?? 5_000,
+			killTimeoutMs: options?.killTimeoutMs ?? 2_000,
+			scheduleTimer: options?.scheduleTimer,
+		});
+	}
 
 	/** Allocate a free TCP port on the loopback interface; resolves to the picked port. */
 	private static async pickFreePort(): Promise<number> {
@@ -206,11 +239,9 @@ export class WhisperServerManager {
 	 * in a bug report.
 	 *
 	 * `log: false` exists because a death during startup reaches this method
-	 * TWICE — once from the `exit` listener, once from the startup catch that the
-	 * same exit rejects. Both writes are wanted (the second message is the more
-	 * specific of the two, and it is what `status` should end up holding), but two
-	 * differently-worded lines for one event is the kind of noise that makes a
-	 * reader doubt the log rather than trust it.
+	 * twice — once from the `exit` listener and once from the startup catch.
+	 * The catch keeps the more specific message in `status`, while suppressing
+	 * the second console line for the same event.
 	 */
 	private recordError(message: string, { log = true }: { log?: boolean } = {}): void {
 		this.lastError = message;
@@ -219,9 +250,14 @@ export class WhisperServerManager {
 
 	/** True when a process is alive and a model is loaded. */
 	get status(): WhisperServerStatus {
+		const isOwned =
+			this.supervisor.pid !== null &&
+			(this.supervisor.state === "attached" ||
+				this.supervisor.state === "stopping" ||
+				this.supervisor.state === "uncertain");
 		return {
-			running: this.process !== null && this.port !== null,
-			pid: this.process?.pid ?? null,
+			running: isOwned && this.port !== null,
+			pid: this.supervisor.pid,
 			port: this.port,
 			backend: this.backend,
 			startedAtMs: this.startedAtMs,
@@ -236,7 +272,10 @@ export class WhisperServerManager {
 	 */
 	async start(options: WhisperServerStartOptions): Promise<{ port: number; backend: SttBackend }> {
 		if (this.starting) return this.starting;
-		this.starting = this.startImpl(options).finally(() => {
+		const attempt: WhisperServerStartAttempt = { cancelled: false };
+		this.currentStartAttempt = attempt;
+		this.starting = this.startImpl(options, attempt).finally(() => {
+			if (this.currentStartAttempt === attempt) this.currentStartAttempt = null;
 			this.starting = null;
 		});
 		return this.starting;
@@ -244,11 +283,22 @@ export class WhisperServerManager {
 
 	private async startImpl(
 		options: WhisperServerStartOptions,
+		attempt: WhisperServerStartAttempt,
 	): Promise<{ port: number; backend: SttBackend }> {
+		this.assertCurrentStartAttempt(attempt);
 		if (this.shuttingDown) {
 			throw new Error("whisper-stt-server manager is shutting down");
 		}
-		if (this.process && this.port) {
+		if (this.supervisor.state === "uncertain") {
+			throw new Error(
+				`whisper-stt-server previous process (pid ${this.supervisor.pid}) exit is uncertain`,
+			);
+		}
+		if (this.supervisor.state === "stopping") {
+			await this.stopOwnedProcess();
+			this.assertCurrentStartAttempt(attempt);
+		}
+		if (this.process && this.port && this.supervisor.state === "attached") {
 			return {
 				port: this.port,
 				backend: this.backend ?? options.backend ?? "whispercpp-cpu",
@@ -258,6 +308,7 @@ export class WhisperServerManager {
 		const resolved = options.binaryPath
 			? { path: options.binaryPath, backend: options.backend ?? "whispercpp-cpu" }
 			: await resolveBinaryPath();
+		this.assertCurrentStartAttempt(attempt);
 		const binaryPath = resolved.path;
 		if (!binaryPath) {
 			const message =
@@ -276,12 +327,28 @@ export class WhisperServerManager {
 			this.recordError(message);
 			throw new Error(message);
 		}
+		this.assertCurrentStartAttempt(attempt);
 		if (!existsSync(options.modelPath)) {
 			throw new Error(`Whisper GGML model not found at ${options.modelPath}`);
 		}
 
 		const launch = async (forceCpu: boolean): Promise<{ port: number; backend: SttBackend }> => {
+			this.assertCurrentStartAttempt(attempt);
+			if (this.shuttingDown) {
+				throw new Error("whisper-stt-server manager is shutting down");
+			}
+			if (this.supervisor.state === "uncertain") {
+				throw new Error(
+					`whisper-stt-server previous process (pid ${this.supervisor.pid}) exit is uncertain`,
+				);
+			}
+			if (this.supervisor.state === "stopping") {
+				await this.stopOwnedProcess();
+				this.assertCurrentStartAttempt(attempt);
+			}
+
 			const port = await WhisperServerManager.pickFreePort();
+			this.assertCurrentStartAttempt(attempt);
 			if (this.shuttingDown) {
 				throw new Error("whisper-stt-server manager is shutting down");
 			}
@@ -299,9 +366,30 @@ export class WhisperServerManager {
 				args.push("--vad-model", options.vadModelPath);
 			}
 			if (forceCpu) args.push("--cpu");
+			this.assertCurrentStartAttempt(attempt);
 			const child = spawn(binaryPath, args, { stdio: ["ignore", "pipe", "pipe"] });
 			const activeBackend: SttBackend = forceCpu ? "whispercpp-cpu" : resolved.backend;
 
+			// Handle spawn errors and invalid pid fail-closed
+			let earlyError: Error | null = null;
+			const onEarlyError = (err: Error) => {
+				earlyError = err;
+			};
+			child.once("error", onEarlyError);
+
+			if (typeof child.pid !== "number" || !Number.isInteger(child.pid) || child.pid <= 0) {
+				await new Promise<void>((resolve) => {
+					setImmediate(resolve);
+				});
+				child.removeListener?.("error", onEarlyError);
+				const errText = (earlyError as Error | null)?.message;
+				const message = errText ? `spawn error: ${errText}` : "spawn failed to assign a valid pid";
+				this.recordError(message);
+				throw new Error(message);
+			}
+			child.removeListener?.("error", onEarlyError);
+
+			const gen = this.supervisor.attach(child as AttachedWhisperChild);
 			this.process = child;
 			this.port = port;
 			this.backend = activeBackend;
@@ -309,40 +397,39 @@ export class WhisperServerManager {
 			this.stderrTail = "";
 			this.lastError = null;
 
+			let exitLogged = false;
+
 			child.stdout?.on("data", (chunk: Buffer) => {
 				process.stdout.write(`[whisper-stt-server] ${chunk.toString()}`);
 			});
 
-			child.stderr.on("data", (chunk: Buffer) => {
+			child.stderr?.on("data", (chunk: Buffer) => {
 				const text = chunk.toString();
 				process.stderr.write(`[whisper-stt-server] ${text}`);
 				this.stderrTail = (this.stderrTail + text).slice(-this.stderrTailMax);
 			});
+
 			child.once("exit", (code) => {
-				if (this.process === child) {
-					const reason =
-						code === null
-							? "exited without code"
-							: `exited with code ${code}; stderr=${this.stderrTail.slice(-512)}`;
-					this.recordError(reason);
+				if (this.process === child && this.supervisor.generation === gen) {
+					const expectedStop = this.stopping;
 					this.process = null;
 					this.port = null;
+					this.backend = null;
 					this.startedAtMs = null;
+					if (!expectedStop) {
+						const reason =
+							code === null
+								? "exited without code"
+								: `exited with code ${code}; stderr=${this.stderrTail.slice(-512)}`;
+						this.recordError(reason);
+						exitLogged = true;
+					}
 				}
 			});
+
 			child.once("error", (err) => {
-				// ponytail: the same shape as the `exit` listener above, and for the same
-				// reason. A spawn error reaches the startup catch by the same route — the
-				// `exitedBeforeReady` race rejects on `error` too — so without clearing
-				// the startup state here, that catch cannot tell this failure has already
-				// been reported and logs it a second time in different words. Clearing is
-				// also just true: a child that never spawned is not a helper that is up,
-				// and `status` said it was.
-				if (this.process === child) {
+				if (this.process === child && this.supervisor.generation === gen) {
 					this.recordError(`spawn error: ${err.message}`);
-					this.process = null;
-					this.port = null;
-					this.startedAtMs = null;
 				}
 			});
 
@@ -355,7 +442,9 @@ export class WhisperServerManager {
 						),
 					);
 				});
-				child.once("error", reject);
+				child.once("error", (err) => {
+					reject(new Error(`spawn error: ${err.message}`));
+				});
 			});
 			try {
 				await Promise.race([
@@ -368,13 +457,8 @@ export class WhisperServerManager {
 				]);
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
-				// ponytail: read BEFORE `stop()`, which nulls it either way. The `exit`
-				// listener clears `this.process` as it records, so `!== child` here means
-				// the death has already been logged and this catch is the second voice on
-				// it. A readiness TIMEOUT leaves the child in place and is logged from
-				// here, which is the only place that sees it at all.
-				const alreadyLogged = this.process !== child;
-				await this.stop();
+				const alreadyLogged = exitLogged;
+				await this.stopOwnedProcess();
 				this.recordError(message, { log: !alreadyLogged });
 				throw new Error(message);
 			}
@@ -394,7 +478,10 @@ export class WhisperServerManager {
 			);
 			const gpuStartupFailed =
 				resolved.backend !== "whispercpp-cpu" && mentionsGpuBackend && mentionsStartupFailure;
-			if (!gpuStartupFailed) throw err;
+			if (!gpuStartupFailed || (this.supervisor.state as SupervisorState) === "uncertain") {
+				throw err;
+			}
+			this.assertCurrentStartAttempt(attempt);
 			process.stderr.write(
 				"[whisper-stt-server] GPU startup failed; retrying with CPU inference\n",
 			);
@@ -404,26 +491,37 @@ export class WhisperServerManager {
 
 	/** Send SIGTERM and wait for the helper to exit. Resolves even if it was already down. */
 	async stop(): Promise<void> {
-		if (!this.process) {
+		if (this.currentStartAttempt) this.currentStartAttempt.cancelled = true;
+		await this.stopOwnedProcess();
+	}
+
+	private assertCurrentStartAttempt(attempt: WhisperServerStartAttempt): void {
+		if (attempt.cancelled || this.currentStartAttempt !== attempt) {
+			throw new Error("whisper-stt-server startup cancelled");
+		}
+	}
+
+	/** Stop only the owned helper without cancelling the start attempt performing cleanup. */
+	private async stopOwnedProcess(): Promise<void> {
+		if (this.supervisor.state === "idle" || this.supervisor.state === "exited") {
+			this.process = null;
 			this.port = null;
+			this.backend = null;
 			this.startedAtMs = null;
 			return;
 		}
-		const child = this.process;
-		this.process = null;
-		this.port = null;
-		this.startedAtMs = null;
-		const exited = new Promise<void>((resolve) => {
-			child.once("exit", () => resolve());
-		});
-		child.kill("SIGTERM");
+
+		this.stopping = true;
 		try {
-			await Promise.race([
-				exited,
-				new Promise<void>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5_000)),
-			]);
-		} catch {
-			child.kill("SIGKILL");
+			await this.supervisor.stop();
+		} finally {
+			this.stopping = false;
+			if ((this.supervisor.state as SupervisorState) === "exited") {
+				this.process = null;
+				this.port = null;
+				this.backend = null;
+				this.startedAtMs = null;
+			}
 		}
 	}
 

@@ -1,0 +1,531 @@
+# speech-core foundation (draft)
+
+Sample-to-media timeline arithmetic, a bounded draft metadata registry,
+interleaved-to-mono downmix, bounded WAV ingestion and whole-buffer resampling,
+a provider INTERFACE and a metadata window planner are implemented. No audio capture,
+loudness normalization, VAD, concrete model/provider, inference,
+sidecar, journal or UI integration.
+The original timeline code uses the repository MIT license. Downmix/provider boundary are adapted from
+meeting-copilot (Zackriya Solutions); its MIT notice is preserved in
+[LICENSE-MEETING-COPILOT](LICENSE-MEETING-COPILOT). Vendor remains immutable.
+
+The library uses std plus pinned rubato 0.15 with default features disabled for the
+bounded whole-buffer normalizer. serde_json is a pinned test dependency for the exact same
+JSON fixture exercised by electron/copilot/sourceTimeline.test.ts. Cargo.lock is
+local to this isolated workspace; the compositor's workspace/lock are unchanged.
+No crate-owned build.rs, hardware API, model downloads or environment changes are required.
+Rubato adds num-traits' compiler-feature build probe; its MIT notice is preserved.
+
+```text
+cargo test --offline --locked --manifest-path crates/speech-core/Cargo.toml
+cargo clippy --offline --locked --manifest-path crates/speech-core/Cargo.toml --all-targets -- -D warnings
+cargo fmt --manifest-path crates/speech-core/Cargo.toml -- --check
+```
+
+Set CARGO_TARGET_DIR to a private ignored build directory when testing locally.
+Initial validation used installed Rust/cargo1.98.1 on Windows, not a RegataOS test.
+No new toolchain was installed. Root npm/Vitest and compositor tests do not exercise
+this separate workspace. The CI now has an independent speech-core job: pinned
+Rust1.98.1, exact lock fetch followed by offline debug/release/clippy/fmt on this
+manifest, temp target directory, read-only repository permission and no native
+backend/model/artifact steps. It is configured, not yet remotely observed passing;
+local Windows results do not homologate Linux/RegataOS. Run the commands explicitly
+when developing locally.
+
+Caller must isolate a single session/source and supply trusted span metadata. The
+raw mapping function is not a wire parser, global map validator, owner check or PCM permission.
+Bounds/rate policy are draftv0, not a supported-hardware declaration. Protocolv1
+remains unfrozen. See [timeline draft](../../project/SPEECH-TIMELINE-DRAFT.md).
+
+`timeline_registry::TimelineRegistry` is optional, pure metadata scoped to one
+session and exact source IDs. It validates append order, non-overlap, media order,
+fixed rate within an epoch and exact idempotent replay. Invalid inserts do not
+consume capacity. The caller chooses smaller positive limits within prototype
+hard caps (64 sources, 4096 spans; each ID at most128 UTF-8 bytes). Capacity is an
+explicit error, never silent eviction. This is NOT an audio queue, negotiated wire
+limit, recording-duration guarantee, authorization service, journal or recovery.
+No integration with the TS host/IPC or capture exists. All metadata is lost on drop.
+Mapping queries filter borrowed spans without allocating a temporary list. Source
+counting uses fixed scratch for the inclusive64-source cap. Session/entry strings
+and entry storage use fallible reservations; `RegistryError::Allocation` leaves
+previous maps and logical capacity unchanged, with explicit retry possible. Four
+tests inject each refusal and exercise the inclusive cap. This is not a promise
+against process OOM termination or allocator overhead/RSS; metadata remains bounded
+by prototype counts, not audio-time credits. The original shared fixtures still pass.
+A full-capacity regression populates4096 maps across64 interleaved sources and64
+epochs at16/44.1/48kHz. Independent integer expectations check source-specific
+anchors, replay and refusal of the4097th span while metadata allocation is denied.
+This synthetic metadata test is not a long-recording/RSS or hardware-clock test.
+
+`downmix::downmix_interleaved` adapts `audio_processing.rs::audio_to_mono` at
+meeting-copilot commit3c299c99abf7c38c1e3bac34c4aecdc010c911dd. Changes: explicit
+AverageAll/FirstStereoPair policy, channels1–32, complete-frame validation, caller
+frame budget plus prototype cap1,048,576 input scalar samples, all-finite validation
+before output allocation and f64 accumulation. The mic-array first-two-channel
+behavior is NEVER implicit for system audio. AverageAll is an arithmetic mean, not
+layout-aware surround downmix; antiphase cancellation remains possible. Finite
+values outside[-1,1] are not clipped. No gain, noise suppression or delay is added.
+Output sample count equals input frame count at the SAME rate, not automatically
+16kHz. Caller must retain transport partial frames; no padding or flush is invented.
+No runtime integration, endpoint access or new Cargo dependency/model download.
+
+`downmix_f32le` shares the same private implementation with native f32 input:
+explicit little-endian decoding of unaligned bytes, no unsafe casts and no
+intermediate interleaved f32 copy. Partial scalar/frame and excluded-channel NaN
+still fail before allocation. Mono allocation is now fallible; refusal or wrong
+allocator shape is an explicit error, not partial output. Five additional tests
+cover format/alignment/extremes/partitions/exact cap/refusal. Raw Vec output alone
+has no global lease; caller must account its lifetime if using that low-level API.
+
+`mono_frame::downmix_owned_frame` is the optional budgeted boundary. It requires
+an immutable decoded input already leased to the EXACT same pool (nonce equality
+alone is insufficient). It reserves output before allocation and retains input;
+no premature release to make the copy fit. OwnedMonoFrame frees samples before its
+lease. Metadata preserves source/epoch/sequence/rate/sample range/count, changing
+only channels/payloadBytes. This is mono at the original rate, NOT resampling or
+automatic16k provider input. Five tests verify either ownership release order,
+capacity/duration/closed/foreign pool refusal and failed/invalid allocator cleanup.
+
+Input+output duration/work is conservatively counted twice while both exist, not
+extra media time. Capacity fails immediately: future host policy must avoid holding
+all inputs while indefinitely waiting for output that cannot fit. Charges include
+a header-sized allowance but not allocator/metadata overhead, therefore NOT RSS.
+No capture/normalizer runtime or model was connected by this boundary.
+
+## Bounded file-buffer normalizer and earlier experiment
+
+`normalizer.rs` promotes the characterized candidate to a public, cancelable
+whole-buffer API for already-downmixed mono audio. It accepts 16/44.1/48 kHz and
+returns exactly 16 kHz with `floor(input*16000/rate)` samples. Native 16 kHz input
+is copied rather than aliased. The public inclusive ceiling is 1,048,576 input
+samples; callers may choose a smaller positive limit. Input and output coexist,
+so this is not streaming, constant-memory or suitable for an unchunked long file.
+Cancellation is checked before allocation, between filter blocks and before commit;
+partial output never escapes. Debug omits PCM values. Four unit tests cover counts,
+filter reset, cancel during processing, validation, impulse alignment and alias rejection.
+
+The earlier `tests/resample_spike.rs` remains as independent characterization and
+fault-injection coverage for the same pinned configuration.
+
+Rubato0.15.0 has default features disabled. No FFT, realfft, complex, logging or
+live capture is enabled. Cargo.lock adds rubato/num-integer/num-traits/autocfg from
+the existing offline cache. MIT notices are in
+[LICENSE-RESAMPLING-SPIKE](LICENSE-RESAMPLING-SPIKE).
+
+The experiment accepts a complete mono file buffer, only44.1/48kHz, at most
+1,048,576 input floats. It emits exactly floor(total_input*16000/input_rate), an
+explicit prototype EOF policy, not a live timestamp/rounding contract. Fixed512
+input scratch and reusable output scratch; at most four zero flush blocks; padding
+is not captured audio. Input/output whole-file buffers are bounded but still held
+in memory: this is NOT a constant-memory streaming implementation or long-file API.
+
+Crucial measured convention: this exact SincFixedIn configuration declares46/42
+output frames of delay, but the first block is shorter, NOT prefixed with that
+many zero samples. Blindly trimming output_delay advanced the impulse by47 frames
+in the initial failing test. Keeping output intact measured peaks within one output
+frame of floor(source_position*16000/input_rate). No universal phase/latency claim;
+future live metadata must represent availability separately from media position.
+
+Eight integration tests cover tails0/1/2/3/511/512/513/1023/1024/1025, partition
+invariance, late impulse, 1kHz passband, 12kHz rejection, invalid inputs and cancel
+after partial conversion (no successful/original output returned). New calls have
+independent filter history. An intentionally undersized output buffer triggers a
+real rubato error after two successful blocks; no original or partial successful
+result escapes. Cancel is also checked during EOF flush and before final delivery.
+The inclusive whole-file budget is tested, not just budget+1 rejection.
+This does not test continuous epoch reset, gap journal, streaming partial emissions,
+realtime latency, all devices/rates or Linux. Those remain integration gates.
+
+Private offline voice QA reused the repository's existing synthetic pt-BR fixture:
+44.1k and48k inputs through this exact test-local candidate each produced204,608
+samples (12.788s), then the existing CPU Whisper manager transcribed both with
+0word edits/24reference words. One manager, sequential requests, cached models,
+external network forbidden and helper shutdown awaited. No microphone/desktop/
+meeting captured, no new provider or live ASR integration. This single synthetic
+sentence does not qualify diverse speakers, timing accuracy or thirty-minute ASR.
+
+Run `cargo test --offline --locked --manifest-path crates/speech-core/Cargo.toml
+--test resample_spike -- --nocapture` for measured values. Existing23 unit tests
+remain separate from these eight experiment tests. No npm suite or app rebuild is
+needed for this test-only change; app runtime/package are unchanged.
+
+Additional DC/ramp characterization: interior DC gain error measured7.451ppm at
+44.1k and1.550ppm at48k (20ppm regression ceiling). Remove the same-phase DC gain
+before interpreting ramp amplitude as position. Measured source-frame offsets
+~1.76/~2.01 match this configuration's index/table prediction within0.05 input
+frame; they are NOT the declared46/42 OUTPUT-frame availability delay. These are
+empirical characterization bounds, not an exact live timestamp/wire convention,
+voice-quality certificate or hardware-clock measurement. An initial3ppm DC
+assumption failed; the measurement distinguishes gain ripple from phase shift.
+
+## Bounded WAV file ingestion
+
+`wave_file.rs` is the first production PCM-file path into the isolated core. It
+accepts an in-memory RIFF/WAVE payload or a path that the host has already authorized,
+then validates, decodes, applies a caller-selected mono policy and invokes the
+normalizer above. Accepted input is little-endian PCM16 or IEEE float32, 1-32
+channels, at 16/44.1/48 kHz. RIFF length, unique `fmt`/`data`, byte rate, block
+alignment, padding, finite floats, frame limits and the inclusive 16 MiB file cap
+are checked before successful return. The path API grants no path permission and
+does not interpret untrusted UI input.
+
+This remains a bounded whole-file implementation: encoded bytes, decoded
+interleaved samples, downmixed mono and normalized output can coexist. The 16 MiB
+byte ceiling and 1,048,576-scalar/downmix and normalizer ceilings are prototype
+guards, not an RSS guarantee or a long-recording format. Cancellation is checked
+before and after I/O and through downmix/normalization; it does not interrupt a
+blocking filesystem read already in progress. Three tests cover real temporary-file
+I/O, both encodings, explicit stereo averaging, exact output size, Debug redaction,
+malformed/unsupported/non-finite input, capacity and cancellation. No capture,
+streaming decoder, VAD, model, sidecar, journal or host integration is implied.
+
+## Deterministic energy activity gate
+
+`energy_activity.rs` analyzes exact mono16k frames of80–1,600 samples using RMS,
+separate finite start/stop thresholds and1–100-frame start/stop debounce. It owns
+no PCM, allocates nothing, emits one decision per accepted frame and resets all
+continuity/debounce state explicitly at a gap, pause, source or epoch change.
+Invalid size/non-finite PCM and u64 frame-counter exhaustion are fail-closed and
+leave state unchanged. Five tests cover hysteresis, debounce reset, exact frame
+indices, discontinuity, configuration bounds and exhausted counters.
+
+This is real deterministic signal analysis, not semantic speech classification:
+steady noise, music or clicks can trigger it, and quiet speech can remain below a
+poorly chosen threshold. It is not Silero, adaptive noise-floor estimation, model
+inference, endpoint tuning, a capture clock or proof of live VAD quality. Future
+host integration must provide calibrated configuration, exact frame partitioning,
+source/epoch identity and journaled gaps before using its transitions as speech
+window boundaries.
+
+## Isolated provider boundary (no engine)
+
+`provider.rs` adapts only the meeting-copilot provider trait/common types, preserving
+the same MIT provenance. std boxed Send futures replace async_trait; no dependency
+or executor is added. PCM is borrowed rather than cloned into an owned Vec. The
+request accepts only declared mono16kHz,1..1,048,576 finite samples and an optional
+bounded ASCII language hint (syntax, NOT support). Finite amplitudes are not clipped.
+The host must prove actual rate, source/session/epoch and normalization separately.
+
+`Cancellation` is monotonic and per job. `transcribe_checked` checks before entry,
+awaits the provider even after cancel, then discards a canceled result; no early
+select/drop branch detaches inference. Concrete providers MUST complete only after
+their owned workers finish. A caller dropping the future or killing the process is
+NOT drain; an actual job owner/sidecar lifecycle is still absent. Tests use a delayed
+fake provider, not Whisper. This boundary is not wired to the voice QA above.
+
+Result acceptance checks UTF-8 text bytes<=65,536 and optional finite confidence
+0..1. Empty text/silence and partial flag are preserved. This is post-inference
+validation, not a bound on a third-party engine's internal allocations. Engine error
+strings/model metadata are internal domain data, not sanitized IPC messages; do not
+forward them blindly. No provider identity grants file/model/PCM permissions.
+Text has no timestamps/source IDs here: it cannot be exported as a durable final
+or mapped to MP4 without the host's validated envelope/maps and journal. Protocolv1,
+concrete providers, shared-engine coordination and live ASR remain pending.
+
+## Metadata-only speech window planner
+
+`speech_windows.rs` is original code, not a Silero extraction. Caller supplies
+speech boundaries in a single normalized mono16k source/epoch. It cuts uninterrupted
+speech at a positive caller bound<=provider request cap, with explicit overlap<=25%.
+It emits context and novel ownership ranges; these are NOT duplicate-free words or
+accurate ASR timestamps. No model, voice detection, pre/post padding or PCM is owned.
+
+Each advance admits at most one max-window worth of new frames and returns a fixed
+two-slot event array. Invalid calls are atomic; equal endpoint replay is empty.
+Finish emits only novel real tail, not overlap-only/padded audio. Discontinuity and
+new begin discard previous context; same epoch requires forward counters, newer
+epoch permits counter reset. `discard` reports unissued novel tail only, not a
+persisted gap and not cancellation of windows already passed to a provider.
+Host must cancel/drain those jobs, retain PCM with backpressure, validate origin
+maps, record gaps and deduplicate actual text separately. Never pass these16k
+counters directly to the original44.1/48k capture timeline registry.
+
+Nine tests cover packet invariance, limits, order/replay, continuous speech,
+overlap ownership, gaps/epochs, discard and u64 extremes. A five-minute COUNTER
+simulation retains no segment list/PCM; it is not a five-minute ASR or memory
+benchmark of a real pipeline. Tuning max/overlap for natural speech remains open.
+
+`transcript_overlap.rs` now provides that separate conservative text primitive.
+It compares the longest exact suffix/prefix of Unicode-whitespace-delimited tokens
+and returns a UTF-8 byte boundary into the current provider text, preserving its
+original novel suffix. It uses fixed storage for at most256 overlap tokens and
+accepts only texts within the provider's65,536-byte result cap. Matching is
+case- and punctuation-sensitive by design: uncertainty returns the whole current
+text instead of deleting possibly novel words. Complete overlap returns an empty
+novel suffix. Four tests cover longest/full/no match, pt-BR UTF-8, Unicode
+whitespace, the inclusive token bound and redacted diagnostics. The decision has
+no timestamps or source identity and is not fuzzy ASR reconciliation, semantic
+normalization, persistence, partial/final policy or permission to merge across a
+gap/epoch/source; the future host must enforce those boundaries.
+
+## Experimental binary descriptor v0 (not a transport)
+
+`audio_frame_v0.rs` validates a fixed80-byte header before payload sizing: schema,
+source/format, prototype rate/channel/scalar caps, reserved fields and checkedu64
+end counter. Complete-frame validation reparses raw header, verifies actual byte
+count and all finite f32le scalars without copying PCM. Public Header metadata is
+not authorization; changing it does not bypass the raw-frame validator.
+
+The TS main-only parser exercises the same27 synthetic JSON fixtures, snapshots
+u64 as decimal strings and respects Uint8Array byteOffset. Additional tests cover
+all truncated lengths/exact4MiB cap/finite extremes. This is not a reader, pipe,
+ACL/nonce authentication, replay check, backpressure, clock map or PCM integration.
+The current timeline TS draft's safeNumber epoch differs from this descriptor's
+u64 epoch; future adapters must reconcile or refuse, never cast silently.
+See [descriptor draft](../../project/AUDIO-FRAME-DRAFT.md). No library dependency,
+hardware API, runtime import or binary channel is added to the application.
+
+## Incremental decoder v0 (still no pipe)
+
+`audio_decoder_v0.rs` and the independent TS decoder now assemble one frame from
+fragments. Schema/caps/trusted expectation/order are validated before payload
+allocation. Ready blocks feed until ownership handoff; no internal frame queue.
+Source/epoch/rate/channels are fixed per instance, sequence/start exact, no u64 wrap.
+EOF partial fails, ready survives clean EOF, stop discards only still-owned data.
+Rust allocation is fallible; tests inject refusal, not actual OOM. None of these
+operations cancel/drain a worker or prove sender authentication/durable ACK.
+
+Owned audio buffers are bounded to payloadcap+160bytes, excluding metadata,
+allocator/GC, external input queue and frames already taken by caller. Nine Rust
+tests include exact4MiB cap, every split/EOF, two coalesced frames, invalid binding
+before allocation, failure/stop/busy and sequence exhaustion. Ten TS decoder tests
+add primitive expectation snapshot/input alias checks and allocation refusal.
+No process/transport is opened and no PCM is sent to the renderer. Journal and
+actual host/provider supervision remain gates.
+
+## Optional Rust transport-buffer accounting
+
+`transport_budget.rs` is a session-scoped shared admission pool, not account usage,
+authentication, a durable ACK or a whole-process RAM limit. Caller supplies positive
+global/source byte and sample-frame bounds plus an in-flight count. Prototype hard
+caps are64MiB/4096leases, not negotiated production settings. The two source-role
+caps aggregate all epochs; replacing an epoch does not release retained old audio.
+Sample frames are work counts, not equal-duration units across different rates.
+
+`AudioDecoderV0::with_budget` reserves a complete frame before allocating payload.
+Temporary capacity exhaustion retains only the fixed header, consumes no payload,
+and requires explicit `retry_budget` after a capacity-change notification. An optional
+bounded future is described below; no polling loop or input queue is implemented. An impossible cost is terminal rather
+than an infinite wait. The non-cloneable lease moves with pending/ready/handed-off
+frame ownership and releases only after its bytes are freed. Stop cannot reclaim
+a consumer-owned frame. Pool close blocks new admissions without revoking owners;
+poisoned/broken accounting fails closed. Cancellation of workers is still external.
+
+Eight pool and six decoder integration tests cover exact caps, concurrent
+admission, overflow, scope, epochs, handoff, waiting/stop, allocation failure and
+EOF cleanup, malformed PCM, dropped owners and10,000 deterministic operations
+against an independent accounting model. Rust OwnedFrame exposes metadata only
+as a value snapshot, with immutable byte access; neither can detach its reservation.
+The TS decoder has NO shared-pool integration yet. Input chunks,
+header scratch/metadata, normalized copies and engine allocations remain outside
+this accounting; future host must bound them and the number of decoder instances.
+
+Optional `with_audio_time_limits` adds global/source summed audio nanosecond bounds.
+The decoder calls `try_reserve_frame`, which reparses the fixed raw header and
+derives byte/frame/time costs before allocation. Generic untyped reservations are
+refused in a time-limited pool. Duration is ceil(frame_count*1e9/sample_rate), with
+u128 intermediates and checked sums; channels do not multiply audio duration.
+Per-packet rounding is conservative, deliberately NOT partition-invariant timeline
+math, PTS or wall-clock latency. Packetized audio may hit its cap earlier than a
+coalesced frame. Leases retain/release duration across epochs and ownership handoff.
+Four additional pool tests and one decoder test cover mixed rates, exact duration
+caps, no-free tiny packets, invalid/untyped requests and waiting/PCM-error cleanup.
+No host policy is chosen, no transport/model is opened and no TS integration exists.
+
+## Optional capacity-change future (not a host executor)
+
+`budget_change.rs` adds `observe_change` and `wait_for_change`. Observe BEFORE
+attempting admission; after Capacity, await the change and recheck admission.
+The private revision and registration share the accounting mutex, so a release
+before registration/first poll is already visible. One registered waiter per
+source role, two fixed slots total, no dynamic waiter queue or FIFO/fairness.
+Ready means change, NOT a reservation or promise that a retry fits. A same-role
+duplicate returns WaiterBusy. Tokens are bound to the exact pool, not just nonce.
+
+Release/close wake both registered roles outside the mutex; repeated close is
+idempotent. Dropping a future removes only its own registration, not a buffer,
+inference or writer. Overflow fails closed rather than wrapping. Trusted executor
+wakers are cloned/dropped outside the lock; wake panics are contained at the lease
+destructor boundary. Poisoned mutexes still require external supervision/deadlines;
+notification alone cannot guarantee recovery or cancellation of a stuck executor.
+
+Eight notification tests plus one decoder integration test cover release before
+registration/poll, replacing wakers, close/cancel, old/new registration identity,
+reentrant callbacks, counter exhaustion and100 concurrent schedules. No sleep or
+input polling is used in those tests. Host/TS/pipe/worker supervision is NOT wired;
+number of decoder instances, external chunks and completed futures remain host
+responsibilities, not whole-pipeline RAM guarantees. Retry is still explicit.
+
+## Isolated provider admission (no engine or worker supervisor)
+
+`provider_admission.rs` optionally bounds simultaneous managed calls1..16 (prototype
+cap, not a production setting). Host must share ONE gate for the actual engine;
+unmanaged calls, another gate or the inherited STT are NOT globally protected.
+There is no queue, executor, model, download, retry or PCM routing here.
+
+Reservation precedes provider entry. The existing checked provider future is
+awaited even on late cancellation, and a slot is returned only after it resolves.
+Errors/invalid results also release after resolution. Pre-canceled/unpolled work
+never enters. Close stops new admission, not existing calls; it is not a drain.
+
+Dropping an entered managed future or a provider panic marks the gate uncertain
+and keeps that call charged. Known other calls may complete, but cannot erase
+the abandoned charge. No reset/reopen; constructing a new gate does NOT prove
+the old worker stopped. `active` is charged calls, not physical thread count;
+zero alone is not shutdown evidence if state is uncertain/poisoned. This is
+fail-closed bookkeeping, NOT worker cancellation/recovery or process exit.
+
+Nine fake-provider tests cover concurrency, inclusive cap, pre/late cancellation,
+close, error/result refusal, future drop, panic and poison. Real engine ownership,
+timeouts, resource/memory budgets and integration with legacy STT still need host
+supervision and roadmap gates. Borrowed requests retain caller-owned PCM; this
+module neither copies it nor sets a whole-process memory ceiling.
+
+## In-memory component integration (synthetic only)
+
+`tests/core_pipeline.rs` joins the existing raw decoder, exact shared pool,
+OwnedMonoFrame, checked request and managed fake slow provider. Functional tests keep
+input+output at184 charged bytes, refuse the next copy until prior output drops,
+observe/await capacity change, and retain canceled work until provider completion.
+Original48k mono is explicitly refused by the16k request constructor; declaring
+synthetic input16k is NOT resampling48k. No origin counters are replaced by arrival
+time and no sample range is converted to a different rate.
+
+These are140 unit +8 component-integration +8 resampling-spike tests, passing
+debug/release/offline/locked/clippy/fmt locally. Manual polling drives only fake
+futures, no model/worker/process/pipe/journal/file transport or real30min ASR.
+Clippy flagged two unnecessary drops of a borrowed request; corrected and revalidated.
+This does not qualify GUI, natural speech, timestamps or worker shutdown.
+
+## Draft control-line framing (not JSON or an opened channel)
+
+`control_lines.rs` consumes UTF-8 chunks up to one LF/CRLF message, with explicit
+consumed-byte count and ready/take backpressure. Caller-selected positive cap is
+at most1MiB (prototype, not negotiatedv1); bytes before LF INCLUDE optional CR.
+Growth is geometric/fallible and checked against the cap, with no arbitrary chunk
+concatenation or internal message queue. Unterminated EOF, invalid UTF-8, empty
+line, counter overflow and capacity violations fail closed without resync/padding.
+
+UTF-8 validation resumes at the last unfinished suffix (at most3 old bytes), not
+the entire accumulated line per fragment. Ready reuses the buffer as String; stop
+drops only still-owned text, while clean EOF preserves a complete ready message.
+Debug shows counts/state, not pending/ready transcript or control text. Whitespace
+and non-JSON text can be framed: actual JSON/schema/version/identity/permission
+validation is still REQUIRED before treating it as a command/event.
+
+Ten tests cover every partition, multi-line chunks, CRLF/exact cap, invalid and
+partial Unicode, large chunks, maximal line, one-byte Unicode fragments, counters,
+stop/EOF and debug redaction. No stdin/stdout/pipe/socket/helper is opened. Caller
+must bound received chunks, decoder instances, retained Strings and overall
+time/resources; per-instance buffers alone do not establish pipeline RAM limits.
+The additional deterministic checks cover all65,280 one/two-byte payloads without
+LF against std UTF-8 acceptance at every split, plus every legal Unicode scalar
+at every internal fragment boundary. NUL/noncharacters remain valid UTF-8, not
+automatically valid JSON/commands. An initial test-harness mistake fed an empty
+chunk after ready (correctly Busy); fixed the test, not decoder semantics.
+
+Diagnostic Debug for headers, expected streams, decoded/mono frames, requests,
+results, provider errors and pool now omits raw PCM, transcript/language/error
+strings, nonce and source clock counters. Pool Debug uses try_lock and cannot
+deadlock by re-locking a held accounting mutex. Three added tests verify those
+boundaries and unchanged explicit access. This is NOT global logging/privacy or
+access control: public fields/getters and provider-error Display remain explicit
+data-bearing APIs, and future host must sanitize those before logging/transmitting.
+
+Checked provider completion now refuses EngineFailed/UnsupportedLanguage detail
+strings above4,096 UTF-8 bytes, returning InvalidResult without truncation or
+echoing the refused detail. Accepted errors remain exact and data-bearing;
+this is NOT sanitization, a language-support claim or an engine allocation cap.
+Two tests cover inclusive multibyte limits, completion ordering and late cancel
+precedence. Direct provider calls/error construction bypass this checked boundary;
+future host must use the managed checked path and its own safe diagnostics.
+
+Timeline SourceSpan/SourceRange and TimelineRegistry Debug now omit raw source
+counters, media anchors and session/source strings too. Registry diagnostics
+retain only configured caps and span count. A test verifies those markers never
+appear while explicit mapping still returns the same timestamps. This is not
+global log sanitization: public metadata fields remain intentionally accessible.
+
+## Optional managed decoder instance admission
+
+AudioDecoderV0::with_managed_budget uses two fixed slots inside the EXACT shared
+TransportBudget: one system decoder and one microphone decoder, aggregating
+epochs and cloned pool handles. Invalid expectation/wrong nonce/closed or broken
+pool fails before claiming a slot. Stop, clean EOF and terminal decoder errors
+retain that instance slot until decoder Drop, because the object still exists.
+Drop frees still-owned buffers before releasing the slot and notifying change;
+handed-off frames keep their separate byte/frame/duration leases unchanged.
+
+Seven added tests cover role/epoch limits, invalid/closed scope, stop/EOF/drop,
+handed ownership, sixteen simultaneous attempts, change notification and
+poison/corruption/revision overflow. Synthetic component integration now uses
+this factory too. No queue, input allocation, worker, pipe or runtime is added.
+Low-level new/with_budget remain deliberately unmanaged for focused arithmetic
+tests: a future host MUST consistently use the managed factory on one session
+pool, not mix factories or create replacement pools to evade admission. This
+does not limit sessions, control-line decoders, external chunks, engine memory,
+RSS or authenticate the wire nonce. Close is admission closure, not worker drain.
+
+Provider and managed-provider errors expose diagnostic_code() as a static local
+category. No detail, counter, path or language is interpolated; checked error
+details and explicit Display remain separate data-bearing APIs. Two tests cover
+all categories and provider delegation. These strings are not localized UI,
+negotiated/frozen wire codes, telemetry or consent to transmit diagnostics.
+
+Window-planner properties additionally exercise every max_frames1..64 and each
+allowed overlap, varied/empty fragments, finish/discard, explicit gaps and four
+epochs. Issued novel ownership plus explicit discard partitions exactly the
+supplied samples, without counting context overlap or filling unsupplied gaps.
+SpeechWindow/DiscardedRange/planner Debug omit epoch/source ranges and previous
+context; a second test keeps explicit metadata unchanged. These are synthetic
+metadata checks, not VAD, text deduplication, resampling or capture timestamps.
+
+## Optional owned input copy (not a reader)
+
+OwnedInputChunk copies a nonempty input slice only after reserving its bytes and
+one lease in the SAME session/source pool. Caller supplies max_bytes1..65,536
+(prototype hard cap, not wire negotiation). Allocation is fallible and refuses
+unexpected Vec length/capacity rather than silently undercounting it. Bytes are
+freed before the lease; close never revokes a handed owner. Debug contains size,
+not bytes. Five tests cover caps/alias independence, shared roles, scope/close,
+allocation refusal and accounting cleanup.
+
+Unparsed input carries ZERO sample frames/audio duration: metadata is not yet
+validated. A private explicit reservation kind separates it from audio admission;
+generic frame reservations still reject zero frames and missing required time.
+Only a separately validated audio frame contributes duration. The added component
+test holds96 raw+96 decoded bytes at a192-byte cap, refuses an88-byte mono copy,
+then succeeds after raw input Drop; no sample time is attributed to the raw copy.
+
+No pipe/read loop/IPC is opened. The original input slice/queue is caller-owned
+and NOT magically charged by this copy, and this type neither validates binding
+or JSON nor limits sessions/control decoders/OS allocations/RSS. A future host
+must read into bounded storage, retain only bounded suffixes, consistently share
+the pool and reserve headroom for raw+decoded+normalized ownership. Duration
+limits are not meaningful for raw unparsed bytes; those are guarded by bytes/
+leases and future external deadlines. Do not advertise whole-pipeline RAM or
+drain from these isolated owners, or create new pools to bypass capacity.
+A further deterministic10,000-operation model mixes raw input, validated audio
+at16k/44.1k/48k, source caps, byte/frame/time/lease limits, release and close.
+Every step recomputes expected live costs from retained owners and compares both
+usage and duration; raw leases never create audio time. This is bookkeeping,
+not a real30min capture/ASR memory measurement.
+
+BudgetSnapshot observes usage, audio duration, managed-decoder count and admission
+closure under ONE mutex, avoiding a torn observation assembled from separate
+getters. Two added tests cover retained owners/close and concurrent raw/audio
+transitions; poisoned/broken pools refuse snapshots too. It is a value snapshot
+that can immediately become stale, not a reservation, durable ACK, authorization,
+permission to delete audio or worker-drain evidence. Unmanaged/control/external
+owners and provider-engine jobs are outside this snapshot.
+
+Two more component tests combine existing boundaries: partial next-frame EOF
+releases only that pending frame while a live mono/fake-provider request remains
+charged; cancellation still waits for completion. A synthetic declared16k window
+maps its original sample range through TimelineRegistry to a fixed media anchor,
+never provider arrival time. This is not a capture clock,48k resampler, real ASR,
+persisted final/checkpoint, reconnect or worker shutdown test.
+A shared-gate test uses two distinct fake providers: the second is refused while
+the canceled first call remains active, then admitted only after completion.
+Separate gates would bypass that policy. This demonstrates an isolated condition,
+NOT coordination with the actual legacy SttManager/helper or preemption policy.

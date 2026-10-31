@@ -1,6 +1,9 @@
-import type { WebContents } from "electron";
-
-type ExportOwner = Pick<WebContents, "id" | "isDestroyed" | "once" | "removeListener">;
+export interface ExportOwner {
+	id: number;
+	isDestroyed(): boolean;
+	once(event: "destroyed", listener: () => void): unknown;
+	removeListener(event: "destroyed", listener: () => void): unknown;
+}
 
 export interface ExportJob<T> {
 	result: Promise<T>;
@@ -40,6 +43,8 @@ export class ExportJobs {
 		};
 		owner.once("destroyed", onDestroyed);
 		try {
+			// Native initialization may close the owner before the listener exists.
+			if (owner.isDestroyed()) onDestroyed();
 			return await job.result;
 		} finally {
 			active = false;

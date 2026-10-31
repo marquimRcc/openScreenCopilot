@@ -1,4 +1,5 @@
 #include "wasapi_loopback_capture.h"
+#include "wasapi_output_devices.h"
 #include "realtime_scheduling.h"
 
 #include <Functiondiscoverykeys_devpkey.h>
@@ -162,8 +163,8 @@ WasapiLoopbackCapture::~WasapiLoopbackCapture() {
     }
 }
 
-bool WasapiLoopbackCapture::initializeSystemLoopback() {
-    return initialize(WasapiCaptureEndpoint::SystemLoopback, {}, {});
+bool WasapiLoopbackCapture::initializeSystemLoopback(const std::wstring& deviceId) {
+    return initialize(WasapiCaptureEndpoint::SystemLoopback, deviceId, {});
 }
 
 bool WasapiLoopbackCapture::initializeMicrophone(const std::wstring& deviceId, const std::wstring& deviceName) {
@@ -178,6 +179,15 @@ bool WasapiLoopbackCapture::initialize(WasapiCaptureEndpoint endpoint, const std
         IID_PPV_ARGS(&deviceEnumerator_));
     if (!succeeded(hr, "CoCreateInstance(MMDeviceEnumerator)")) {
         return false;
+    }
+
+    if (endpoint == WasapiCaptureEndpoint::SystemLoopback) {
+        WasapiOutputDevice selected;
+        if (!resolveWasapiOutputDevice(deviceId, device_, selected)) {
+            std::cerr << "ERROR: Requested WASAPI output is unavailable; no fallback" << std::endl;
+            return false;
+        }
+        selectedDeviceId_ = selected.id;
     }
 
     if (endpoint == WasapiCaptureEndpoint::Microphone && !deviceId.empty() && deviceId != L"default") {
@@ -375,6 +385,10 @@ const AudioInputFormat& WasapiLoopbackCapture::inputFormat() const {
 
 const std::wstring& WasapiLoopbackCapture::selectedDeviceName() const {
     return selectedDeviceName_;
+}
+
+const std::wstring& WasapiLoopbackCapture::selectedDeviceId() const {
+    return selectedDeviceId_;
 }
 
 void WasapiLoopbackCapture::captureLoop() {

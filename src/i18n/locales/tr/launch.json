@@ -37,6 +37,23 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "Sistem sesini test et (30 sn)",
+		"outputMeterStop": "Testi durdur",
+		"outputMeterStarting": "Test başlatılıyor…",
+		"outputMeterActive": "Çıkış etkinliği — kayıt değil",
+		"outputMeterStopping": "Test durduruluyor…",
+		"outputMeterStopped": "Test sona erdi",
+		"outputMeterError": "Test kullanılamıyor. Yeniden deneyin.",
+		"outputMeterHint": "Çıkış ses düzeyinden önceki tepe. Özel modda sıfır olabilir; etkinlik sesin kaydedildiğini kanıtlamaz.",
+		"outputMeterLevel": "Sistem sesi etkinliği",
+		"outputDevice": "Ses çıkışı",
+		"outputDefault": "Windows varsayılanı",
+		"outputUnavailable": "Seçilen çıkış kullanılamıyor",
+		"outputRefresh": "Yenile",
+		"outputLoading": "Çıkışlar yükleniyor…",
+		"outputLoadFailed": "Çıkışlar yüklenemedi. Windows varsayılanını seçin veya yenileyin.",
+		"outputSaveFailed": "Çıkış kaydedilemedi. Yeniden deneyin.",
+		"outputScope": "Tek bir uygulamayı değil, bu çıkıştan çalınan tüm sesleri kaydeder.",
 		"systemAudio": "Sistem sesi",
 		"microphone": "Mikrofon",
 		"inputDevice": "Giriş cihazı"
@@ -57,13 +74,42 @@
 		"editableTip": "Düzenlenebilir imleç: ayrı kaydedilir; düzenleyicide stilini değiştirebilir, otomatik yakınlaştırma kullanabilirsiniz",
 		"systemTip": "Sistem imleci: gerçek imleciniz, videoya kaydedilir. Stil değişikliği ve otomatik yakınlaştırma yok."
 	},
+	"recordingResult": {
+		"saveCopy": "Bir kopya kaydet…",
+		"copying": "Orijinal, düzenlemesiz kopyalanıyor…",
+		"copySaved": "Kopyanın konumu:",
+		"cancelCopy": "Kopyalamayı iptal et",
+		"copyExists": "Bu hedef zaten var. Yeni bir ad seçin; orijinal ve mevcut dosyalar korunacaktır.",
+		"originalPreview": "Orijinal video önizlemesi. Ayrı kamera, düzenlenebilir imleç ve düzenlemeler Düzenle bölümünde görünür.",
+		"saved": "Kayıt kaydedildi",
+		"title": "Kayıt",
+		"loading": "Kayıt yükleniyor…",
+		"unavailable": "Kaydedilen kayıt bulunamadı. Bu ekran özgün dosyayı silmedi.",
+		"actionFailed": "İşlem tamamlanamadı. Kayıt değiştirilmedi.",
+		"preview": "Kayıt önizlemesi",
+		"previewFailed": "Önizleme kullanılamıyor. Klasörü açabilir veya düzenleyiciyi deneyebilirsiniz.",
+		"location": "Kayıt konumu",
+		"openFolder": "Klasörü aç",
+		"newCapture": "Yeni kayıt",
+		"edit": "Düzenle",
+		"retry": "Yeniden dene"
+	},
+	"regionSelection": {
+		"tab": "Bölge",
+		"monitorHint": "Bir ekran seçin, ardından kayıt alanını çizin.",
+		"draw": "Alan çiz",
+		"hint": "Kaydedilecek alanı işaretlemek için sürükleyin.",
+		"keys": "Enter: onayla · Esc: iptal",
+		"confirm": "Bu alanı kullan",
+		"error": "Alan seçilemedi. Yeniden deneyin."
+	},
 	"sourceSelector": {
 		"loading": "Kaynaklar yükleniyor...",
 		"screens": "Ekranlar ({{count}})",
 		"windows": "Pencereler ({{count}})",
 		"emptyTitle": "Ekran veya pencere bulunamadı",
-		"emptyDescription": "Ekran kaydı iznini az önce verdiyseniz bu seçiciyi yeniden yükleyin. macOS'ta OpenScreen'i yeniden açmanız gerekebilir.",
-		"loadFailedDescription": "OpenScreen yakalama kaynaklarını yükleyemedi. Bu seçiciyi yeniden yükleyip tekrar deneyin.",
+		"emptyDescription": "Ekran kaydı iznini az önce verdiyseniz bu seçiciyi yeniden yükleyin. macOS'ta openScreenCopilot'i yeniden açmanız gerekebilir.",
+		"loadFailedDescription": "openScreenCopilot yakalama kaynaklarını yükleyemedi. Bu seçiciyi yeniden yükleyip tekrar deneyin.",
 		"defaultSourceName": "Ekran"
 	},
 	"recording": {
@@ -77,13 +123,13 @@
 	"languageWithName": "Dil: {{language}}",
 	"systemLanguagePrompt": {
 		"title": "Sistem dilinizi kullanmak ister misiniz?",
-		"description": "Sistem diliniz {{language}} olarak algılandı. OpenScreen i {{language}} diline geçirmek ister misiniz?",
+		"description": "Sistem diliniz {{language}} olarak algılandı. openScreenCopilot i {{language}} diline geçirmek ister misiniz?",
 		"switch": "{{language}} diline geç",
 		"keepDefault": "Mevcut dili koru"
 	},
 	"softwareEncoderFallback": {
 		"title": "Yazılım kodlamasına geçildi",
-		"description": "Varsayılan GPU kodlayıcı başlatılamadığı için OpenScreen yazılım tabanlı H.264 kodlamasına geçti. Kayıt normal şekilde devam eder, ancak CPU kullanımı daha yüksek olabilir.",
+		"description": "Varsayılan GPU kodlayıcı başlatılamadığı için openScreenCopilot yazılım tabanlı H.264 kodlamasına geçti. Kayıt normal şekilde devam eder, ancak CPU kullanımı daha yüksek olabilir.",
 		"dismiss": "Anladım",
 		"dontShowAgain": "Bir daha gösterme"
 	},
@@ -100,7 +146,7 @@
 		"checkingForUpdates": "Denetleniyor…"
 	},
 	"permissions": {
-		"title": "OpenScreen'in birkaç izne ihtiyacı var",
+		"title": "openScreenCopilot'in birkaç izne ihtiyacı var",
 		"subtitle": "macOS her birini yalnızca bir kez ister. Bunları istediğiniz zaman Sistem Ayarları'ndan değiştirebilirsiniz.",
 		"level": {
 			"required": "Gerekli",
@@ -137,17 +183,17 @@
 			"continue": "Devam",
 			"allow": "İzin ver",
 			"openSettings": "Ayarları Aç",
-			"restart": "OpenScreen'i yeniden başlat",
+			"restart": "openScreenCopilot'i yeniden başlat",
 			"start": "Başla"
 		},
 		"help": {
-			"screenPrompt": "Ardından macOS, Sistem Ayarları'nda OpenScreen'i açmanızı isteyecek.",
-			"screenSettings": "Sistem Ayarları'nda OpenScreen'i açın. macOS uygulamayı kapatıp yeniden açmayı önerirse kabul edin: bu pencere geri gelecek.",
-			"screenNotListed": "OpenScreen listede yok mu? + düğmesine tıklayın ve Uygulamalar'dan OpenScreen'i seçin.",
-			"screenRestart": "İzin verildi. OpenScreen'in bunu kullanabilmesi için yeniden başlatılması gerekiyor.",
-			"screenRecurring": "İlk kaydınızda macOS, OpenScreen'in sistem seçicisi olmadan ekranınıza doğrudan erişip erişemeyeceğini soracak. İzin Ver'e tıklayın. macOS bunu zaman zaman yeniden sorar; bu normaldir.",
-			"systemAudioPrompt": "macOS, OpenScreen'in Mac'inizin sesini kaydetmesine izin vermenizi isteyecek.",
-			"systemAudioRequested": "Reddettiyseniz, Sistem Ayarları'nda “Yalnızca Sistem Sesi Kaydı” altında OpenScreen'i açın."
+			"screenPrompt": "Ardından macOS, Sistem Ayarları'nda openScreenCopilot'i açmanızı isteyecek.",
+			"screenSettings": "Sistem Ayarları'nda openScreenCopilot'i açın. macOS uygulamayı kapatıp yeniden açmayı önerirse kabul edin: bu pencere geri gelecek.",
+			"screenNotListed": "openScreenCopilot listede yok mu? + düğmesine tıklayın ve Uygulamalar'dan openScreenCopilot'i seçin.",
+			"screenRestart": "İzin verildi. openScreenCopilot'in bunu kullanabilmesi için yeniden başlatılması gerekiyor.",
+			"screenRecurring": "İlk kaydınızda macOS, openScreenCopilot'in sistem seçicisi olmadan ekranınıza doğrudan erişip erişemeyeceğini soracak. İzin Ver'e tıklayın. macOS bunu zaman zaman yeniden sorar; bu normaldir.",
+			"systemAudioPrompt": "macOS, openScreenCopilot'in Mac'inizin sesini kaydetmesine izin vermenizi isteyecek.",
+			"systemAudioRequested": "Reddettiyseniz, Sistem Ayarları'nda “Yalnızca Sistem Sesi Kaydı” altında openScreenCopilot'i açın."
 		},
 		"footer": {
 			"screenRequired": "Kayıt için ekran kaydı gereklidir.",

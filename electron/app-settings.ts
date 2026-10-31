@@ -18,6 +18,8 @@ export interface RecordingPreferences {
 	/** Capture resolution for the camera. See WEBCAM_QUALITY_PRESETS. */
 	camQuality: WebcamQualityId;
 	systemAudioEnabled: boolean;
+	/** Windows MMDevice output ID. Null resolves the Windows default on each take. */
+	windowsSystemAudioDeviceId: string | null;
 	cursorCaptureMode: CursorCaptureMode;
 	/** Display captures on macOS and Windows. Opt-in: on Windows the icons also leave the real desktop while recording. */
 	hideDesktopIcons: boolean;
@@ -39,7 +41,9 @@ export const DEFAULT_RECORDING_PREFERENCES: RecordingPreferences = {
 	camDeviceId: null,
 	camDeviceName: null,
 	camQuality: DEFAULT_WEBCAM_QUALITY,
-	systemAudioEnabled: false,
+	// New/missing preferences default on; parseRecording preserves an explicit false.
+	systemAudioEnabled: true,
+	windowsSystemAudioDeviceId: null,
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
@@ -116,6 +120,7 @@ function parseRecording(raw: RawSettings): RecordingPreferences {
 			raw.systemAudioEnabled,
 			DEFAULT_RECORDING_PREFERENCES.systemAudioEnabled,
 		),
+		windowsSystemAudioDeviceId: nullableString(raw.windowsSystemAudioDeviceId, null),
 		cursorCaptureMode:
 			raw.cursorCaptureMode === "system" || raw.cursorCaptureMode === "editable-overlay"
 				? raw.cursorCaptureMode
@@ -166,6 +171,17 @@ function validateRecordingPatch(patch: Partial<RecordingPreferences>): void {
 	for (const [key, value] of Object.entries(patch)) {
 		if (!allowed.has(key)) throw new TypeError(`unknown recording preference: ${key}`);
 		if (value === undefined) continue;
+		if (
+			key === "windowsSystemAudioDeviceId" &&
+			value !== null &&
+			(typeof value !== "string" ||
+				!value.trim() ||
+				value === "default" ||
+				value.length > 4096 ||
+				Array.from(value).some((character) => character.charCodeAt(0) < 32))
+		) {
+			throw new TypeError("windowsSystemAudioDeviceId must be a native output ID or null");
+		}
 		if ((key.endsWith("Enabled") || key === "hideDesktopIcons") && typeof value !== "boolean") {
 			throw new TypeError(`${key} must be a boolean`);
 		}

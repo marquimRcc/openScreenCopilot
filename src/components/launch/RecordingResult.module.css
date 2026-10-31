@@ -1,0 +1,19 @@
+.root { height: 100vh; overflow-y: auto; background: #09090b; color: #f5f7fa; }
+.titlebar { height: 46px; padding: 0 150px 0 calc(20px + var(--titlebar-inset-left, 0px)); display: flex; align-items: center; font-size: 13px; font-weight: 600; border-bottom: 1px solid #242932; -webkit-app-region: drag; }
+.content { width: min(960px, calc(100% - 48px)); margin: 0 auto; padding: 24px 0 32px; }
+.content h1 { font-size: 22px; font-weight: 600; margin: 0 0 16px; }
+.preview { background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #242932; }
+.preview video { display: block; width: 100%; max-height: calc(100vh - 365px); min-height: 180px; object-fit: contain; }
+.details { display: grid; gap: 8px; margin: 16px 0 20px; }
+.details strong { overflow-wrap: anywhere; }
+.details span, .details label { font-size: 13px; color: #abb4c2; }
+.details label { display: grid; gap: 6px; }
+.details input { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 7px; color: #dfe5ed; background: #151a22; border: 1px solid #333a45; font: inherit; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.actions button { border: 1px solid #394150; border-radius: 8px; background: #151a22; color: #f5f7fa; padding: 10px 16px; font: inherit; font-size: 14px; cursor: pointer; }
+.actions .primary { background: #10b981; color: #08090d; border-color: #10b981; font-weight: 600; }
+.actions button:disabled { opacity: .45; cursor: default; }
+.actions button:focus-visible, .details input:focus-visible { outline: 2px solid #10b981; outline-offset: 3px; }
+.error { color: #fca5a5; font-size: 14px; margin-bottom: 12px; }
+.previewNote { color: #a4adba; font-size: 12px; margin: 8px 0 16px; }
+.copyResult { font-size: 13px; color: #a7f3d0; overflow-wrap: anywhere; user-select: text; }

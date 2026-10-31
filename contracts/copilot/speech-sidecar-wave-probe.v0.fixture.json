@@ -1,0 +1,15 @@
+{
+	"version": 0,
+	"kind": "wave.normalized",
+	"sourceRate": 16000,
+	"sampleRate": 16000,
+	"samples": "1",
+	"availabilityDelayFrames": "0",
+	"activityGate": "energy-rms-diagnostic-v0",
+	"activityFrameSamples": 160,
+	"activityFrames": "0",
+	"activityStarts": "0",
+	"activityStops": "0",
+	"activityTailSamples": 1,
+	"activityAtEnd": false
+}

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "wgc_source_state.h"
+
 #include <Windows.h>
 #include <d3d11.h>
 #include <windows.graphics.capture.h>
@@ -12,7 +14,56 @@
 #include <atomic>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <mutex>
+
+// Minimal RAII wrapper for Win32 HANDLE to ensure leak-free ownership,
+// exception safety, and safe move semantics without adding external dependencies.
+class ScopedHandle {
+public:
+    ScopedHandle() noexcept = default;
+    explicit ScopedHandle(HANDLE h) noexcept : handle_(h) {}
+    ~ScopedHandle() noexcept {
+        reset();
+    }
+
+    ScopedHandle(const ScopedHandle&) = delete;
+    ScopedHandle& operator=(const ScopedHandle&) = delete;
+
+    ScopedHandle(ScopedHandle&& other) noexcept : handle_(other.handle_) {
+        other.handle_ = nullptr;
+    }
+
+    ScopedHandle& operator=(ScopedHandle&& other) noexcept {
+        if (this != &other) {
+            reset();
+            handle_ = other.handle_;
+            other.handle_ = nullptr;
+        }
+        return *this;
+    }
+
+    HANDLE get() const noexcept { return handle_; }
+    explicit operator bool() const noexcept {
+        return handle_ != nullptr && handle_ != INVALID_HANDLE_VALUE;
+    }
+
+    HANDLE release() noexcept {
+        HANDLE h = handle_;
+        handle_ = nullptr;
+        return h;
+    }
+
+    void reset(HANDLE h = nullptr) noexcept {
+        if (handle_ && handle_ != INVALID_HANDLE_VALUE) {
+            CloseHandle(handle_);
+        }
+        handle_ = h;
+    }
+
+private:
+    HANDLE handle_ = nullptr;
+};
 
 // Frame delivery defaults to pull-based, not the WGC FrameArrived event: the
 // caller's own thread polls tryGetNextFrame() on its own schedule and does
@@ -79,6 +130,8 @@ public:
     // the device after that is unsafe, so stop() skips it in that case.
     bool quiesceLegacyCallback(int drainTimeoutMs = 5000);
     void stop();
+    bool isSourceClosed() const;
+    WgcSourceCloseReason sourceCloseReason() const;
 
     int captureWidth() const;
     int captureHeight() const;
@@ -90,6 +143,7 @@ private:
     bool createCaptureItem(HMONITOR monitor);
     bool createCaptureItem(HWND window);
     bool applySessionOptions(bool captureCursor);
+    void revokeItemClosedHandler();
     void onFrameArrived(
         winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool const& sender,
         winrt::Windows::Foundation::IInspectable const&);
@@ -108,6 +162,18 @@ private:
     winrt::Windows::Graphics::Capture::Direct3D11CaptureFrame currentFrame_{nullptr};
     // Legacy push-based path state; unused unless setFrameCallback() is called.
     winrt::event_token frameArrivedToken_{};
+    winrt::event_token itemClosedToken_{};
+    std::shared_ptr<WgcSourceClosedState> sourceClosedState_;
+
+    // Target window and process identity for native liveness monitoring
+    bool isWindowSource_ = false;
+    HWND targetWindow_ = nullptr;
+    DWORD originalPid_ = 0;
+    DWORD originalTid_ = 0;
+    ScopedHandle targetProcess_;
+    mutable std::atomic<bool> warnedWaitFailed_{false};
+    mutable std::atomic<bool> warnedQueryFailed_{false};
+
     FrameCallback frameCallback_;
     std::mutex callbackMutex_;
     std::atomic<int> callbacksInFlight_ = 0;

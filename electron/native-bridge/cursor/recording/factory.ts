@@ -7,6 +7,7 @@ import { WindowsNativeRecordingSession } from "./windowsNativeRecordingSession";
 
 interface CreateCursorRecordingSessionOptions {
 	getDisplayBounds: () => Rectangle | null;
+	getPhysicalBounds?: () => Rectangle | null;
 	maxSamples: number;
 	platform: NodeJS.Platform;
 	sampleIntervalMs: number;
@@ -20,6 +21,7 @@ export function createCursorRecordingSession(
 	if (options.platform === "win32") {
 		return new WindowsNativeRecordingSession({
 			getDisplayBounds: options.getDisplayBounds,
+			getPhysicalBounds: options.getPhysicalBounds,
 			maxSamples: options.maxSamples,
 			sampleIntervalMs: options.sampleIntervalMs,
 			sourceId: options.sourceId,

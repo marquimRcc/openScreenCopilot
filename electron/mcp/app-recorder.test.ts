@@ -115,9 +115,11 @@ async function started(recorder: ReturnType<typeof setup>["recorder"], calls: st
 describe("an MCP take in the app", () => {
 	it("goes through the recording bar, and hands back the project the editor opened", async () => {
 		const { recorder, calls, editor } = setup();
+		expect(recorder.isClientTakeActive()).toBe(false);
 		const starting = recorder.start(REQUEST);
 		await new Promise((resolve) => setTimeout(resolve, 5));
 		expect(calls).toEqual(["prepare My App", "startTake"]);
+		expect(recorder.isClientTakeActive()).toBe(true);
 		recorder.recordingChanged(true);
 		const take = await starting;
 		expect(take.startedAt).toBeGreaterThan(0);

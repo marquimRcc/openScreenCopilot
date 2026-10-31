@@ -13,7 +13,7 @@ import { openVideoInHiddenWindow } from "../mcp/hidden-video";
 import { serveMcpOverStdio } from "../mcp/stdio-server";
 import { registerSttIpc } from "../stt";
 import { createRunnerWindow } from "../windows";
-import { CLI_USAGE, type CliCommand } from "./args";
+import { CLI_USAGE, type CliCommand, parseRecordControlLine } from "./args";
 import { runInfoCommand, runPackCommand } from "./projectCommands";
 import { createRunnerHost } from "./runnerHost";
 import { isolateCliSessionData } from "./sessionData";
@@ -184,19 +184,30 @@ async function writeProjectFile(projectOut: string, projectData: unknown): Promi
 	await fs.writeFile(projectOut, JSON.stringify(projectData, null, 2), "utf8");
 }
 
-function setupRecordStopSignals(stop: (reason: string) => void): void {
+function setupRecordSignals(controls: {
+	stop(reason: string): void;
+	pause(): void;
+	resume(): void;
+}): void {
 	// SIGINT covers Ctrl+C everywhere; SIGTERM never fires on Windows, where
 	// stdin "stop" or --duration are the graceful alternatives (see website/docs/cli.md).
-	process.on("SIGINT", () => stop("SIGINT"));
-	process.on("SIGTERM", () => stop("SIGTERM"));
+	process.on("SIGINT", () => controls.stop("SIGINT"));
+	process.on("SIGTERM", () => controls.stop("SIGTERM"));
 	try {
 		// Touching process.stdin can throw on Windows GUI-subsystem builds when
 		// spawned with stdio "ignore"; signals and --duration still work then.
 		const rl = readline.createInterface({ input: openStdin() });
 		rl.on("line", (line) => {
-			const trimmed = line.trim().toLowerCase();
-			if (trimmed === "stop" || trimmed === "q" || trimmed === "quit") {
-				stop("stdin");
+			switch (parseRecordControlLine(line)) {
+				case "stop":
+					controls.stop("stdin");
+					break;
+				case "pause":
+					controls.pause();
+					break;
+				case "resume":
+					controls.resume();
+					break;
 			}
 		});
 		rl.on("close", () => {
@@ -404,7 +415,19 @@ export function runCli(command: CliCommand): void {
 					output.event("stopping", { reason });
 					cliWindow?.webContents.send("cli-stop-recording");
 				};
-				setupRecordStopSignals(stop);
+				setupRecordSignals({
+					stop,
+					pause: () => {
+						output.info("Pausing recording…");
+						output.event("pausing");
+						cliWindow?.webContents.send("cli-set-recording-paused", true);
+					},
+					resume: () => {
+						output.info("Resuming recording…");
+						output.event("resuming");
+						cliWindow?.webContents.send("cli-set-recording-paused", false);
+					},
+				});
 			}
 
 			milestone("cli ipc registered; starting the runner");

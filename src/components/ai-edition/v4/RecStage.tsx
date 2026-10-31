@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import { WindowsAudioOutputPicker } from "@/components/launch/WindowsAudioOutputPicker";
 import { AudioLevelMeter } from "@/components/ui/audio-level-meter";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useScopedT } from "@/contexts/I18nContext";
@@ -49,7 +50,7 @@ const DEFAULT_PREFS: RecordingPrefsState = {
 	camEnabled: false,
 	camDeviceId: null,
 	camDeviceName: null,
-	systemAudioEnabled: false,
+	systemAudioEnabled: true,
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
@@ -88,6 +89,7 @@ export function RecStage({
 	onClose?: () => void;
 }) {
 	const t = useScopedT("editor");
+	const tLaunch = useScopedT("launch");
 	const [prefs, setPrefsState] = useState<RecordingPrefsState>(DEFAULT_PREFS);
 	// Bumped by every local change and every pushed snapshot, so the re-read after a
 	// failed write can tell that something newer has landed since.
@@ -267,6 +269,20 @@ export function RecStage({
 		};
 	}, []);
 	const openSourceModal = async () => {
+		// Windows rectangles belong to the dedicated main-owned picker. The inline
+		// screen/window modal has no region transaction and cannot authorize one.
+		// Keep the editor alive: its existing source-change subscription receives
+		// the committed choice, while Cancel/Escape leave the current source alone.
+		if (window.electronAPI?.getPlatform?.() === "win32" && window.electronAPI.openSourceSelector) {
+			try {
+				const result = await window.electronAPI.openSourceSelector();
+				if (!result.opened) toast.error(tLaunch("regionSelection.error"));
+			} catch (error) {
+				console.warn("[rec-stage] failed to open the Windows source picker:", error);
+				toast.error(tLaunch("regionSelection.error"));
+			}
+			return;
+		}
 		// With Apple's system picker (macOS 15.2+) the choice is made there, and the pick
 		// comes back through `onSelectedSourceChanged` like any other. Listing sources here
 		// would go through the Screen Recording grant the picker makes unnecessary.
@@ -461,6 +477,29 @@ export function RecStage({
 						</Tooltip>
 					</div>
 
+					<WindowsAudioOutputPicker
+						labels={{
+							device: tLaunch("audio.outputDevice"),
+							default: tLaunch("audio.outputDefault"),
+							unavailable: tLaunch("audio.outputUnavailable"),
+							refresh: tLaunch("audio.outputRefresh"),
+							loading: tLaunch("audio.outputLoading"),
+							loadFailed: tLaunch("audio.outputLoadFailed"),
+							saveFailed: tLaunch("audio.outputSaveFailed"),
+							scope: tLaunch("audio.outputScope"),
+							meter: {
+								test: tLaunch("audio.outputMeterTest"),
+								stop: tLaunch("audio.outputMeterStop"),
+								starting: tLaunch("audio.outputMeterStarting"),
+								active: tLaunch("audio.outputMeterActive"),
+								stopping: tLaunch("audio.outputMeterStopping"),
+								stopped: tLaunch("audio.outputMeterStopped"),
+								error: tLaunch("audio.outputMeterError"),
+								hint: tLaunch("audio.outputMeterHint"),
+								level: tLaunch("audio.outputMeterLevel"),
+							},
+						}}
+					/>
 					{canRecordMicrophone() ? (
 						<div className={styles.recRow}>
 							<div id={rowLabelId("microphone")} className={styles.recRowLabel}>

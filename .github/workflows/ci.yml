@@ -94,6 +94,44 @@ jobs:
       - uses: ./.github/actions/setup
       - run: npm run test
 
+  speech-core:
+    name: Rust speech-core (isolated)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      RUSTUP_TOOLCHAIN: "1.98.1"
+      # `runner` is not available while GitHub validates a job-level `env` map.
+      # Keep the isolated build output inside the ephemeral checkout instead.
+      CARGO_TARGET_DIR: ${{ github.workspace }}/.ci/speech-core-target
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install validated Rust toolchain
+        run: rustup toolchain install 1.98.1 --profile minimal --component rustfmt --component clippy
+      # This manifest owns a separate lock/workspace and requires no native SDK,
+      # media backend or model. Fetch once, then build/test with network disabled.
+      - name: Fetch locked test dependencies
+        run: cargo fetch --locked --manifest-path crates/speech-core/Cargo.toml
+      - name: Test isolated core (debug)
+        run: cargo test --offline --locked --manifest-path crates/speech-core/Cargo.toml
+      - name: Test isolated core (release)
+        run: cargo test --release --offline --locked --manifest-path crates/speech-core/Cargo.toml
+      - name: Lint isolated core
+        run: cargo clippy --offline --locked --manifest-path crates/speech-core/Cargo.toml --all-targets -- -D warnings
+      - name: Check isolated core formatting
+        run: cargo fmt --manifest-path crates/speech-core/Cargo.toml -- --check
+      - name: Fetch locked sidecar dependencies
+        run: cargo fetch --locked --manifest-path crates/speech-sidecar/Cargo.toml
+      - name: Test draft sidecar (debug)
+        run: cargo test --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml
+      - name: Test draft sidecar (release)
+        run: cargo test --release --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml
+      - name: Lint draft sidecar
+        run: cargo clippy --offline --locked --manifest-path crates/speech-sidecar/Cargo.toml --all-targets -- -D warnings
+      - name: Check draft sidecar formatting
+        run: cargo fmt --manifest-path crates/speech-sidecar/Cargo.toml -- --check
+
   build:
     name: Build
     runs-on: ubuntu-latest

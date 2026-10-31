@@ -58,6 +58,9 @@ async function runInVsEnv(command) {
 		cmdPath,
 		[
 			"@echo off",
+			// CMake and Ninja must see the same /showIncludes bytes on localized MSVC.
+			// Otherwise headers are not tracked and incremental builds mix class layouts.
+			"chcp 65001 >nul",
 			`call "${vcvarsAll}" ${VCVARS_ARCH}`,
 			"if errorlevel 1 exit /b %errorlevel%",
 			`if not exist "${COMPAT_LIB_DIR}" mkdir "${COMPAT_LIB_DIR}"`,
@@ -88,14 +91,20 @@ console.log(`Building Windows WGC helper for target arch: ${TARGET_ARCH} (vcvars
 // wrong-arch binaries (the cached compiler wins over the new vcvars env). Wipe
 // the build dir when the target arch changes; same-arch reruns stay incremental.
 const ARCH_STAMP = path.join(BUILD_DIR, ".target-arch");
+const ENCODING_STAMP = path.join(BUILD_DIR, ".toolchain-encoding");
+const TOOLCHAIN_ENCODING = "utf8-v1";
 if (fs.existsSync(BUILD_DIR)) {
 	const previousArch = fs.existsSync(ARCH_STAMP) ? fs.readFileSync(ARCH_STAMP, "utf8").trim() : "";
-	if (previousArch !== TARGET_ARCH) {
+	const previousEncoding = fs.existsSync(ENCODING_STAMP)
+		? fs.readFileSync(ENCODING_STAMP, "utf8").trim()
+		: "";
+	if (previousArch !== TARGET_ARCH || previousEncoding !== TOOLCHAIN_ENCODING) {
 		fs.rmSync(BUILD_DIR, { recursive: true, force: true });
 	}
 }
 fs.mkdirSync(BUILD_DIR, { recursive: true });
 fs.writeFileSync(ARCH_STAMP, TARGET_ARCH);
+fs.writeFileSync(ENCODING_STAMP, TOOLCHAIN_ENCODING);
 
 await runInVsEnv(
 	`"${CMAKE}" -S "${SOURCE_DIR}" -B "${BUILD_DIR}" -G Ninja -DCMAKE_BUILD_TYPE=Release`,
@@ -125,6 +134,10 @@ console.log(`Built ${cursorSamplerOutputPath}`);
 console.log(`Copied ${cursorSamplerDistributablePath}`);
 
 const audioUtilsTestPath = path.join(BUILD_DIR, "audio_sample_utils_test.exe");
+// Actual D3D11 texture readback verifies every pixel of a selected region.
+// WARP makes this independent of screen privacy/lock state and GPU vendor.
+await run(path.join(BUILD_DIR, "capture_region_test.exe"), [], { cwd: BUILD_DIR });
+
 if (!fs.existsSync(audioUtilsTestPath)) {
 	throw new Error(`WGC helper build completed but ${audioUtilsTestPath} was not found.`);
 }
@@ -183,3 +196,12 @@ if (!fs.existsSync(encoderColorTestPath)) {
 // ffprobe/ffmpeg are not on PATH.
 await run(encoderColorTestPath, [], { cwd: BUILD_DIR });
 console.log(`Passed ${encoderColorTestPath}`);
+
+const sourceStateTestPath = path.join(BUILD_DIR, "wgc_source_state_test.exe");
+if (!fs.existsSync(sourceStateTestPath)) {
+	throw new Error(`WGC helper build completed but ${sourceStateTestPath} was not found.`);
+}
+// Guards the source liveness evaluator: WinRT closed, process signaled,
+// HWND invalidity, PID/TID mismatch, and API query degradation flags.
+await run(sourceStateTestPath, [], { cwd: BUILD_DIR });
+console.log(`Passed ${sourceStateTestPath}`);

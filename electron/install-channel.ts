@@ -11,6 +11,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { app } from "electron";
+import { SELF_UPDATE_ENABLED } from "../src/config/product";
 
 /** Where the running binary came from. */
 export type InstallChannel =
@@ -126,7 +127,7 @@ export function offersUpdateCheck(
 	channel: InstallChannel,
 	state: { readonly recording: boolean },
 ): boolean {
-	return !platformOwnsUpdates(channel) && !state.recording;
+	return SELF_UPDATE_ENABLED && !platformOwnsUpdates(channel) && !state.recording;
 }
 
 /** Memoized: `probeInstall()` touches the filesystem, and the answer cannot change while the

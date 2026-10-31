@@ -885,4 +885,480 @@ describe("WhisperServerManager", () => {
 			await rm(dir, { recursive: true, force: true });
 		}
 	});
+
+	describe("WhisperServerManager with WorkerProcessSupervisor integration", () => {
+		interface MockTimer {
+			readonly ms: number;
+			readonly fire: () => void;
+			cancelled: boolean;
+			fired: boolean;
+		}
+
+		function createMockScheduler() {
+			const timers: MockTimer[] = [];
+			const scheduleTimer = (ms: number, onTimeout: () => void) => {
+				const timer: MockTimer = {
+					ms,
+					fire: () => {
+						if (!timer.cancelled && !timer.fired) {
+							timer.fired = true;
+							onTimeout();
+						}
+					},
+					cancelled: false,
+					fired: false,
+				};
+				timers.push(timer);
+				return () => {
+					timer.cancelled = true;
+				};
+			};
+			return {
+				timers,
+				scheduleTimer,
+				get activeTimers() {
+					return timers.filter((t) => !t.cancelled && !t.fired);
+				},
+			};
+		}
+
+		let tempDir: string;
+		let modelFile: string;
+		let binaryFile: string;
+
+		beforeEach(async () => {
+			const fs = await import("node:fs/promises");
+			tempDir = await mkdtemp(path.join(tmpdir(), "whisper-supervisor-tests-"));
+			modelFile = path.join(tempDir, "model.bin");
+			binaryFile = path.join(tempDir, "whisper-stt-server");
+			await fs.writeFile(modelFile, "dummy-model");
+			await fs.writeFile(binaryFile, "x", { mode: 0o755 });
+		});
+
+		afterEach(async () => {
+			vi.unstubAllGlobals();
+			await rm(tempDir, { recursive: true, force: true });
+		});
+
+		it("keeps process, port and startedAt during stopping and clears only on observed exit", async () => {
+			const { spawn } = await import("node:child_process");
+			const child = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2001,
+				kill: vi.fn(),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => child as never);
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("ok", { status: 200 })));
+
+			const mgr = new WhisperServerManager();
+			await mgr.start({ modelPath: modelFile, binaryPath: binaryFile, backend: "whispercpp-cpu" });
+
+			expect(mgr.status.running).toBe(true);
+			expect(mgr.status.pid).toBe(2001);
+			expect(mgr.status.port).toBeTypeOf("number");
+			expect(mgr.status.backend).toBe("whispercpp-cpu");
+			expect(mgr.status.startedAtMs).toBeTypeOf("number");
+
+			// Begin stop
+			const stopPromise = mgr.stop();
+			expect(child.kill).toHaveBeenCalledWith("SIGTERM");
+
+			// While stopping: running, pid, port, startedAtMs remain intact
+			expect(mgr.status.running).toBe(true);
+			expect(mgr.status.pid).toBe(2001);
+			expect(mgr.status.port).toBeTypeOf("number");
+			expect(mgr.status.backend).toBe("whispercpp-cpu");
+
+			// Simulate exit observation
+			child.emit("exit", 0);
+			await stopPromise;
+
+			// Cleared only after exit observed
+			expect(mgr.status.running).toBe(false);
+			expect(mgr.status.pid).toBeNull();
+			expect(mgr.status.port).toBeNull();
+			expect(mgr.status.backend).toBeNull();
+			expect(mgr.status.startedAtMs).toBeNull();
+		});
+
+		it("coalesces concurrent stop calls into a single signal and promise", async () => {
+			const { spawn } = await import("node:child_process");
+			const child = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2002,
+				kill: vi.fn(),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => child as never);
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("ok", { status: 200 })));
+
+			const mgr = new WhisperServerManager();
+			await mgr.start({ modelPath: modelFile, binaryPath: binaryFile, backend: "whispercpp-cpu" });
+
+			const p1 = mgr.stop();
+			const p2 = mgr.stop();
+			expect(child.kill).toHaveBeenCalledTimes(1);
+
+			child.emit("exit", 0);
+			await Promise.all([p1, p2]);
+
+			expect(mgr.status.running).toBe(false);
+		});
+
+		it("cancels a pending start before spawn and allows a later independent start", async () => {
+			const { spawn } = await import("node:child_process");
+			let releasePort: ((port: number) => void) | undefined;
+			const pendingPort = new Promise<number>((resolve) => {
+				releasePort = resolve;
+			});
+			const managerClass = WhisperServerManager as unknown as {
+				pickFreePort: () => Promise<number>;
+			};
+			const pickFreePort = vi
+				.spyOn(managerClass, "pickFreePort")
+				.mockImplementationOnce(() => pendingPort)
+				.mockResolvedValueOnce(45_322);
+			const child = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2010,
+				kill: vi.fn(() => {
+					queueMicrotask(() => child.emit("exit", 0));
+					return true;
+				}),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => child as never);
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("ok", { status: 200 })));
+
+			try {
+				const mgr = new WhisperServerManager();
+				const options = {
+					modelPath: modelFile,
+					binaryPath: binaryFile,
+					backend: "whispercpp-cpu" as const,
+				};
+				const firstStart = mgr.start(options);
+				const firstRejection = expect(firstStart).rejects.toThrow(/startup cancelled/);
+				await vi.waitFor(() => expect(pickFreePort).toHaveBeenCalledOnce());
+
+				await mgr.stop();
+				releasePort?.(45_321);
+				await firstRejection;
+
+				expect(spawn).not.toHaveBeenCalled();
+				expect(mgr.status.running).toBe(false);
+				expect(mgr.status.pid).toBeNull();
+
+				await expect(mgr.start(options)).resolves.toEqual({
+					port: 45_322,
+					backend: "whispercpp-cpu",
+				});
+				expect(spawn).toHaveBeenCalledOnce();
+				expect(mgr.status.pid).toBe(2010);
+				await mgr.stop();
+			} finally {
+				pickFreePort.mockRestore();
+			}
+		});
+
+		it("does not respawn on CPU when stop cancels an attached GPU startup", async () => {
+			const { spawn } = await import("node:child_process");
+			const managerClass = WhisperServerManager as unknown as {
+				pickFreePort: () => Promise<number>;
+			};
+			const pickFreePort = vi.spyOn(managerClass, "pickFreePort").mockResolvedValue(45_323);
+			const gpuChild = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2011,
+				kill: vi.fn(() => {
+					queueMicrotask(() => gpuChild.emit("exit", 0));
+					return true;
+				}),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => gpuChild as never);
+			vi.stubGlobal(
+				"fetch",
+				vi.fn().mockImplementation(() => new Promise<Response>(() => undefined)),
+			);
+
+			try {
+				const mgr = new WhisperServerManager();
+				const startPromise = mgr.start({
+					modelPath: modelFile,
+					binaryPath: binaryFile,
+					backend: "whispercpp-metal",
+				});
+				const startRejection = expect(startPromise).rejects.toThrow(/startup cancelled/);
+				await vi.waitFor(() => expect(mgr.status.pid).toBe(2011));
+				gpuChild.stderr.emit(
+					"data",
+					Buffer.from("ggml_metal_buffer_init: failed to allocate GPU buffer\n"),
+				);
+
+				await mgr.stop();
+				await startRejection;
+
+				expect(spawn).toHaveBeenCalledOnce();
+				expect(mgr.status.running).toBe(false);
+				expect(mgr.status.pid).toBeNull();
+			} finally {
+				pickFreePort.mockRestore();
+			}
+		});
+
+		it("escalates from SIGTERM to SIGKILL on deadline and cleans up on exit", async () => {
+			const scheduler = createMockScheduler();
+			const { spawn } = await import("node:child_process");
+			const child = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2003,
+				kill: vi.fn(),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => child as never);
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("ok", { status: 200 })));
+
+			const mgr = new WhisperServerManager({
+				termTimeoutMs: 3000,
+				killTimeoutMs: 2000,
+				scheduleTimer: scheduler.scheduleTimer,
+			});
+			await mgr.start({ modelPath: modelFile, binaryPath: binaryFile, backend: "whispercpp-cpu" });
+
+			const stopPromise = mgr.stop();
+			expect(child.kill).toHaveBeenLastCalledWith("SIGTERM");
+			expect(scheduler.activeTimers.length).toBe(1);
+
+			// Fire TERM deadline
+			scheduler.activeTimers[0].fire();
+			expect(child.kill).toHaveBeenLastCalledWith("SIGKILL");
+			expect(scheduler.activeTimers.length).toBe(1);
+
+			// Process exits under SIGKILL
+			child.emit("exit", null, "SIGKILL");
+			await stopPromise;
+
+			expect(mgr.status.running).toBe(false);
+			expect(mgr.status.pid).toBeNull();
+			expect(scheduler.activeTimers.length).toBe(0);
+		});
+
+		it("preserves ownership and fields on uncertain timeout and blocks new start until late exit", async () => {
+			const scheduler = createMockScheduler();
+			const { spawn } = await import("node:child_process");
+			const staleExitListeners: Array<
+				(code: number | null, signal: NodeJS.Signals | null) => void
+			> = [];
+			const child1 = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2004,
+				kill: vi.fn(),
+			});
+			const child1Once = child1.once.bind(child1);
+			child1.once = ((event: string, listener: (...args: unknown[]) => void) => {
+				if (event === "exit") {
+					staleExitListeners.push(
+						listener as (code: number | null, signal: NodeJS.Signals | null) => void,
+					);
+				}
+				return child1Once(event, listener);
+			}) as typeof child1.once;
+			vi.mocked(spawn).mockImplementationOnce(() => child1 as never);
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("ok", { status: 200 })));
+
+			const mgr = new WhisperServerManager({
+				termTimeoutMs: 1000,
+				killTimeoutMs: 1500,
+				scheduleTimer: scheduler.scheduleTimer,
+			});
+			await mgr.start({ modelPath: modelFile, binaryPath: binaryFile, backend: "whispercpp-cpu" });
+
+			const stopPromise = mgr.stop();
+			// Fire TERM deadline
+			scheduler.activeTimers[0].fire();
+			// Fire KILL deadline without exit
+			scheduler.activeTimers[0].fire();
+
+			await expect(stopPromise).rejects.toThrow(/unknown-timed-out/);
+
+			// Uncertain state retains ownership and keeps status.running = true with pid
+			expect(mgr.status.running).toBe(true);
+			expect(mgr.status.pid).toBe(2004);
+			expect(mgr.status.port).toBeTypeOf("number");
+			expect(mgr.status.backend).toBe("whispercpp-cpu");
+
+			// New start attempt is refused
+			await expect(
+				mgr.start({ modelPath: modelFile, binaryPath: binaryFile, backend: "whispercpp-cpu" }),
+			).rejects.toThrow(/previous process.*exit is uncertain/);
+
+			// Process finally emits exit late
+			child1.emit("exit", 137, "SIGKILL");
+
+			expect(mgr.status.running).toBe(false);
+			expect(mgr.status.pid).toBeNull();
+			expect(mgr.status.port).toBeNull();
+			expect(mgr.status.backend).toBeNull();
+
+			// Now new start is allowed
+			const child2 = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2005,
+				kill: vi.fn(),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => child2 as never);
+			const startRes = await mgr.start({
+				modelPath: modelFile,
+				binaryPath: binaryFile,
+				backend: "whispercpp-metal",
+			});
+			expect(startRes.port).toBeTypeOf("number");
+			expect(mgr.status.pid).toBe(2005);
+			expect(mgr.status.running).toBe(true);
+			expect(mgr.status.backend).toBe("whispercpp-metal");
+
+			// Out-of-band delivery of every captured generation-1 exit callback must
+			// not clear generation 2's current backend or ownership fields.
+			for (const staleExit of staleExitListeners) staleExit(137, "SIGKILL");
+			expect(mgr.status.pid).toBe(2005);
+			expect(mgr.status.running).toBe(true);
+			expect(mgr.status.backend).toBe("whispercpp-metal");
+		});
+
+		it("fails closed on GPU fallback if stopping GPU helper becomes uncertain", async () => {
+			const scheduler = createMockScheduler();
+			const { spawn } = await import("node:child_process");
+			const gpuChild = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2006,
+				kill: vi.fn(),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => {
+				queueMicrotask(() => {
+					gpuChild.stderr.emit(
+						"data",
+						Buffer.from("ggml_metal_buffer_init: failed to allocate GPU buffer\n"),
+					);
+					gpuChild.emit("error", new Error("failed to allocate GPU buffer"));
+				});
+				return gpuChild as never;
+			});
+			vi.stubGlobal(
+				"fetch",
+				vi.fn().mockImplementation(() => new Promise(() => undefined)),
+			);
+
+			const mgr = new WhisperServerManager({
+				termTimeoutMs: 100,
+				killTimeoutMs: 100,
+				scheduleTimer: scheduler.scheduleTimer,
+			});
+
+			const startPromise = mgr.start({
+				modelPath: modelFile,
+				binaryPath: binaryFile,
+				backend: "whispercpp-metal",
+			});
+
+			// Allow the error/microtask chain to reject exitedBeforeReady and invoke
+			// this.stop(). A single setImmediate is not a synchronization boundary for
+			// that whole chain on a loaded CI runner, so wait for the observable timer.
+			await vi.waitFor(() => expect(scheduler.activeTimers.length).toBe(1));
+
+			// Stop is waiting on timers: fire TERM and KILL deadlines without exit
+			scheduler.activeTimers[0].fire(); // TERM timeout -> sends KILL
+			expect(scheduler.activeTimers.length).toBe(1);
+			scheduler.activeTimers[0].fire(); // KILL timeout -> uncertain
+
+			await expect(startPromise).rejects.toThrow(/unknown-timed-out/);
+			// CPU was never spawned because stop was uncertain
+			expect(spawn).toHaveBeenCalledTimes(1);
+			expect(mgr.status.running).toBe(true);
+			expect(mgr.status.pid).toBe(2006);
+		});
+
+		it("propagates failure when shutdown cannot confirm exit", async () => {
+			const scheduler = createMockScheduler();
+			const { spawn } = await import("node:child_process");
+			const child = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2007,
+				kill: vi.fn(),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => child as never);
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("ok", { status: 200 })));
+
+			const mgr = new WhisperServerManager({
+				termTimeoutMs: 1000,
+				killTimeoutMs: 1000,
+				scheduleTimer: scheduler.scheduleTimer,
+			});
+			await mgr.start({ modelPath: modelFile, binaryPath: binaryFile, backend: "whispercpp-cpu" });
+
+			const shutdownPromise = mgr.shutdown();
+			scheduler.activeTimers[0].fire(); // TERM timeout
+			scheduler.activeTimers[0].fire(); // KILL timeout
+
+			await expect(shutdownPromise).rejects.toThrow(/unknown-timed-out/);
+			expect(mgr.status.running).toBe(true);
+		});
+
+		it("handles spawn without valid PID or immediate error without supervisor ownership", async () => {
+			const { spawn } = await import("node:child_process");
+			const child = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: undefined,
+				kill: vi.fn(),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => {
+				queueMicrotask(() => {
+					child.emit("error", new Error("spawn EACCES"));
+				});
+				return child as never;
+			});
+
+			const mgr = new WhisperServerManager();
+			await expect(
+				mgr.start({ modelPath: modelFile, binaryPath: binaryFile, backend: "whispercpp-cpu" }),
+			).rejects.toThrow(/spawn error: spawn EACCES/);
+
+			expect(mgr.status.running).toBe(false);
+			expect(mgr.status.pid).toBeNull();
+		});
+
+		it("cleans up fields and logs error on spontaneous exit while running", async () => {
+			const { spawn } = await import("node:child_process");
+			const child = Object.assign(new EventEmitter(), {
+				stdout: new EventEmitter(),
+				stderr: new EventEmitter(),
+				pid: 2009,
+				kill: vi.fn(),
+			});
+			vi.mocked(spawn).mockImplementationOnce(() => child as never);
+			vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("ok", { status: 200 })));
+
+			const mgr = new WhisperServerManager();
+			await mgr.start({ modelPath: modelFile, binaryPath: binaryFile, backend: "whispercpp-cpu" });
+
+			expect(mgr.status.running).toBe(true);
+			// Process crashes unexpectedly
+			child.emit("exit", 2);
+
+			expect(mgr.status.running).toBe(false);
+			expect(mgr.status.pid).toBeNull();
+			expect(mgr.status.port).toBeNull();
+			expect(mgr.status.backend).toBeNull();
+			expect(mgr.status.lastError).toMatch(/exited with code 2/);
+
+			// stop() afterwards is safe no-op
+			await expect(mgr.stop()).resolves.toBeUndefined();
+		});
+	});
 });

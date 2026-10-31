@@ -37,6 +37,23 @@
 		}
 	},
 	"audio": {
+		"outputMeterTest": "測試系統音訊（30秒）",
+		"outputMeterStop": "停止測試",
+		"outputMeterStarting": "正在開始測試…",
+		"outputMeterActive": "輸出活動 — 並非錄音",
+		"outputMeterStopping": "正在停止測試…",
+		"outputMeterStopped": "測試已結束",
+		"outputMeterError": "無法測試，請重試。",
+		"outputMeterHint": "輸出音量調整前的峰值。獨佔模式可能顯示為零；活動並不能證明音訊已錄製。",
+		"outputMeterLevel": "系統音訊活動",
+		"outputDevice": "音訊輸出",
+		"outputDefault": "Windows 預設",
+		"outputUnavailable": "所選輸出無法使用",
+		"outputRefresh": "重新整理",
+		"outputLoading": "正在載入輸出…",
+		"outputLoadFailed": "無法載入輸出。請選擇 Windows 預設輸出或重新整理。",
+		"outputSaveFailed": "無法儲存輸出。請重試。",
+		"outputScope": "錄製此輸出播放的所有聲音，而非單一應用程式的聲音。",
 		"systemAudio": "系統音訊",
 		"microphone": "麥克風",
 		"inputDevice": "輸入裝置"
@@ -57,13 +74,42 @@
 		"editableTip": "可編輯游標：單獨錄製，可在編輯器中修改樣式並使用自動縮放",
 		"systemTip": "系統游標：真實游標，直接錄進影片。無法修改樣式，沒有自動縮放。"
 	},
+	"recordingResult": {
+		"saveCopy": "儲存副本…",
+		"copying": "正在複製原始影片，不含編輯效果…",
+		"copySaved": "副本已儲存至：",
+		"cancelCopy": "取消複製",
+		"copyExists": "目標檔案已存在。請選擇新名稱；原始影片和現有檔案將保留。",
+		"originalPreview": "原始影片預覽。獨立錄製的攝影機、可編輯游標和編輯效果可在「編輯」中查看。",
+		"saved": "錄製已儲存",
+		"title": "錄製",
+		"loading": "正在載入錄製…",
+		"unavailable": "找不到已儲存的錄製。此畫面未刪除原始檔。",
+		"actionFailed": "無法完成操作。錄製未被修改。",
+		"preview": "錄製預覽",
+		"previewFailed": "無法預覽。您仍可開啟資料夾或嘗試編輯器。",
+		"location": "儲存位置",
+		"openFolder": "開啟資料夾",
+		"newCapture": "新錄製",
+		"edit": "編輯",
+		"retry": "重試"
+	},
+	"regionSelection": {
+		"tab": "區域",
+		"monitorHint": "選擇螢幕，然後框選錄製區域。",
+		"draw": "框選區域",
+		"hint": "拖曳以框選錄製區域。",
+		"keys": "Enter：確認 · Esc：取消",
+		"confirm": "使用此區域",
+		"error": "無法選擇區域，請重試。"
+	},
 	"sourceSelector": {
 		"loading": "正在載入來源...",
 		"screens": "螢幕 ({{count}})",
 		"windows": "視窗 ({{count}})",
 		"emptyTitle": "找不到螢幕或視窗",
-		"emptyDescription": "如果您剛授予螢幕錄製權限，請重新載入此選擇器。在 macOS 上，您可能需要重新開啟 OpenScreen。",
-		"loadFailedDescription": "OpenScreen 無法載入擷取來源。請重新載入此選擇器並再試一次。",
+		"emptyDescription": "如果您剛授予螢幕錄製權限，請重新載入此選擇器。在 macOS 上，您可能需要重新開啟 openScreenCopilot。",
+		"loadFailedDescription": "openScreenCopilot 無法載入擷取來源。請重新載入此選擇器並再試一次。",
 		"defaultSourceName": "螢幕"
 	},
 	"recording": {
@@ -77,13 +123,13 @@
 	"languageWithName": "語言：{{language}}",
 	"systemLanguagePrompt": {
 		"title": "要使用系統語言嗎？",
-		"description": "偵測到系統語言為 {{language}}。要將 OpenScreen 切換為 {{language}} 嗎？",
+		"description": "偵測到系統語言為 {{language}}。要將 openScreenCopilot 切換為 {{language}} 嗎？",
 		"switch": "切換為 {{language}}",
 		"keepDefault": "保持目前語言"
 	},
 	"softwareEncoderFallback": {
 		"title": "已切換至軟體編碼",
-		"description": "預設 GPU 編碼器啟動失敗，OpenScreen 已改用軟體 H.264 編碼。錄製會照常繼續，但 CPU 使用率可能較高。",
+		"description": "預設 GPU 編碼器啟動失敗，openScreenCopilot 已改用軟體 H.264 編碼。錄製會照常繼續，但 CPU 使用率可能較高。",
 		"dismiss": "知道了",
 		"dontShowAgain": "不再顯示"
 	},
@@ -100,7 +146,7 @@
 		"checkingForUpdates": "檢查中…"
 	},
 	"permissions": {
-		"title": "OpenScreen 需要一些權限",
+		"title": "openScreenCopilot 需要一些權限",
 		"subtitle": "macOS 只會請你授予一次。你可以隨時在「系統設定」中更改。",
 		"level": {
 			"required": "必要",
@@ -137,17 +183,17 @@
 			"continue": "繼續",
 			"allow": "允許",
 			"openSettings": "打開設定",
-			"restart": "重新啟動 OpenScreen",
+			"restart": "重新啟動 openScreenCopilot",
 			"start": "開始使用"
 		},
 		"help": {
-			"screenPrompt": "接下來 macOS 會請你在「系統設定」中開啟 OpenScreen。",
-			"screenSettings": "請在「系統設定」中開啟 OpenScreen。如果 macOS 提議結束並重新打開，請同意：此視窗會再次出現。",
-			"screenNotListed": "列表中沒有 OpenScreen？按一下 +，然後在「應用程式」中選擇 OpenScreen。",
-			"screenRestart": "已允許。OpenScreen 需要重新啟動才能使用。",
-			"screenRecurring": "第一次錄製時，macOS 會詢問是否允許 OpenScreen 不透過系統選擇器直接取用你的螢幕。請按一下「允許」。macOS 會不時再次詢問，這是正常的。",
-			"systemAudioPrompt": "macOS 會請你允許 OpenScreen 錄製 Mac 播放的聲音。",
-			"systemAudioRequested": "如果你拒絕了，請在「系統設定」的「僅限系統錄音」中開啟 OpenScreen。"
+			"screenPrompt": "接下來 macOS 會請你在「系統設定」中開啟 openScreenCopilot。",
+			"screenSettings": "請在「系統設定」中開啟 openScreenCopilot。如果 macOS 提議結束並重新打開，請同意：此視窗會再次出現。",
+			"screenNotListed": "列表中沒有 openScreenCopilot？按一下 +，然後在「應用程式」中選擇 openScreenCopilot。",
+			"screenRestart": "已允許。openScreenCopilot 需要重新啟動才能使用。",
+			"screenRecurring": "第一次錄製時，macOS 會詢問是否允許 openScreenCopilot 不透過系統選擇器直接取用你的螢幕。請按一下「允許」。macOS 會不時再次詢問，這是正常的。",
+			"systemAudioPrompt": "macOS 會請你允許 openScreenCopilot 錄製 Mac 播放的聲音。",
+			"systemAudioRequested": "如果你拒絕了，請在「系統設定」的「僅限系統錄音」中開啟 openScreenCopilot。"
 		},
 		"footer": {
 			"screenRequired": "錄製需要螢幕錄製權限。",

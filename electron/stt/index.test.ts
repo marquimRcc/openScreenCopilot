@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
-
+import { createAppQuitLifecycle } from "../quitBarrier";
 import { planChunks } from "./chunking";
+import * as extractAudio from "./extractAudio";
 import { _resetSttManagerForTests, getSttManager, SttManager, shutdownStt } from "./index";
 import type { SttStatusEvent, SttTranscribeResponse } from "./transcriptionContract";
 
@@ -101,6 +102,56 @@ describe("SttManager", () => {
 		expect(result.detectedLanguage).toBe("en");
 		expect(result.backend).toBe("whispercpp-cpu");
 		expect(result.wordSegments).toHaveLength(1);
+		expect(fakeWhisperServer.transcribe).toHaveBeenCalledOnce();
+	});
+
+	it("rejects a concurrent run before init, extraction, or server work without disturbing the owner", async () => {
+		const mgr = new SttManager();
+		await mgr.init({ modelsBaseDir: "/tmp/fake-stt-models" });
+		const initSpy = vi.spyOn(mgr, "init");
+		let releaseExtraction!: (samples: Float32Array) => void;
+		const extractSpy = vi.spyOn(extractAudio, "extractMono16kPcm").mockImplementationOnce(
+			() =>
+				new Promise<Float32Array>((resolve) => {
+					releaseExtraction = resolve;
+				}),
+		);
+
+		try {
+			const first = mgr.transcribe({ sourcePath: "/tmp/first.mp4", language: "en" });
+			await vi.waitFor(() => expect(extractSpy).toHaveBeenCalledOnce());
+
+			await expect(
+				mgr.transcribe({ sourcePath: "/tmp/second.mp4", language: "en" }),
+			).rejects.toThrow("STT transcription is already running");
+			expect(initSpy).toHaveBeenCalledOnce();
+			expect(extractSpy).toHaveBeenCalledOnce();
+			expect(fakeWhisperServer.transcribe).not.toHaveBeenCalled();
+
+			releaseExtraction(new Float32Array(16_000));
+			await expect(first).resolves.toMatchObject({ detectedLanguage: "en" });
+			expect(fakeWhisperServer.transcribe).toHaveBeenCalledOnce();
+
+			await expect(
+				mgr.transcribe({ samples: new Float32Array(16_000), language: "en" }),
+			).resolves.toMatchObject({ detectedLanguage: "en" });
+			expect(fakeWhisperServer.transcribe).toHaveBeenCalledTimes(2);
+		} finally {
+			extractSpy.mockRestore();
+			initSpy.mockRestore();
+		}
+	});
+
+	it("releases transcription admission after a failed run", async () => {
+		const mgr = new SttManager();
+		await mgr.init({ modelsBaseDir: "/tmp/fake-stt-models" });
+
+		await expect(mgr.transcribe({})).rejects.toThrow(
+			"stt:transcribe needs either `samples` or `sourcePath`",
+		);
+		await expect(
+			mgr.transcribe({ samples: new Float32Array(16_000), language: "en" }),
+		).resolves.toMatchObject({ detectedLanguage: "en" });
 		expect(fakeWhisperServer.transcribe).toHaveBeenCalledOnce();
 	});
 
@@ -389,6 +440,17 @@ describe("SttManager", () => {
 		// drops the job silently instead of toasting an engine failure.
 		expect((error as Error).name).toBe("AbortError");
 		expect(fakeWhisperServer.transcribe).toHaveBeenCalledOnce();
+
+		fakeWhisperServer.transcribe.mockResolvedValue({
+			segments: [{ text: "after cancel", startSec: 0, endSec: 0.5 }],
+			wordSegments: [{ word: "after", startSec: 0, endSec: 0.25 }],
+			detectedLanguage: "en",
+			backend: "whispercpp-cpu",
+		});
+		await expect(
+			mgr.transcribe({ samples: new Float32Array(16_000), language: "en" }),
+		).resolves.toMatchObject({ segments: [{ text: "after cancel" }] });
+		expect(fakeWhisperServer.transcribe).toHaveBeenCalledTimes(2);
 	});
 
 	it("shutdown() stops whisper-stt-server", async () => {
@@ -407,6 +469,43 @@ describe("SttManager", () => {
 
 		expect(fakeWhisperServer.shutdown).toHaveBeenCalledOnce();
 		expect(() => getSttManager()).toThrowError(/cancel/i);
+	});
+	it("preserves the same STT manager and allows another transcription when window close vetoes quit", async () => {
+		const manager = getSttManager();
+		await manager.init({ modelsBaseDir: "/tmp/fake-stt-models" });
+		let vetoed!: () => void;
+		const veto = new Promise<void>((resolve) => {
+			vetoed = resolve;
+		});
+		let lifecycle!: ReturnType<typeof createAppQuitLifecycle>;
+		const quit = () => {
+			const event = {
+				defaultPrevented: false,
+				preventDefault() {
+					this.defaultPrevented = true;
+				},
+			};
+			lifecycle.beforeQuit(event);
+			if (!event.defaultPrevented) vetoed(); // Unsaved window refuses close, so no will-quit.
+		};
+		lifecycle = createAppQuitLifecycle({
+			pauseDerivatives: () => ({ settled: Promise.resolve(), resume: () => undefined }),
+			flush: async () => undefined,
+			shutdownStt,
+			quit,
+			onError: (error) => {
+				throw error;
+			},
+		});
+		quit();
+		await veto;
+		expect(getSttManager()).toBe(manager);
+		expect(fakeWhisperServer.shutdown).not.toHaveBeenCalled();
+		const response = await manager.transcribe({ samples: new Float32Array(16000), language: "en" });
+		expect(response.segments[0].text).toBe("hello");
+		expect(fakeWhisperServer.start).toHaveBeenCalledOnce();
+		expect(fakeWhisperServer.transcribe).toHaveBeenCalledOnce();
+		await shutdownStt();
 	});
 
 	it("does not respawn the helper when shutdown interrupts a failed chunk", async () => {

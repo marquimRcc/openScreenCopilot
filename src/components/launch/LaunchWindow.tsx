@@ -1143,6 +1143,27 @@ export function LaunchWindow() {
 	const deviceSettingsLabels = useMemo<HudDeviceSettingsLabels>(
 		() => ({
 			title: t("deviceSettings.title"),
+			windowsOutput: {
+				device: t("audio.outputDevice"),
+				default: t("audio.outputDefault"),
+				unavailable: t("audio.outputUnavailable"),
+				refresh: t("audio.outputRefresh"),
+				loading: t("audio.outputLoading"),
+				loadFailed: t("audio.outputLoadFailed"),
+				saveFailed: t("audio.outputSaveFailed"),
+				scope: t("audio.outputScope"),
+				meter: {
+					test: t("audio.outputMeterTest"),
+					stop: t("audio.outputMeterStop"),
+					starting: t("audio.outputMeterStarting"),
+					active: t("audio.outputMeterActive"),
+					stopping: t("audio.outputMeterStopping"),
+					stopped: t("audio.outputMeterStopped"),
+					error: t("audio.outputMeterError"),
+					hint: t("audio.outputMeterHint"),
+					level: t("audio.outputMeterLevel"),
+				},
+			},
 			close: t("deviceSettings.close"),
 			microphone: t("audio.inputDevice"),
 			camera: t("webcam.cameraDevice"),
@@ -1378,6 +1399,7 @@ export function LaunchWindow() {
 						{isDeviceSettingsOpen && (
 							<HudDeviceSettings
 								showMicrophone={microphoneOffered}
+								locked={controlsLocked}
 								micDevices={micDevices}
 								cameraDevices={cameraDevices}
 								activeMicId={microphoneDeviceId || selectedMicId}

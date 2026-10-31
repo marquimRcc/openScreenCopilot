@@ -9,6 +9,7 @@
 // projects, and the ~500 MB STT model — which is exactly what we want.
 
 import { app } from "electron";
+import { SELF_UPDATE_ENABLED } from "../src/config/product";
 import type { InstallChannel } from "./install-channel";
 import { ownsItsUpdates } from "./install-channel";
 
@@ -39,6 +40,7 @@ export function blockedFromInstalling(state: InstallReadiness): string | null {
 /** Loaded lazily: importing electron-updater costs startup time on every launch, and the
  *  channels that cannot use it must not pay for it at all. */
 async function getUpdater() {
+	if (!SELF_UPDATE_ENABLED) throw new Error("Automatic updates are disabled in this test build.");
 	const { autoUpdater } = await import("electron-updater");
 	// Never surprise the user with a 240 MB download or an install they did not ask for.
 	// `window-all-closed` quits this app, and the HUD is a window — with the default
@@ -56,7 +58,9 @@ async function getUpdater() {
 
 /** Is an update available, and can this install apply it itself? */
 export async function checkForSelfUpdate(channel: InstallChannel): Promise<UpdateOutcome> {
-	if (!ownsItsUpdates(channel) || !app.isPackaged) return { kind: "unsupported" };
+	if (!SELF_UPDATE_ENABLED || !ownsItsUpdates(channel) || !app.isPackaged) {
+		return { kind: "unsupported" };
+	}
 	try {
 		const autoUpdater = await getUpdater();
 		const result = await autoUpdater.checkForUpdates();
@@ -73,6 +77,7 @@ export async function checkForSelfUpdate(channel: InstallChannel): Promise<Updat
 
 /** Download the pending update. Separate from the check so the user approves the transfer. */
 export async function downloadSelfUpdate(): Promise<UpdateOutcome> {
+	if (!SELF_UPDATE_ENABLED) return { kind: "unsupported" };
 	try {
 		const autoUpdater = await getUpdater();
 		await autoUpdater.downloadUpdate();

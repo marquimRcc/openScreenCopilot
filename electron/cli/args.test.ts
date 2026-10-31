@@ -1,6 +1,6 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseCliArgs } from "./args";
+import { parseCliArgs, parseRecordControlLine } from "./args";
 
 const CWD = path.resolve("/work");
 const inCwd = (name: string) => path.resolve(CWD, name);
@@ -10,6 +10,12 @@ function parse(args: string[]) {
 }
 
 describe("parseCliArgs", () => {
+	it("parses idempotent stdin recording controls and ignores other lines", () => {
+		expect(["stop", " Q ", "quit"].map(parseRecordControlLine)).toEqual(["stop", "stop", "stop"]);
+		expect(["pause", "P"].map(parseRecordControlLine)).toEqual(["pause", "pause"]);
+		expect(["resume", " r "].map(parseRecordControlLine)).toEqual(["resume", "resume"]);
+		expect(parseRecordControlLine("status")).toBeNull();
+	});
 	it("returns null when no subcommand is present (GUI launch)", () => {
 		expect(parse([])).toBeNull();
 		expect(parse(["--some-chromium-flag"])).toBeNull();
