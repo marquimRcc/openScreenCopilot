@@ -51,6 +51,34 @@ type AttachedWhisperChild = WhisperChild & { readonly pid: number };
  */
 const REQUEST_TIMEOUT_MS = 280_000;
 
+/** Redact host-private executable/model locations before diagnostics retain helper output. */
+export function redactWhisperHelperPaths(
+	text: string,
+	paths: Array<string | null | undefined>,
+): string {
+	let redacted = text;
+	for (const candidate of paths) {
+		if (!candidate) continue;
+		const variants = new Set([
+			candidate,
+			candidate.replace(/\\/g, "/"),
+			candidate.replace(/\//g, "\\"),
+		]);
+		for (const variant of variants) {
+			if (!variant) continue;
+			redacted = redacted.split(variant).join("[private-path]");
+			if (process.platform === "win32") {
+				let at = redacted.toLowerCase().indexOf(variant.toLowerCase());
+				while (at >= 0) {
+					redacted = `${redacted.slice(0, at)}[private-path]${redacted.slice(at + variant.length)}`;
+					at = redacted.toLowerCase().indexOf(variant.toLowerCase(), at + "[private-path]".length);
+				}
+			}
+		}
+	}
+	return redacted;
+}
+
 /**
  * Owns the long-lived `whisper-stt-server` process used to recognize speech.
  *
@@ -404,7 +432,11 @@ export class WhisperServerManager {
 			});
 
 			child.stderr?.on("data", (chunk: Buffer) => {
-				const text = chunk.toString();
+				const text = redactWhisperHelperPaths(chunk.toString(), [
+					binaryPath,
+					options.modelPath,
+					options.vadModelPath,
+				]);
 				process.stderr.write(`[whisper-stt-server] ${text}`);
 				this.stderrTail = (this.stderrTail + text).slice(-this.stderrTailMax);
 			});
