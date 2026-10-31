@@ -1265,11 +1265,12 @@ describe("WhisperServerManager", () => {
 				backend: "whispercpp-metal",
 			});
 
-			// Allow microtask to reject exitedBeforeReady and invoke this.stop()
-			await new Promise((resolve) => setImmediate(resolve));
+			// Allow the error/microtask chain to reject exitedBeforeReady and invoke
+			// this.stop(). A single setImmediate is not a synchronization boundary for
+			// that whole chain on a loaded CI runner, so wait for the observable timer.
+			await vi.waitFor(() => expect(scheduler.activeTimers.length).toBe(1));
 
 			// Stop is waiting on timers: fire TERM and KILL deadlines without exit
-			expect(scheduler.activeTimers.length).toBe(1);
 			scheduler.activeTimers[0].fire(); // TERM timeout -> sends KILL
 			expect(scheduler.activeTimers.length).toBe(1);
 			scheduler.activeTimers[0].fire(); // KILL timeout -> uncertain
