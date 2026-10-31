@@ -658,7 +658,9 @@ export function createEditorWindow(query: Record<string, string> = {}): BrowserW
  * Floating source-selector window for picking a screen or window to record.
  * Frameless, transparent, and follows the user across macOS Spaces.
  */
-export function createRegionIndicatorWindow(bounds: Electron.Rectangle): BrowserWindow {
+export function createRegionIndicatorWindow(
+	bounds: Electron.Rectangle,
+): BrowserWindow & { setPausedVisual(paused: boolean): void } {
 	const win = new BrowserWindow({
 		...bounds,
 		show: false,
@@ -679,19 +681,36 @@ export function createRegionIndicatorWindow(bounds: Electron.Rectangle): Browser
 	// Unlike the HUD's QA override, the border must NEVER be baked into a take.
 	win.setContentProtection(true);
 	win.setAlwaysOnTop(true, "screen-saver");
+	let paused = false;
+	const applyPausedVisual = () => {
+		if (win.isDestroyed()) return;
+		void win.webContents
+			.executeJavaScript(`document.body.dataset.paused = ${paused ? '"true"' : '"false"'}`)
+			.catch(() => {
+				// Retained state is retried after the document finishes loading.
+			});
+	};
+	const indicator = Object.assign(win, {
+		setPausedVisual(nextPaused: boolean) {
+			paused = nextPaused;
+			applyPausedVisual();
+		},
+	});
+	win.webContents.on("did-finish-load", applyPausedVisual);
 	win.once("ready-to-show", () => {
 		if (!win.isDestroyed()) win.showInactive();
 	});
+	const pauseLabel = app.getLocale().toLowerCase().startsWith("pt") ? "PAUSADO" : "PAUSED";
 	void win
 		.loadURL(
 			`data:text/html;charset=utf-8,${encodeURIComponent(
-				"<!doctype html><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'\"><title>Recording region</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{box-sizing:border-box;border:2px dashed #ef4444;pointer-events:none}</style>",
+				`<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Recording region</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}body{box-sizing:border-box;border:2px dashed #ef4444;pointer-events:none;font:700 12px system-ui;color:#fff}#paused{display:none;position:absolute;top:6px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:#b91c1c;letter-spacing:.08em}body[data-paused="true"]{border-color:#f59e0b}body[data-paused="true"] #paused{display:block}</style><div id="paused">${pauseLabel}</div>`,
 			)}`,
 		)
 		.catch(() => {
 			if (!win.isDestroyed()) win.destroy();
 		});
-	return win;
+	return indicator;
 }
 
 export function createRegionSelectionWindow(bounds: Electron.Rectangle): BrowserWindow {

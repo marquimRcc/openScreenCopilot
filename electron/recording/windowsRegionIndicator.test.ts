@@ -98,7 +98,12 @@ describe("Windows region indicator", () => {
 		expect(create).toHaveBeenCalledWith(bounds);
 	});
 	it("dims only the current owner's border while paused and restores it on resume", () => {
-		const window = { isDestroyed: () => false, destroy: vi.fn(), setOpacity: vi.fn() };
+		const window = {
+			isDestroyed: () => false,
+			destroy: vi.fn(),
+			setOpacity: vi.fn(),
+			setPausedVisual: vi.fn(),
+		};
 		const indicator = new WindowsRegionIndicator(() => window);
 		const owner = {};
 		indicator.show(owner, selection);
@@ -108,6 +113,7 @@ describe("Windows region indicator", () => {
 		indicator.setPaused(owner, false);
 
 		expect(window.setOpacity.mock.calls).toEqual([[0.45], [1]]);
+		expect(window.setPausedVisual.mock.calls).toEqual([[true], [false]]);
 	});
 	it("moves only the current owner's live window border", () => {
 		const window = {

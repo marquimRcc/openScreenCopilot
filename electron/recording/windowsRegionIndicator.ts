@@ -50,6 +50,7 @@ interface IndicatorWindow {
 	destroy(): void;
 	setOpacity?(opacity: number): void;
 	setBounds?(bounds: Rectangle): void;
+	setPausedVisual?(paused: boolean): void;
 }
 
 /** One indicator per helper; stop/exit of an older helper cannot close a newer one. */
@@ -70,6 +71,7 @@ export class WindowsRegionIndicator {
 	setPaused(owner: object, paused: boolean) {
 		if (!this.current || this.current.owner !== owner || this.current.window.isDestroyed()) return;
 		this.current.window.setOpacity?.(paused ? 0.45 : 1);
+		this.current.window.setPausedVisual?.(paused);
 	}
 
 	updateBounds(owner: object, bounds: Rectangle) {

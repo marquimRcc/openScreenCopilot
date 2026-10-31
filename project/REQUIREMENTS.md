@@ -27,7 +27,8 @@ aceite permanecem identificadas abaixo e em `STATUS.md`.
 Pedido do usuário em 2026-10-13. A borda protegida já acompanha a região fixa, a
 tela inteira e a geometria dinâmica de janela informada pelo helper nativo; pausa
 reduz sua opacidade e stop/cancel/falha/exit a remove por ownership do helper.
-Texto de pausa independente do HUD e homologação física/DPI misto continuam pendentes.
+Durante a pausa, a própria borda protegida exibe texto PAUSADO/PAUSED e muda de
+cor, sem depender do HUD. Homologação física/DPI misto continua pendente.
 
 - Borda vermelha fina e pontilhada/tracejada delimitando exatamente o monitor,
   a janela ou o retângulo que está sendo capturado. Visível durante toda a gravação,
@@ -35,8 +36,9 @@ Texto de pausa independente do HUD e homologação física/DPI misto continuam p
 - A borda informa o recorte visual real, não apenas o último item selecionado.
   Ao capturar uma janela, acompanha sua geometria; um retângulo fixo continua fixo
   no monitor, mesmo se a janela dentro dele se mover.
-- Pausa deve ser distinguível de gravação ativa, com indicação textual no HUD,
-  sem depender só da cor. Parar, cancelar, falhar ou encerrar a sessão remove a borda.
+- Pausa deve ser distinguível de gravação ativa, com indicação textual na borda
+  e no HUD, sem depender só da cor. Parar, cancelar, falhar ou encerrar a sessão
+  remove a borda.
 - A sobreposição não pode aparecer no MP4 nem nos frames exportados, ou mudar os
   pixels/dimensões da seleção. Comprovar a exclusão em captura de monitor/janela/região,
   incluindo DPI misto; não presumir isso só porque o HUD já possui proteção.

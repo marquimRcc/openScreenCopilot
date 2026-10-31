@@ -3,7 +3,11 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 const electron = vi.hoisted(() => {
 	class FakeWindow {
 		constructor(readonly options: Record<string, unknown>) {}
-		webContents = { on: vi.fn(), send: vi.fn() };
+		webContents = {
+			on: vi.fn(),
+			send: vi.fn(),
+			executeJavaScript: vi.fn().mockResolvedValue(undefined),
+		};
 		setMenu = vi.fn();
 		setBounds = vi.fn();
 		setIgnoreMouseEvents = vi.fn();
@@ -23,7 +27,7 @@ const electron = vi.hoisted(() => {
 });
 
 vi.mock("electron", () => ({
-	app: {},
+	app: { getLocale: () => "en-US" },
 	BrowserWindow: electron.FakeWindow,
 	ipcMain: { on: vi.fn() },
 	screen: {
@@ -87,6 +91,14 @@ describe("HUD content protection on Windows (#1105)", () => {
 		});
 		expect(win.setBounds).toHaveBeenCalledWith(bounds);
 		expect(win.loadURL).toHaveBeenCalledWith(expect.stringContaining("data:text/html"));
+		expect(decodeURIComponent(win.loadURL.mock.calls[0][0])).toContain("PAUSED");
+		const loaded = win.webContents.on.mock.calls.find(([name]) => name === "did-finish-load")?.[1];
+		loaded();
+		(win as unknown as { setPausedVisual(paused: boolean): void }).setPausedVisual(true);
+		expect(win.webContents.executeJavaScript.mock.calls).toEqual([
+			['document.body.dataset.paused = "false"'],
+			['document.body.dataset.paused = "true"'],
+		]);
 		const ready = win.once.mock.calls.find(([name]) => name === "ready-to-show")?.[1];
 		ready();
 		expect(win.showInactive).toHaveBeenCalledOnce();

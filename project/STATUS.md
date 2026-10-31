@@ -367,6 +367,18 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   `0089133E5421A011C99E91788E65516F9137231BA846DEFA3B8B681E2114D79E`.
   Regressão: Vitest completo 390 arquivos / 5.382 testes aprovados, 2 arquivos /
   10 testes ignorados; typecheck, lint (26 avisos herdados), i18n e docs aprovados.
+  A sobreposição protegida também retém estado de pausa antes/depois do load,
+  troca a borda para âmbar e exibe selo textual `PAUSADO` no locale `pt*` ou
+  `PAUSED` nos demais, independente do HUD e ainda click-through. Contrato testado;
+  a visibilidade física do selo continua no mesmo aceite manual pendente da borda.
+  Rebuild Windows após o selo: exit 0; instalador local 190.563.015 bytes SHA256
+  `69D697784FEC052E140756334F9F62C8192437828E4030221DC1D55E20A9AD80`,
+  EXE unpacked 223.298.048 bytes
+  `0A3317447C038D17E5D97BF27C90B88B9399A7EB07D40865158189475220F8EA`
+  e `app.asar` 117.713.376 bytes
+  `49648676F9A95F665395BAB63A6C357E38E418A1DA8CF16577256D5636A02760`;
+  não assinados, instalados ou publicados. Vitest completo permaneceu verde com
+  390 arquivos / 5.382 testes aprovados e 2 arquivos / 10 testes ignorados.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
   reset lógico, timeout/kill não confirmado e evento tardio de geração antiga não
   autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.
