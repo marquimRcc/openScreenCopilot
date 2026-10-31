@@ -405,6 +405,8 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   `D34BE870C866796DF7658AAC92DB0E5222B3A75EB6DAEF8395E632233B577C63` e
   decode integral exit 0. Isto valida integração/ausência de crash; a proteção da
   própria janela continua impedindo que automação prove visualmente os selos.
+  Regressão final após o framing limitado: 391 arquivos / 5.385 testes aprovados,
+  2 arquivos / 10 testes ignorados, exit 0 em 129,99 s.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
   reset lógico, timeout/kill não confirmado e evento tardio de geração antiga não
   autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.
