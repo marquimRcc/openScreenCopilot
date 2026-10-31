@@ -1112,6 +1112,7 @@ if (
 	WITH_WINDOW &&
 	!sourceBoundsEvents.some(
 		(event) =>
+			event.schemaVersion === 2 &&
 			Number.isInteger(event.x) &&
 			Number.isInteger(event.y) &&
 			Number.isInteger(event.width) &&

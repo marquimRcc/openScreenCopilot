@@ -37,6 +37,7 @@ describe("Windows region indicator", () => {
 		expect(
 			sourceBoundsFromHelperEvent({
 				event: "source-bounds",
+				schemaVersion: 2,
 				x: -1920,
 				y: 12,
 				width: 1280,
@@ -47,10 +48,34 @@ describe("Windows region indicator", () => {
 			sourceBoundsFromHelperEvent({ event: "other", x: 0, y: 0, width: 1, height: 1 }),
 		).toBeNull();
 		expect(
-			sourceBoundsFromHelperEvent({ event: "source-bounds", x: 0.5, y: 0, width: 1, height: 1 }),
+			sourceBoundsFromHelperEvent({
+				event: "source-bounds",
+				schemaVersion: 2,
+				x: 0.5,
+				y: 0,
+				width: 1,
+				height: 1,
+			}),
 		).toBeNull();
 		expect(
-			sourceBoundsFromHelperEvent({ event: "source-bounds", x: 0, y: 0, width: 0, height: 1 }),
+			sourceBoundsFromHelperEvent({
+				event: "source-bounds",
+				schemaVersion: 2,
+				x: 0,
+				y: 0,
+				width: 0,
+				height: 1,
+			}),
+		).toBeNull();
+		expect(
+			sourceBoundsFromHelperEvent({
+				event: "source-bounds",
+				schemaVersion: 1,
+				x: 0,
+				y: 0,
+				width: 1,
+				height: 1,
+			}),
 		).toBeNull();
 	});
 	it("maps actual physical crop locally on a negative-origin 150% display", () => {

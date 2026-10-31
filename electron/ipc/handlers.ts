@@ -124,6 +124,7 @@ import {
 } from "../recording/boundedRetainedText";
 import { scoreDeviceNameMatch } from "../recording/deviceNameMatching";
 import { recordingStorageProblem } from "../recording/diskSpaceCheck";
+import { createNativeHelperEventLineParser } from "../recording/nativeHelperEventLineParser";
 import {
 	describeSalvagedTake,
 	nativeMacSalvageTarget,
@@ -1624,17 +1625,13 @@ function attachNativeWindowsCaptureOutputDrain(
 	proc: ChildProcessWithoutNullStreams,
 	onEvent?: (event: Record<string, unknown>) => void,
 ) {
-	let lineBuffer = "";
+	const parseEventLines = createNativeHelperEventLineParser(tryParseNativeHelperEvent, (event) =>
+		onEvent?.(event),
+	);
 	const drainStdout = (chunk: Buffer) => {
 		const text = chunk.toString();
 		nativeWindowsCaptureOutput.append(text);
-		lineBuffer += text;
-		const lines = lineBuffer.split(/\r?\n/);
-		lineBuffer = lines.pop() ?? "";
-		for (const line of lines) {
-			const event = tryParseNativeHelperEvent(line.trim());
-			if (event) onEvent?.(event);
-		}
+		parseEventLines(text);
 	};
 	const drainStderr = (chunk: Buffer) => {
 		nativeWindowsCaptureOutput.append(chunk.toString());

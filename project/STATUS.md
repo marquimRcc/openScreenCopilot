@@ -380,6 +380,11 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   `4B67EE1F3A055CA8C5E00897CA22B8D9FA8DFC8297EAE7CA63BDF9DA3B917318`;
   não assinados, instalados ou publicados. Vitest completo permaneceu verde com
   390 arquivos / 5.382 testes aprovados e 2 arquivos / 10 testes ignorados.
+  O framing NDJSON usado para acompanhar a janela aceita somente eventos
+  `source-bounds` schema v2 e limita linhas a 64 KiB; linha sem terminador ou completa
+  acima do teto é descartada até a próxima quebra, sem crescimento ilimitado e com
+  recuperação do evento seguinte. Três testes cobrem fragmentação, ordem e ambos os
+  casos de excesso.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
   reset lógico, timeout/kill não confirmado e evento tardio de geração antiga não
   autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.

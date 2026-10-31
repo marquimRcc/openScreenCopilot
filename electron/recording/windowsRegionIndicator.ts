@@ -33,7 +33,7 @@ export function windowsCaptureIndicatorBounds(
 export function sourceBoundsFromHelperEvent(event: unknown): Rectangle | null {
 	if (!event || typeof event !== "object") return null;
 	const value = event as Record<string, unknown>;
-	if (value.event !== "source-bounds") return null;
+	if (value.event !== "source-bounds" || value.schemaVersion !== 2) return null;
 	const keys = ["x", "y", "width", "height"] as const;
 	if (!keys.every((key) => Number.isSafeInteger(value[key]))) return null;
 	const bounds = {
