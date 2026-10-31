@@ -372,12 +372,13 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   locale `pt*` ou `PAUSED` nos demais, independente do HUD e ainda click-through.
   Contrato testado;
   a visibilidade física do selo continua no mesmo aceite manual pendente da borda.
-  Rebuild Windows final após os selos: exit 0; instalador local 191.325.313 bytes
-  SHA256 `BC8B981BF0F5783BFA3A3322DB14385EAFA1F45CF600CA3D4F4F1BC8A9AD572A`,
+  Rebuild Windows final após selos e framing limitado: exit 0; instalador local
+  192.095.211 bytes SHA256
+  `731FD9D9AA248E9336BD6EF91DA63D0AC0FD77735F2C6977EA141A4CE85FF96A`,
   EXE unpacked 223.298.048 bytes
-  `8A4296DD0E0813DF7AFBBED904CE5BC84508C99246E237D37FFB3B6CC4AB6BE7`
-  e `app.asar` 121.992.441 bytes
-  `4B67EE1F3A055CA8C5E00897CA22B8D9FA8DFC8297EAE7CA63BDF9DA3B917318`;
+  `A81F6D4F75656AD8C8A55586FC3041452B229683F4AE1381E7A490A03297BE1A`
+  e `app.asar` 126.271.788 bytes
+  `D47E737E8522F9F73AC8B99470AE11F19F67EDEA5D29F2A80FD9950053FA2EE8`;
   não assinados, instalados ou publicados. Vitest completo permaneceu verde com
   390 arquivos / 5.382 testes aprovados e 2 arquivos / 10 testes ignorados.
   O framing NDJSON usado para acompanhar a janela aceita somente eventos
