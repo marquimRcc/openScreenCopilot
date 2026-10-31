@@ -1,5 +1,17 @@
 # Plano passo a passo
 
+## Corte autorizado — transcrição local após gravar (2026-10-31)
+
+Nova instrução explícita autoriza, na branch `feat/post-recording-transcription`, um
+corte menor que 05/06: vídeo já salvo -> extração local -> Whisper herdado -> segmentos
+finais -> resultado pós-gravação -> TXT/JSON. Não inclui PCM ao vivo, parciais,
+journal/recovery, diarização ou Copilot e não declara as etapas 04–06 concluídas.
+
+O checkpoint inicial está descrito em
+[POST-RECORDING-TRANSCRIPTION.md](POST-RECORDING-TRANSCRIPTION.md). Ele reutiliza o
+engine herdado e deixa o sidecar draft sem provider; validação de pacote/E2E ainda é
+gate antes de considerar esse corte pronto.
+
 ## Corte da primeira versão — 2026-10-29
 
 A primeira versão utilizável será **somente Windows** e terá como objetivo fechar um

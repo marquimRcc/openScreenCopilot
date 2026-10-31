@@ -1,5 +1,34 @@
 # Estado atual — openScreenCopilot
 
+## Branch de transcrição pós-gravação — 2026-10-31
+
+Por nova instrução explícita do usuário, a branch `feat/post-recording-transcription`
+implementa o primeiro corte utilizável separado da gravação. Essa autorização supera
+para esta branch a prioridade anterior que adiava ASR, sem autorizar transcrição ao
+vivo, release, instalador ou promoção.
+
+Checkpoint `58863d48` integra o resultado pós-gravação ao `SttManager`/Whisper local
+herdado: autorização main-owned da gravação corrente, estados preparar/transcrever/
+concluir/cancelar/falhar, progresso, cancelamento e retry, texto na UI e publicação
+atômica de TXT + JSON schema v1 ao lado do vídeo. Falha/cancelamento não alteram o
+vídeo e mensagens da UI não recebem erro cru, PCM ou texto em logs. Extração agora
+tem teto explícito de quatro horas/230.400.000 amostras; fonte do fluxo tem teto de
+8 GiB. Cópia/GIF/transcrição têm admissão mutuamente exclusiva.
+
+Validação local do checkpoint: 62 testes focados aprovados; typecheck app e testes,
+i18n (15 locales/1013 chaves), Biome dos arquivos alterados e diff-check aprovados.
+Lint completo sem erros e com os mesmos 26 avisos herdados. Ambiente disponível usa
+Node 24.19.0/npm 11.17.0, diferente do pin Node 22.22.1/npm 10.9.4; repetir a suíte
+final no toolchain fixado continua obrigatório.
+
+Provider real validado isoladamente com WAV sintético pt-BR de 7,37 s: helper oficial
+OpenScreen v2.1.2 extraído sem instalar, modelo small-q8_0/Silero em cache, CPU, 15
+palavras, idioma `pt`, WER 0,0000, guardrail/timestamps aprovados e RTF 0,400. Isso
+não qualifica staging/pacote desta branch. Evidência, contrato, limites e pendências
+em [POST-RECORDING-TRANSCRIPTION.md](POST-RECORDING-TRANSCRIPTION.md).
+
+Branch enviada ao remoto; nenhum PR, release, instalador ou publicação foi criado.
+
 ## Decisão vigente — primeira versão Windows (2026-10-29)
 
 Atualização de entrega em 31/10/2026: por decisão do usuário, o foco imediato é o
