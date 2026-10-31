@@ -101,6 +101,8 @@ export class SttManager {
 	private modelsBaseDir: string | null = null;
 	private readonly statusSinks = new Set<(event: SttStatusEvent) => void>();
 	private initPromise: Promise<void> | null = null;
+	/** Owns model preparation for the current init attempt. */
+	private preparation: AbortController | null = null;
 	/** Identity of the only whole-recording transcription admitted by this manager. */
 	private activeTranscription: object | null = null;
 	/** Kept from `prepare()` so a chunk retry can respawn a helper that died mid-run. */
@@ -205,6 +207,7 @@ export class SttManager {
 	 */
 	cancel(): void {
 		this.cancelEpoch++;
+		this.preparation?.abort(cancelledError());
 		this.extraction?.abort();
 		for (const download of this.alignerDownloads.values()) download.abort(cancelledError());
 	}
@@ -241,32 +244,41 @@ export class SttManager {
 	}
 
 	private async prepare(): Promise<void> {
+		const controller = new AbortController();
+		this.preparation = controller;
 		const modelsDir = this.getModelsDir();
-		this.emit({ phase: "model", model: "whisper", downloadedBytes: 0, totalBytes: 0 });
-		await ensureModels({
-			baseDir: modelsDir,
-			onProgress: (event) => {
-				this.emit({
-					phase: "model",
-					model: event.id,
-					downloadedBytes: event.downloadedBytes,
-					totalBytes: event.totalBytes,
-				});
-			},
-		});
-		if (this.shuttingDown) throw cancelledError();
-
-		const paths = modelPaths(modelsDir);
-		this.modelPath = paths.whisper;
-		this.vadModelPath = paths["silero-vad"];
 		try {
+			this.emit({ phase: "model", model: "whisper", downloadedBytes: 0, totalBytes: 0 });
+			await ensureModels({
+				baseDir: modelsDir,
+				signal: controller.signal,
+				onProgress: (event) => {
+					this.emit({
+						phase: "model",
+						model: event.id,
+						downloadedBytes: event.downloadedBytes,
+						totalBytes: event.totalBytes,
+					});
+				},
+			});
+			if (this.shuttingDown || controller.signal.aborted) throw cancelledError();
+
+			const paths = modelPaths(modelsDir);
+			this.modelPath = paths.whisper;
+			this.vadModelPath = paths["silero-vad"];
 			await this.server.start({
 				modelPath: paths.whisper,
 				vadModelPath: paths["silero-vad"],
 			});
+			if (controller.signal.aborted) {
+				await this.server.shutdown();
+				throw cancelledError();
+			}
 		} catch (error) {
-			if (this.shuttingDown) throw cancelledError();
+			if (this.shuttingDown || controller.signal.aborted) throw cancelledError();
 			throw error;
+		} finally {
+			if (this.preparation === controller) this.preparation = null;
 		}
 		if (this.shuttingDown) {
 			await this.server.shutdown();
@@ -352,9 +364,9 @@ export class SttManager {
 	}
 
 	private async transcribeAdmitted(req: SttTranscribeRequest): Promise<SttTranscribeResponse> {
-		await this.init();
-
 		const epoch = this.cancelEpoch;
+		await this.init();
+		if (this.cancelEpoch !== epoch) throw cancelledError();
 		this.alignersFailed.clear();
 		// Extraction is part of the run, and on a long file it is the part the user used
 		// to watch the editor freeze through. Doing it here means the renderer hands over

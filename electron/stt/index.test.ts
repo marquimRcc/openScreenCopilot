@@ -581,6 +581,58 @@ describe("SttManager", () => {
 		expect(fakeWhisperServer.start).toHaveBeenCalledOnce();
 	});
 
+	it("cancels model preparation and lets retry create a fresh init attempt", async () => {
+		const { ensureModels } = await import("./modelManager");
+		const mocked = vi.mocked(ensureModels);
+		mocked.mockClear();
+		let preparationSignal: AbortSignal | undefined;
+		mocked.mockImplementationOnce(
+			(options: { signal?: AbortSignal }) =>
+				new Promise<void>((_resolve, reject) => {
+					preparationSignal = options.signal;
+					options.signal?.addEventListener("abort", () => reject(options.signal?.reason), {
+						once: true,
+					});
+				}),
+		);
+		const mgr = new SttManager();
+		const pending = mgr.init({ modelsBaseDir: "/tmp/fake-stt-models" });
+		await vi.waitFor(() => expect(preparationSignal).toBeDefined());
+
+		mgr.cancel();
+		await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+		expect(preparationSignal?.aborted).toBe(true);
+		expect(fakeWhisperServer.start).not.toHaveBeenCalled();
+
+		mocked.mockResolvedValueOnce(undefined);
+		await expect(
+			mgr.transcribe({ samples: new Float32Array(16_000), language: "pt" }),
+		).resolves.toMatchObject({ detectedLanguage: "en" });
+		expect(mocked).toHaveBeenCalledTimes(2);
+		expect(fakeWhisperServer.start).toHaveBeenCalledOnce();
+	});
+
+	it("waits for helper startup, shuts it down, and cancels before extraction", async () => {
+		let finishStart!: () => void;
+		fakeWhisperServer.start.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finishStart = () => resolve({ port: 9000, backend: "whispercpp-cpu" });
+				}),
+		);
+		const extractSpy = vi.spyOn(extractAudio, "extractMono16kPcm");
+		const mgr = new SttManager();
+		const pending = mgr.init({ modelsBaseDir: "/tmp/fake-stt-models" });
+		await vi.waitFor(() => expect(fakeWhisperServer.start).toHaveBeenCalledOnce());
+
+		mgr.cancel();
+		finishStart();
+		await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+		expect(fakeWhisperServer.shutdown).toHaveBeenCalledOnce();
+		expect(extractSpy).not.toHaveBeenCalled();
+		extractSpy.mockRestore();
+	});
+
 	describe("word aligner", () => {
 		/** Chunks report what `alignerFor("fr")` gave them, as the helper would use it. */
 		function recordAligner() {

@@ -75,6 +75,30 @@ describe("modelManager", () => {
 		expect(await areModelsPresent(dir)).toBe(true);
 	});
 
+	it("aborts model preparation and removes the partial download", async () => {
+		const controller = new AbortController();
+		const download = ensureModels({
+			baseDir: dir,
+			only: ["whisper"],
+			signal: controller.signal,
+			fetcher: async () =>
+				new Response(
+					new ReadableStream<Uint8Array>({
+						start(stream) {
+							stream.enqueue(new Uint8Array(8));
+						},
+					}),
+					{ status: 200 },
+				),
+		});
+		setTimeout(() => controller.abort(new Error("cancelled while preparing")), 20);
+
+		await expect(download).rejects.toThrow("cancelled while preparing");
+		const file = modelPaths(dir).whisper;
+		expect(existsSync(file)).toBe(false);
+		expect(existsSync(`${file}.partial`)).toBe(false);
+	});
+
 	it("ensureModels succeeds when the file is already present (cache hit)", async () => {
 		const paths = modelPaths(dir);
 		await mkdir(path.dirname(paths.whisper), { recursive: true });
