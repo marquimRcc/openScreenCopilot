@@ -29,6 +29,10 @@ const SAMPLE_RATE = 16_000;
 /** Past this, it is not a recording — it is a wedged ffmpeg. Matches the peaks path. */
 const EXTRACT_TIMEOUT_MS = 60_000;
 
+/** Hard whole-buffer ceiling: extraction never grows without bound. */
+export const MAX_STT_AUDIO_SEC = 4 * 60 * 60;
+const MAX_STT_SAMPLES = SAMPLE_RATE * MAX_STT_AUDIO_SEC;
+
 /**
  * Thrown when no ffmpeg can be resolved, so the caller can fall back to the
  * renderer pipeline rather than failing the transcription outright. A distinct type
@@ -77,11 +81,15 @@ const ACCESS_DENIED = /operation not permitted|permission denied/i;
  */
 export async function extractMono16kPcm(
 	filePath: string,
-	options: { signal?: AbortSignal } = {},
+	options: { signal?: AbortSignal; maxSamples?: number } = {},
 ): Promise<Float32Array> {
 	const ffmpeg = resolveFfmpeg();
 	if (!ffmpeg) throw new FfmpegUnavailableError();
 	if (options.signal?.aborted) throw new DOMException("Aborted", "AbortError");
+	const maxSamples = options.maxSamples ?? MAX_STT_SAMPLES;
+	if (!Number.isSafeInteger(maxSamples) || maxSamples <= 0 || maxSamples > MAX_STT_SAMPLES) {
+		throw new RangeError(`maxSamples must be between 1 and ${MAX_STT_SAMPLES}`);
+	}
 	const audioArgs = await mediaClockAudioArgs(ffmpeg, filePath, options.signal);
 	// Again: an abort during the probe (which it kills) fired before the listener below.
 	if (options.signal?.aborted) throw new DOMException("Aborted", "AbortError");
@@ -144,12 +152,18 @@ export async function extractMono16kPcm(
 		options.signal?.addEventListener("abort", onAbort, { once: true });
 
 		child.stdout.on("data", (c: Buffer) => {
+			if (settled) return;
 			const buf = carry ? Buffer.concat([carry, c]) : c;
 			const usable = buf.length - (buf.length % 4);
 			if (usable > 0) {
 				// Copy rather than view: a Buffer's memory is rarely 4-byte aligned, and
 				// `byteOffset` is almost never 0.
 				const view = new Float32Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + usable));
+				if (total + view.length > maxSamples) {
+					child.kill("SIGKILL");
+					finish(() => reject(new Error("Audio exceeds the four-hour transcription limit.")));
+					return;
+				}
 				chunks.push(view);
 				total += view.length;
 			}

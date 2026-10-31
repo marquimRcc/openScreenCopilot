@@ -92,7 +92,8 @@
 		"openFolder": "Abrir pasta",
 		"newCapture": "Nova captura",
 		"edit": "Editar",
-		"retry": "Tentar novamente"
+		"retry": "Tentar novamente",
+		"transcriptionCancelled": "Transcrição cancelada"
 	},
 	"regionSelection": {
 		"tab": "Região",

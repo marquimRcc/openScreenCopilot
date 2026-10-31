@@ -92,7 +92,8 @@
 		"openFolder": "Otevřít složku",
 		"newCapture": "Nový záznam",
 		"edit": "Upravit",
-		"retry": "Zkusit znovu"
+		"retry": "Zkusit znovu",
+		"transcriptionCancelled": "Přepis byl zrušen"
 	},
 	"regionSelection": {
 		"tab": "Oblast",

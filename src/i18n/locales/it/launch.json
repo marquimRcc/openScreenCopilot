@@ -92,7 +92,8 @@
 		"openFolder": "Apri cartella",
 		"newCapture": "Nuova cattura",
 		"edit": "Modifica",
-		"retry": "Riprova"
+		"retry": "Riprova",
+		"transcriptionCancelled": "Trascrizione annullata"
 	},
 	"regionSelection": {
 		"tab": "Area",

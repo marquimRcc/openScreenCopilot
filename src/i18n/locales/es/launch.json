@@ -92,7 +92,8 @@
 		"openFolder": "Abrir carpeta",
 		"newCapture": "Nueva captura",
 		"edit": "Editar",
-		"retry": "Reintentar"
+		"retry": "Reintentar",
+		"transcriptionCancelled": "Transcripción cancelada"
 	},
 	"regionSelection": {
 		"tab": "Región",

@@ -156,6 +156,7 @@ import {
 	type NativeWindowsTakeSession,
 	queryTakeStatus,
 } from "../recording/nativeWindowsMidCaptureWatch";
+import { PostRecordingTranscriptions } from "../recording/postRecordingTranscription";
 import { removeEmptyCaptureOutput } from "../recording/removeEmptyCaptureOutput";
 import { createSavedRecordingActions } from "../recording/savedRecording";
 import {
@@ -198,6 +199,7 @@ import {
 	shouldEnumerateRecordingSources,
 	shouldPersistSelectedSource,
 } from "../recording-source-settings";
+import { getSttManager } from "../stt";
 import { createRegionIndicatorWindow, createRunnerWindow } from "../windows";
 import { getSourcesByType, shouldEnumerateSourceTypesSeparately } from "./desktopSourceTypes";
 import { registerNativeBridgeHandlers } from "./nativeBridge";
@@ -2709,6 +2711,7 @@ export function registerIpcHandlers(
 		(editorHasUnsavedChanges?.() ?? false);
 	const copyOwnerCurrent = (owner: SavedRecordingCopyOwner) =>
 		isRecordingResultOwner(getMainWindow(), owner);
+	let postRecordingTranscriptions: PostRecordingTranscriptions | null = null;
 	const currentSavedSource = () =>
 		currentVideoPath && isPathAllowed(currentVideoPath)
 			? {
@@ -2718,7 +2721,8 @@ export function registerIpcHandlers(
 			: null;
 	const savedRecordingCopies = new SavedRecordingCopies({
 		current: currentSavedSource,
-		isBusy: () => recordingBusy() || savedRecordingGifs.isBusy(),
+		isBusy: () =>
+			recordingBusy() || savedRecordingGifs.isBusy() || !!postRecordingTranscriptions?.isBusy(),
 		isOwnerCurrent: copyOwnerCurrent,
 		pick: async (owner, name, extension) => {
 			if (!copyOwnerCurrent(owner)) throw new Error("Recording result window changed.");
@@ -2735,7 +2739,8 @@ export function registerIpcHandlers(
 		ipc: ipcMain,
 		window: getMainWindow,
 		current: currentSavedSource,
-		isBusy: () => recordingBusy() || savedRecordingCopies.isBusy(),
+		isBusy: () =>
+			recordingBusy() || savedRecordingCopies.isBusy() || !!postRecordingTranscriptions?.isBusy(),
 		compositor: new CompositorViewService(),
 		pick: async (owner, name) => {
 			if (!copyOwnerCurrent(owner)) throw new Error("Recording result window changed.");
@@ -2747,6 +2752,14 @@ export function registerIpcHandlers(
 			});
 			return result.canceled || !result.filePath ? null : result.filePath;
 		},
+	});
+	postRecordingTranscriptions = new PostRecordingTranscriptions({
+		current: currentSavedSource,
+		isBusy: () => recordingBusy() || savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy(),
+		isAllowed: isPathAllowed,
+		isOwnerCurrent: copyOwnerCurrent,
+		engine: getSttManager,
+		emit: (owner, status) => owner.send("post-recording-transcription-status", status),
 	});
 	const savedRecordingActions = createSavedRecordingActions({
 		getCurrentPath: () => currentVideoPath,
@@ -2787,6 +2800,16 @@ export function registerIpcHandlers(
 	);
 	ipcMain.handle("cancel-saved-recording-copy", (event) => ({
 		accepted: savedRecordingCopies.cancel(event.sender),
+	}));
+	ipcMain.handle("start-post-recording-transcription", (event, expectedPath: string) => {
+		if (event.senderFrame !== event.sender.mainFrame)
+			return { success: false, errorCode: "unavailable" };
+		return postRecordingTranscriptions?.start(event.sender, expectedPath);
+	});
+	ipcMain.handle("cancel-post-recording-transcription", (event) => ({
+		accepted:
+			event.senderFrame === event.sender.mainFrame &&
+			(postRecordingTranscriptions?.cancel(event.sender) ?? false),
 	}));
 
 	ipcMain.handle("switch-to-hud", () => {

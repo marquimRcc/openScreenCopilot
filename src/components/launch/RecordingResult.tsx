@@ -6,6 +6,7 @@ import {
 	recordingSizeLabel,
 	type SavedRecordingInfo,
 } from "@/lib/savedRecording";
+import { PostRecordingTranscription } from "./PostRecordingTranscription";
 import styles from "./RecordingResult.module.css";
 
 export function RecordingResult() {
@@ -126,6 +127,7 @@ export function RecordingResult() {
 								<input readOnly value={info.path} aria-label={t("recordingResult.location")} />
 							</label>
 						</div>
+						<PostRecordingTranscription recordingPath={info.path} />
 					</>
 				)}
 				{copying && <p role="status">{t("recordingResult.copying")}</p>}

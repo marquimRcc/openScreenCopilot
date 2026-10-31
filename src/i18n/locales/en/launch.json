@@ -92,7 +92,8 @@
 		"openFolder": "Open folder",
 		"newCapture": "New capture",
 		"edit": "Edit",
-		"retry": "Try again"
+		"retry": "Try again",
+		"transcriptionCancelled": "Transcription canceled"
 	},
 	"regionSelection": {
 		"tab": "Region",

@@ -92,7 +92,8 @@
 		"openFolder": "Ouvrir le dossier",
 		"newCapture": "Nouvelle capture",
 		"edit": "Modifier",
-		"retry": "Réessayer"
+		"retry": "Réessayer",
+		"transcriptionCancelled": "Transcription annulée"
 	},
 	"regionSelection": {
 		"tab": "Zone",
