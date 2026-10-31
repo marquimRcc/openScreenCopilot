@@ -385,6 +385,17 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   acima do teto é descartada até a próxima quebra, sem crescimento ilimitado e com
   recuperação do evento seguinte. Três testes cobrem fragmentação, ordem e ambos os
   casos de excesso.
+  Repetição do harness sintético de source-close com o helper atual `0089133E…`
+  passou nos dois casos (31/10, recibo privado
+  `.cache/wgc-source-close-harness-receipt.json`). Caso A fechou a janela 28 ms após
+  `encoder-selection`, antes de `recording-started`: mensagem explícita
+  `Source window closed before first video sample was submitted`, exit 1 esperado,
+  sem timeout. Caso B habilitou realmente `mode=legacy-callback`, fechou a janela no
+  `recording-started`, confirmou `wgc-quiesce drained=true`, source-close e exit 0 em
+  703 ms. O fragmento salvável H.264 942×712/30 fps tem 0,033333 s, 12.528 bytes,
+  SHA256 `C2F767C7C15032F38D4F9DF3C4FB8B199665B48E059621E8884F628055960813`
+  e decode integral exit 0. Isto fecha a cobertura sintética helper-level de startup e
+  callback legado; não substitui janela de terceiro nem aceite global GUI 01/02.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
   reset lógico, timeout/kill não confirmado e evento tardio de geração antiga não
   autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.
@@ -854,7 +865,7 @@ Parcial real aprovado (curta e longa passaram nos escopos testados; pendências 
   - Janelas / aplicações reais de terceiros ou títulos pessoais do usuário.
   - Microfone audível e independente e sincronização com fala humana; a execução
     longa do pacote vigente aprovou vídeo + loopback sintético, não voz humana.
-  - Fechamento de janela/fonte durante captura ativa E durante captura pausada teve aceite parcial no pacote win-unpacked 811C (autofinalização autônoma, resultado, playback, retorno ao HUD); minimizar/restaurar janela fonte sem falso encerramento validado com aceite parcial; fechamento pré-primeiro frame, legacy real, janelas reais de terceiros e DPI misto seguem pendentes (ensaio do harness privado em 2026-10-24 inconclusivo por limitação do ambiente gráfico/WGC, sem falha funcional de produto).
+  - Fechamento de janela/fonte durante captura ativa E durante captura pausada teve aceite parcial no pacote win-unpacked 811C (autofinalização autônoma, resultado, playback, retorno ao HUD); minimizar/restaurar janela fonte sem falso encerramento validado com aceite parcial. O harness sintético de 31/10 aprovou fechamento pré-primeiro frame e callback legado real no helper atual; janelas reais de terceiros, integração GUI desses dois subcasos e DPI misto seguem pendentes.
   - Etapas 01 e 02 completas e integração ASR (05).
 
 Alinhamento da auditoria de speech-core: "nenhum defeito confirmado" na auditoria estática dos módulos isolados não prova ausência absoluta de defeitos nem garante limites RSS de processo; git status limpo não prova que `target/` foi mantido limpo ou ignorado.

@@ -59,7 +59,9 @@ tenham sido homologados em hardware e uso reais.
 ### 2. Robustez
 
 - [ ] Testar desconexão ou mudança de dispositivo de áudio.
-- [ ] Testar fechamento da janela ou fonte capturada durante a gravação.
+- [x] Testar fechamento da janela ou fonte capturada durante a gravação (pacote
+  em ativa+pausada; helper sintético em startup+callback legado; janela real de
+  terceiro ainda permanece limitação documentada).
 - [x] Testar encerramento inesperado do helper nativo.
 - [ ] Verificar recuperação e limpeza após cancelamento, erro e fechamento do app.
 - [x] Executar gravação prolongada e conferir memória, CPU, sincronização e tamanho.
