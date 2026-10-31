@@ -24,7 +24,10 @@ final no toolchain fixado continua obrigatório.
 Provider real validado isoladamente com WAV sintético pt-BR de 7,37 s: helper oficial
 OpenScreen v2.1.2 extraído sem instalar, modelo small-q8_0/Silero em cache, CPU, 15
 palavras, idioma `pt`, WER 0,0000, guardrail/timestamps aprovados e RTF 0,400. Isso
-não qualifica staging/pacote desta branch. Evidência, contrato, limites e pendências
+não qualifica staging/pacote desta branch. Integração opt-in adicional percorreu o
+serviço real até TXT/JSON com Vulkan e validou cancelamento pós-extração preservando
+os derivados anteriores; stderr conhecido teve caminhos privados redigidos.
+Evidência, contrato, limites e pendências
 em [POST-RECORDING-TRANSCRIPTION.md](POST-RECORDING-TRANSCRIPTION.md).
 
 Branch enviada ao remoto; nenhum PR, release, instalador ou publicação foi criado.

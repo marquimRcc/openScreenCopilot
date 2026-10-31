@@ -75,6 +75,15 @@ Validação isolada em Windows, sem microfone, captura ou mídia privada:
 - tempo: 2,95 s para 7,37 s de áudio, RTF `0,400`;
 - alinhador CTC: ignorado porque não há alinhador pt no catálogo atual.
 
+Um teste de integração opt-in adicional executou o corte exato
+`serviço main-owned -> extração ffmpeg -> SttManager -> helper Vulkan -> TXT/JSON`:
+texto esperado e schema v1 foram conferidos, ambos os arquivos foram relidos do disco
+e o processo foi encerrado. Uma segunda execução cancelou depois da extração real e
+antes da inferência, retornou `cancelled` e preservou byte a byte os derivados já
+concluídos. O host também passou a redigir os caminhos conhecidos do helper/modelos
+antes de encaminhar ou reter stderr; o mesmo teste real mostrou `[private-path]` nos
+lugares antes ocupados pelos caminhos locais.
+
 Essa evidência qualifica o provider concreto e a amostra conhecida. O helper veio de
 um release upstream, não de um pacote desta branch; portanto não comprova staging,
 empacotamento ou E2E da interface desta branch.
@@ -83,7 +92,8 @@ empacotamento ou E2E da interface desta branch.
 
 - validar o fluxo completo em uma gravação sintética encerrada no aplicativo;
 - confirmar o helper e suas DLLs no pacote produzido a partir desta branch;
-- testar cancelamento real durante extração e durante um chunk Whisper longo;
+- testar cancelamento real durante um chunk Whisper longo (cancelamento após extração
+  e antes do chunk já foi validado);
 - validar falhas reais de helper/modelo/caminho no runtime empacotado;
 - executar suíte completa relevante e registrar o resultado final;
 - confirmar salvamento TXT/JSON e retry pela interface em build desta branch.
