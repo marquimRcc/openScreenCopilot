@@ -397,6 +397,14 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   SHA256 `C2F767C7C15032F38D4F9DF3C4FB8B199665B48E059621E8884F628055960813`
   e decode integral exit 0. Isto fecha a cobertura sintética helper-level de startup e
   callback legado; não substitui janela de terceiro nem aceite global GUI 01/02.
+  Smoke final do pacote atual alternou `REC -> PAUSADO -> REC` pelo protocolo CLI,
+  sem erro de criação/reposicionamento da sobreposição: eventos `pausing` e
+  `resuming` na ordem, duration 9.000 ms, exit 0 e resultado em 9.161 ms. O trecho
+  pausado foi removido: MP4 H.264 hardware 1920×1128 de 7,051100 s, 422 pacotes com
+  DTS estritamente crescente, 346.949 bytes, SHA256
+  `D34BE870C866796DF7658AAC92DB0E5222B3A75EB6DAEF8395E632233B577C63` e
+  decode integral exit 0. Isto valida integração/ausência de crash; a proteção da
+  própria janela continua impedindo que automação prove visualmente os selos.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
   reset lógico, timeout/kill não confirmado e evento tardio de geração antiga não
   autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.
