@@ -12,6 +12,11 @@ o commit-fonte quando os bytes dos artefatos não mudam. O snapshot rastreado co
 com o manifesto local; instalador 192.095.211 bytes SHA256 `731FD9D9…`, identidade
 `openScreenCopilot`/`0.1.0-alpha.1`, Authenticode `NotSigned`, licenças/avisos e helper
 WGC presentes. Nenhum instalador foi executado ou publicado nesta preparação.
+Entrega local materializada em 31/10 no diretório `outputs` do workspace
+`openscreencopilot-windows-preview`, contendo somente quatro arquivos: instalador,
+manifesto, `SHA256SUMS.txt` e README de handoff. O hash do instalador copiado coincide
+com o manifesto (`731FD9D9…`). Metadados de auto-update/blockmap não foram incluídos;
+o instalador permaneceu sem execução.
 
 O corte atual é somente Windows. A próxima entrega não inclui transcrição ao vivo,
 provider ASR concreto, recuperação de transcrição, Copilot, AV1 nem Linux/RegataOS.
