@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
 	regionIndicatorBounds,
+	sourceBoundsFromHelperEvent,
 	WindowsRegionIndicator,
 	windowsCaptureIndicatorBounds,
 } from "./windowsRegionIndicator";
@@ -31,6 +32,26 @@ describe("Windows region indicator", () => {
 		);
 		expect(windowsCaptureIndicatorBounds("display", displayBounds, null, true)).toBeNull();
 		expect(windowsCaptureIndicatorBounds("window", displayBounds, selection, false)).toBeNull();
+	});
+	it("accepts only positive integral source bounds from the helper", () => {
+		expect(
+			sourceBoundsFromHelperEvent({
+				event: "source-bounds",
+				x: -1920,
+				y: 12,
+				width: 1280,
+				height: 720,
+			}),
+		).toEqual({ x: -1920, y: 12, width: 1280, height: 720 });
+		expect(
+			sourceBoundsFromHelperEvent({ event: "other", x: 0, y: 0, width: 1, height: 1 }),
+		).toBeNull();
+		expect(
+			sourceBoundsFromHelperEvent({ event: "source-bounds", x: 0.5, y: 0, width: 1, height: 1 }),
+		).toBeNull();
+		expect(
+			sourceBoundsFromHelperEvent({ event: "source-bounds", x: 0, y: 0, width: 0, height: 1 }),
+		).toBeNull();
 	});
 	it("maps actual physical crop locally on a negative-origin 150% display", () => {
 		expect(regionIndicatorBounds(selection)).toEqual({
@@ -87,6 +108,23 @@ describe("Windows region indicator", () => {
 		indicator.setPaused(owner, false);
 
 		expect(window.setOpacity.mock.calls).toEqual([[0.45], [1]]);
+	});
+	it("moves only the current owner's live window border", () => {
+		const window = {
+			isDestroyed: () => false,
+			destroy: vi.fn(),
+			setBounds: vi.fn(),
+		};
+		const indicator = new WindowsRegionIndicator(() => window);
+		const owner = {};
+		indicator.show(owner, selection);
+		const bounds = { x: 10, y: 20, width: 800, height: 600 };
+
+		indicator.updateBounds({}, bounds);
+		indicator.updateBounds(owner, bounds);
+
+		expect(window.setBounds).toHaveBeenCalledOnce();
+		expect(window.setBounds).toHaveBeenCalledWith(bounds);
 	});
 	it("does not destroy an already closed window", () => {
 		const window = { isDestroyed: () => true, destroy: vi.fn() };

@@ -29,10 +29,27 @@ export function windowsCaptureIndicatorBounds(
 	return displayBounds;
 }
 
+/** Validate the physical Win32 rectangle reported by the native helper. */
+export function sourceBoundsFromHelperEvent(event: unknown): Rectangle | null {
+	if (!event || typeof event !== "object") return null;
+	const value = event as Record<string, unknown>;
+	if (value.event !== "source-bounds") return null;
+	const keys = ["x", "y", "width", "height"] as const;
+	if (!keys.every((key) => Number.isSafeInteger(value[key]))) return null;
+	const bounds = {
+		x: value.x as number,
+		y: value.y as number,
+		width: value.width as number,
+		height: value.height as number,
+	};
+	return bounds.width > 0 && bounds.height > 0 ? bounds : null;
+}
+
 interface IndicatorWindow {
 	isDestroyed(): boolean;
 	destroy(): void;
 	setOpacity?(opacity: number): void;
+	setBounds?(bounds: Rectangle): void;
 }
 
 /** One indicator per helper; stop/exit of an older helper cannot close a newer one. */
@@ -53,6 +70,13 @@ export class WindowsRegionIndicator {
 	setPaused(owner: object, paused: boolean) {
 		if (!this.current || this.current.owner !== owner || this.current.window.isDestroyed()) return;
 		this.current.window.setOpacity?.(paused ? 0.45 : 1);
+	}
+
+	updateBounds(owner: object, bounds: Rectangle) {
+		if (!this.current || this.current.owner !== owner || this.current.window.isDestroyed())
+			return false;
+		this.current.window.setBounds?.(bounds);
+		return true;
 	}
 
 	clear(owner?: object) {

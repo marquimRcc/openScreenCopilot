@@ -1077,6 +1077,10 @@ const encoderSelectionLine = result.stdout
 	.split(/\r?\n/)
 	.find((line) => line.includes('"event":"encoder-selection"'));
 const encoderSelection = encoderSelectionLine ? JSON.parse(encoderSelectionLine) : null;
+const sourceBoundsEvents = result.stdout
+	.split(/\r?\n/)
+	.filter((line) => line.includes('"event":"source-bounds"'))
+	.map((line) => JSON.parse(line));
 const nativeWebcamDiagnostics = result.stderr.split(/\r?\n/).filter(
 	(line) =>
 		line.includes("Native webcam candidate") ||
@@ -1103,6 +1107,20 @@ const nativeMicrophoneDiagnostics = result.stderr
 	);
 if (!hasVideo) {
 	throw new Error(`WGC helper output has no video stream: ${outputPath}`);
+}
+if (
+	WITH_WINDOW &&
+	!sourceBoundsEvents.some(
+		(event) =>
+			Number.isInteger(event.x) &&
+			Number.isInteger(event.y) &&
+			Number.isInteger(event.width) &&
+			Number.isInteger(event.height) &&
+			event.width > 0 &&
+			event.height > 0,
+	)
+) {
+	throw new Error(`WGC window helper did not report valid source bounds: ${result.stdout}`);
 }
 if (videoStream.codec_name !== "h264") {
 	throw new Error(
@@ -1267,6 +1285,7 @@ console.log(
 			})),
 			cursorCapture,
 			encoderSelection,
+			sourceBoundsEvents,
 			selectedMicrophoneDeviceName: audioFormat?.microphoneDeviceName,
 			selectedWebcamDeviceName: webcamFormat?.deviceName,
 			nativeMicrophoneDiagnostics,

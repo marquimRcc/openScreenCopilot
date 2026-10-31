@@ -316,7 +316,7 @@ PR2 de01 continua dependente dos aceites; não promover distribuição por teste
 |---|---|
 |00 fundação|Concluída:fork/históricos/licenças/vendor/contratos/política CI|
 |01 Windows/identidade|Código/pacote isolados, timestamps corrigidos; GUI curta/longa 30min sintética (dist) e execução empacotada curta (win-unpacked 30s) aprovadas; pacote 30min com áudio/títulos reais/DPI misto pendentes|
-|02 região/dispositivos/resultado|Implementados (guarda pré-spawn, região, resultado, borda protegida para região+tela inteira, loopback sintético 30min, source close ativo + pausado e minimizar/restaurar validados); borda física/janela dinâmica/mic audível/DPI misto pendentes|
+|02 região/dispositivos/resultado|Implementados (guarda pré-spawn, região, resultado, borda protegida para região+tela inteira+janela dinâmica, loopback sintético 30min, source close ativo + pausado e minimizar/restaurar validados); borda física/mic audível/DPI misto pendentes|
 |03 compressão|Inventário/sondas MF apenas; AV1 não grava, comparação30min não feita|
 |04 speech-core|Core isolado inclui WAV/normalização/gate/janelas/dedup; sidecar v0 executa só handshake fail-closed e anuncia sem provider; sem PCM live/engine/ASR|
 |05 ASRlive|Não integrado; depende02/04 (03 adiada ao backlog)/relógio/journal/créditos|
@@ -334,8 +334,12 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   limitado aScreens/Windows, fallbackfullscreen ou autostart. ForaWindows preservado.
 - Região React/arraste/Escape, cropD3D11 GPU, cursor físico recortado; requests
   inválidos recusados. Borda pontilhada helper-owned protegida, independenteHUD,
-  agora cobre região e tela inteira, reduz opacidade em pausa e é removida em
-  stop/cancel/reset/exit. Janela dinâmica, DPI misto e borda física ainda sem aceite.
+  agora cobre região, tela inteira e janela dinâmica, reduz opacidade em pausa e é
+  removida em stop/cancel/reset/exit. O helper publica retângulos Win32 físicos apenas
+  quando mudam; o main valida, converte para DIP e reposiciona somente o indicador do
+  helper proprietário. Smoke nativo de janela confirmou evento 1536×960 e H.264
+  hardware de 5,034 s; build nativo e 177 testes de áudio passaram. DPI misto,
+  movimento visual no pacote e borda física ainda sem aceite.
   Checkpoint `8f1bb6da`: pacote Windows completo passou; CLI empacotado gravou tela
   inteira por 20,193 s em perfil isolado, WGC/H.264 hardware, MP4 1.869.665 bytes,
   SHA256 `AAAEEB17C37B188CE62FC5F0657296E8B1F66F72BB77373D91DD6D214A084DCE`,
@@ -347,6 +351,22 @@ Não anunciar etapas concluídas por planejamento, build Linux ou fixture curta.
   A primeira passada revelou expectativa CI stale do conserto `github.workspace`;
   o teste foi alinhado e a segunda passada ficou verde. Instalador local não assinado
   `C8145E3F…` (187.503.623 bytes), EXE unpacked `92E7456D…`; não publicados.
+  Rebuild final desta extensão (30/10) também passou em `npm run build:win`.
+  Smoke CLI do `win-unpacked` sobre a janela Notepad++ terminou normalmente em
+  15.181 ms: MP4 H.264 hardware 1920×1128 de 15,084417 s, 698.441 bytes,
+  SHA256 `D4A705196CAEC70AAE399924319CF38AAEDC9ACE0CABCE52D8431084383288D5`,
+  decode integral exit 0 (com aviso não fatal de DTS não monotônico no muxer
+  `null`). A API de observação do Windows não enumerou a sobreposição protegida;
+  portanto esta tomada valida gravação/empacotamento, mas não acrescenta aceite
+  de visibilidade física ou movimento visual da borda. Artefatos locais, não
+  assinados/não publicados: instalador 189.798.266 bytes SHA256
+  `779AD4E910E9D6DDB0F65329EAC5A319A00173967AB0BEE5820ED3BE076538D6`,
+  EXE unpacked 223.298.048 bytes `9062B9B5E7E76CA334585E13CDF5FC56D50810B66F3AD25A051C439C900704B8`,
+  `app.asar` 113.434.442 bytes `3A47ACEC8338432F3581296AFD60CA512119491914BA164294695866157EB70F`
+  e helper WGC 599.552 bytes
+  `0089133E5421A011C99E91788E65516F9137231BA846DEFA3B8B681E2114D79E`.
+  Regressão: Vitest completo 390 arquivos / 5.382 testes aprovados, 2 arquivos /
+  10 testes ignorados; typecheck, lint (26 avisos herdados), i18n e docs aprovados.
 - Ownership independente do helper WGC permanece até o evento `close` exato;
   reset lógico, timeout/kill não confirmado e evento tardio de geração antiga não
   autorizam novo spawn, captura Chromium concorrente ou preview/medidor de saída.

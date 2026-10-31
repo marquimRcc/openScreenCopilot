@@ -24,10 +24,10 @@ aceite permanecem identificadas abaixo e em `STATUS.md`.
 
 ## Indicador persistente da área gravada
 
-Pedido do usuário em 2026-10-13. A borda protegida já acompanha a região fixa e,
-no checkpoint atual, também delimita a tela inteira; pausa reduz sua opacidade e
-stop/cancel/falha/exit a remove por ownership do helper. Acompanhamento de janela,
-texto de pausa independente do HUD e homologação física/DPI misto continuam pendentes.
+Pedido do usuário em 2026-10-13. A borda protegida já acompanha a região fixa, a
+tela inteira e a geometria dinâmica de janela informada pelo helper nativo; pausa
+reduz sua opacidade e stop/cancel/falha/exit a remove por ownership do helper.
+Texto de pausa independente do HUD e homologação física/DPI misto continuam pendentes.
 
 - Borda vermelha fina e pontilhada/tracejada delimitando exatamente o monitor,
   a janela ou o retângulo que está sendo capturado. Visível durante toda a gravação,

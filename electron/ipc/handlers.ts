@@ -175,6 +175,7 @@ import {
 import { WindowsMeterCaptureGuard } from "../recording/windowsMeterCaptureGuard";
 import { WindowsOutputMeter } from "../recording/windowsOutputMeter";
 import {
+	sourceBoundsFromHelperEvent,
 	WindowsRegionIndicator,
 	windowsCaptureIndicatorBounds,
 } from "../recording/windowsRegionIndicator";
@@ -1619,17 +1620,32 @@ function waitForNativeWindowsCaptureStart(proc: ChildProcessWithoutNullStreams) 
  * reproduced by driving the .exe by hand. macOS has had this since it shipped
  * (`attachNativeMacCaptureOutputDrain`); Windows never did.
  */
-function attachNativeWindowsCaptureOutputDrain(proc: ChildProcessWithoutNullStreams) {
-	const drain = (chunk: Buffer) => {
+function attachNativeWindowsCaptureOutputDrain(
+	proc: ChildProcessWithoutNullStreams,
+	onEvent?: (event: Record<string, unknown>) => void,
+) {
+	let lineBuffer = "";
+	const drainStdout = (chunk: Buffer) => {
+		const text = chunk.toString();
+		nativeWindowsCaptureOutput.append(text);
+		lineBuffer += text;
+		const lines = lineBuffer.split(/\r?\n/);
+		lineBuffer = lines.pop() ?? "";
+		for (const line of lines) {
+			const event = tryParseNativeHelperEvent(line.trim());
+			if (event) onEvent?.(event);
+		}
+	};
+	const drainStderr = (chunk: Buffer) => {
 		nativeWindowsCaptureOutput.append(chunk.toString());
 	};
 	const cleanup = () => {
-		proc.stdout.off("data", drain);
-		proc.stderr.off("data", drain);
+		proc.stdout.off("data", drainStdout);
+		proc.stderr.off("data", drainStderr);
 	};
 
-	proc.stdout.on("data", drain);
-	proc.stderr.on("data", drain);
+	proc.stdout.on("data", drainStdout);
+	proc.stderr.on("data", drainStderr);
 	proc.once("close", cleanup);
 	// An 'error' event with no listener throws, and in the main process that is
 	// an uncaught exception rather than a rejected promise. Both streams need a
@@ -3464,7 +3480,29 @@ export function registerIpcHandlers(
 				}
 				meterCapture.bind(proc);
 				proc.once("exit", () => windowsRegionIndicator.clear(proc));
-				nativeWindowsCaptureDrainCleanup = attachNativeWindowsCaptureOutputDrain(proc);
+				nativeWindowsCaptureDrainCleanup = attachNativeWindowsCaptureOutputDrain(
+					proc,
+					(helperEvent) => {
+						if (
+							request.source.type !== "window" ||
+							nativeWindowsCaptureProcess !== proc ||
+							!nativeWindowsProcessOwnership.owns(proc)
+						) {
+							return;
+						}
+						const physicalBounds = sourceBoundsFromHelperEvent(helperEvent);
+						if (!physicalBounds) return;
+						try {
+							const dipBounds = screen.screenToDipRect(null, physicalBounds);
+							if (!windowsRegionIndicator.updateBounds(proc, dipBounds)) {
+								windowsRegionIndicator.showBounds(proc, dipBounds);
+								if (nativeWindowsIsPaused) windowsRegionIndicator.setPaused(proc, true);
+							}
+						} catch (error) {
+							console.warn("[native-wgc] window indicator bounds unavailable", error);
+						}
+					},
+				);
 
 				const take = createNativeWindowsTakeSession({
 					recordingId,

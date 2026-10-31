@@ -34,6 +34,13 @@
 
 namespace {
 
+std::mutex protocolOutputMutex;
+
+void writeProtocolLine(const std::string& line) {
+    std::lock_guard lock(protocolOutputMutex);
+    std::cout << line << std::endl;
+}
+
 struct CaptureConfig {
     int schemaVersion = 1;
     int64_t displayId = 0;
@@ -631,14 +638,14 @@ void readCaptureCommands(CaptureControl& control, const std::function<void(bool)
         if (line == "pause") {
             control.setPaused(true);
             onPauseChanged(true);
-            std::cout << "{\"event\":\"recording-paused\",\"schemaVersion\":2}" << std::endl;
+            writeProtocolLine("{\"event\":\"recording-paused\",\"schemaVersion\":2}");
             control.cv.notify_all();
             continue;
         }
         if (line == "resume") {
             control.setPaused(false);
             onPauseChanged(false);
-            std::cout << "{\"event\":\"recording-resumed\",\"schemaVersion\":2}" << std::endl;
+            writeProtocolLine("{\"event\":\"recording-resumed\",\"schemaVersion\":2}");
             control.cv.notify_all();
             continue;
         }
@@ -828,6 +835,7 @@ int wmain(int argc, wchar_t* argv[]) {
     DesktopIconCover desktopIconCover;
     WgcSession session;
     HMONITOR capturedMonitor = nullptr;
+    HWND capturedWindow = nullptr;
     if (config.sourceType == "display") {
         HMONITOR monitor = findMonitorForCapture(
             config.displayId,
@@ -855,6 +863,7 @@ int wmain(int argc, wchar_t* argv[]) {
         // A window is captured by whichever display it currently sits on, which
         // is the adapter that matters for the same reason a monitor's does.
         capturedMonitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+        capturedWindow = window;
         // A window source would otherwise lose every context menu and dropdown,
         // which are windows of their own (getopenscreen/openscreen#894). Windows 11
         // 24H2+ can draw them into this capture; OPENSCREEN_WGC_DISABLE_SECONDARY_
@@ -1725,10 +1734,31 @@ int wmain(int argc, wchar_t* argv[]) {
     std::cout << "{\"event\":\"recording-started\",\"schemaVersion\":2}" << std::endl;
     std::cout << "Recording started" << std::endl;
 
+    RECT lastSourceBounds{};
+    bool hasLastSourceBounds = false;
     while (!control.stopRequested.load()) {
         if (session.isSourceClosed()) {
             control.requestStop();
             break;
+        }
+        // Window capture follows resize/move natively. Report the physical Win32
+        // rectangle only when it changes so the main process can keep its protected
+        // border on the same pixels without polling through a second helper.
+        if (capturedWindow && IsWindow(capturedWindow)) {
+            RECT sourceBounds{};
+            if (GetWindowRect(capturedWindow, &sourceBounds) &&
+                sourceBounds.right > sourceBounds.left && sourceBounds.bottom > sourceBounds.top &&
+                (!hasLastSourceBounds || sourceBounds.left != lastSourceBounds.left ||
+                 sourceBounds.top != lastSourceBounds.top || sourceBounds.right != lastSourceBounds.right ||
+                 sourceBounds.bottom != lastSourceBounds.bottom)) {
+                lastSourceBounds = sourceBounds;
+                hasLastSourceBounds = true;
+                writeProtocolLine(
+                    "{\"event\":\"source-bounds\",\"schemaVersion\":2,\"x\":" +
+                    std::to_string(sourceBounds.left) + ",\"y\":" + std::to_string(sourceBounds.top) +
+                    ",\"width\":" + std::to_string(sourceBounds.right - sourceBounds.left) +
+                    ",\"height\":" + std::to_string(sourceBounds.bottom - sourceBounds.top) + "}");
+            }
         }
         std::unique_lock lock(control.stopMutex);
         control.stopCv.wait_for(lock, std::chrono::milliseconds(50), [&] {
