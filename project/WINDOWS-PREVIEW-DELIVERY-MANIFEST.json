@@ -1,0 +1,49 @@
+{
+	"schemaVersion": 1,
+	"product": "openScreenCopilot",
+	"version": "0.1.0-alpha.1",
+	"channel": "windows-preview",
+	"platform": "win32",
+	"arch": "x64",
+	"source": {
+		"branch": "feat/windows-region-foundation",
+		"commit": "61676d1f80cee80a08cb4d6fbec4a10d19d2420b"
+	},
+	"distribution": {
+		"codeSigned": false,
+		"autoUpdateEnabled": false,
+		"published": false
+	},
+	"artifacts": [
+		{
+			"role": "installer",
+			"path": "openScreenCopilot.Setup.0.1.0-alpha.1-x64.exe",
+			"sizeBytes": 192095211,
+			"sha256": "731FD9D9AA248E9336BD6EF91DA63D0AC0FD77735F2C6977EA141A4CE85FF96A"
+		},
+		{
+			"role": "installer-blockmap",
+			"path": "openScreenCopilot.Setup.0.1.0-alpha.1-x64.exe.blockmap",
+			"sizeBytes": 202677,
+			"sha256": "D0CD4A88DCC592C3768266123C32099F3B35B0ECE8ACC8DEEBDCC70413A62E33"
+		},
+		{
+			"role": "unpacked-executable",
+			"path": "win-unpacked/openScreenCopilot.exe",
+			"sizeBytes": 223298048,
+			"sha256": "A81F6D4F75656AD8C8A55586FC3041452B229683F4AE1381E7A490A03297BE1A"
+		},
+		{
+			"role": "application-archive",
+			"path": "win-unpacked/resources/app.asar",
+			"sizeBytes": 126271788,
+			"sha256": "D47E737E8522F9F73AC8B99470AE11F19F67EDEA5D29F2A80FD9950053FA2EE8"
+		},
+		{
+			"role": "native-capture-helper",
+			"path": "win-unpacked/resources/electron/native/bin/win32-x64/wgc-capture.exe",
+			"sizeBytes": 599552,
+			"sha256": "0089133E5421A011C99E91788E65516F9137231BA846DEFA3B8B681E2114D79E"
+		}
+	]
+}

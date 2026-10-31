@@ -55,6 +55,7 @@
 		"build:native:compositor:linux": "node scripts/build-linux-compositor-addon.mjs",
 		"build:native:linux": "node scripts/build-linux-pipewire-helper.mjs",
 		"build:win": "npm run build:native:win && npm run fetch:ffmpeg && npm run fetch:onnxruntime && npm run stage:vcomp && npm run build:native:compositor && tsc && vite build && npm run licenses:generate && electron-builder --win --config.npmRebuild=false",
+		"delivery:win": "node scripts/create-windows-preview-delivery.mjs",
 		"build:win:store": "node scripts/fork-store-disabled.mjs",
 		"build:linux": "npm run fetch:ffmpeg:sdk && npm run build:native:linux && npm run fetch:onnxruntime && npm run build:native:compositor:linux && tsc && vite build && npm run licenses:generate && electron-builder --linux AppImage deb pacman rpm --config.npmRebuild=false",
 		"build:whisper-binaries": "bash scripts/build-whisper-stt.sh",

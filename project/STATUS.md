@@ -2,6 +2,17 @@
 
 ## Decisão vigente — primeira versão Windows (2026-10-29)
 
+Atualização de entrega em 31/10/2026: por decisão do usuário, o foco imediato é o
+handoff do candidato e a homologação física será feita depois pelo operador. O pacote
+`0.1.0-alpha.1` está pronto para entrega como **preview/teste**, com manifesto em
+[WINDOWS-PREVIEW-DELIVERY.md](WINDOWS-PREVIEW-DELIVERY.md). Isto não transforma os
+aceites adiados em aprovados e não autoriza publicação ou instalação automática.
+`npm run delivery:win` gera manifesto e `SHA256SUMS.txt` ao lado do pacote, preservando
+o commit-fonte quando os bytes dos artefatos não mudam. O snapshot rastreado confere
+com o manifesto local; instalador 192.095.211 bytes SHA256 `731FD9D9…`, identidade
+`openScreenCopilot`/`0.1.0-alpha.1`, Authenticode `NotSigned`, licenças/avisos e helper
+WGC presentes. Nenhum instalador foi executado ou publicado nesta preparação.
+
 O corte atual é somente Windows. A próxima entrega não inclui transcrição ao vivo,
 provider ASR concreto, recuperação de transcrição, Copilot, AV1 nem Linux/RegataOS.
 Esses trabalhos permanecem preservados como backlog e não bloqueiam a versão inicial.

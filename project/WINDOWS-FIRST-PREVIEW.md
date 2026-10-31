@@ -1,6 +1,12 @@
 # Primeira versão estável — Windows
 
-Estado consolidado em 2026-10-29.
+Estado consolidado em 2026-10-31.
+
+Decisão de entrega em 31/10/2026: o candidato Windows pode ser entregue como
+**preview/teste** antes da homologação física. Os itens manuais abaixo serão executados
+depois pelo operador e não bloqueiam o handoff do instalador; continuam bloqueando
+somente a promoção para release homologado. Manifesto e instruções em
+[WINDOWS-PREVIEW-DELIVERY.md](WINDOWS-PREVIEW-DELIVERY.md).
 
 Este documento resume o corte da primeira versão utilizável do openScreenCopilot.
 Ele não substitui [STATUS.md](STATUS.md) nem [ROADMAP.md](ROADMAP.md), que continuam
@@ -41,7 +47,7 @@ e não como release homologado.
 Esses itens indicam implementação disponível; não significam que todos os cenários
 tenham sido homologados em hardware e uso reais.
 
-## O que falta para fechar o preview Windows
+## O que falta para o aceite final do preview Windows
 
 ### 1. Homologação funcional real
 
@@ -99,7 +105,7 @@ preview Windows:
 - redução ou cancelamento de ruído do microfone;
 - downloads automáticos de modelos.
 
-## Definição de pronto
+## Definição de pronto para homologação
 
 O preview Windows pode ser considerado pronto quando:
 
@@ -113,8 +119,10 @@ O preview Windows pode ser considerado pronto quando:
 
 ## Próximo passo
 
-Executar a homologação funcional real na ordem da checklist acima, registrar cada
-resultado em [STATUS.md](STATUS.md) e corrigir apenas os bloqueadores confirmados.
+Entregar o instalador e o manifesto conforme
+[WINDOWS-PREVIEW-DELIVERY.md](WINDOWS-PREVIEW-DELIVERY.md). Depois, quando o operador
+decidir, executar a homologação funcional real na ordem da checklist acima e corrigir
+apenas bloqueadores confirmados.
 
 ## Instruções de retomada para outra IA
 
