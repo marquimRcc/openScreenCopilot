@@ -97,6 +97,17 @@ describe("extractMono16kPcm", () => {
 		expect(Array.from(out)).toEqual([0.25, -0.75, 1]);
 	});
 
+	it("kills extraction before whole-buffer PCM exceeds its configured bound", async () => {
+		const child = fakeChild();
+		spawnMock.mockReturnValue(child);
+		const promise = extractMono16kPcm("/tmp/too-long.mp4", { maxSamples: 2 });
+		await spawned();
+		child.stdout.write(f32le([0.1, 0.2, 0.3]));
+
+		await expect(promise).rejects.toThrow("four-hour transcription limit");
+		expect(child.kill).toHaveBeenCalledWith("SIGKILL");
+	});
+
 	it("reports a file with no audio track", async () => {
 		const child = fakeChild();
 		spawnMock.mockReturnValue(child);

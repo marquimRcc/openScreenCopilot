@@ -92,7 +92,8 @@
 		"openFolder": "Klasörü aç",
 		"newCapture": "Yeni kayıt",
 		"edit": "Düzenle",
-		"retry": "Yeniden dene"
+		"retry": "Yeniden dene",
+		"transcriptionCancelled": "Transkripsiyon iptal edildi"
 	},
 	"regionSelection": {
 		"tab": "Bölge",

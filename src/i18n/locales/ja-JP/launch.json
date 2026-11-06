@@ -92,7 +92,8 @@
 		"openFolder": "フォルダーを開く",
 		"newCapture": "新しい録画",
 		"edit": "編集",
-		"retry": "再試行"
+		"retry": "再試行",
+		"transcriptionCancelled": "文字起こしをキャンセルしました"
 	},
 	"regionSelection": {
 		"tab": "範囲",

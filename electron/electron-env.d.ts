@@ -598,6 +598,19 @@ interface Window {
 				callback: (event: import("./stt/transcriptionContract").SttStatusEvent) => void,
 			) => () => void;
 		};
+		postRecordingTranscription: {
+			start: (
+				expectedPath: string,
+			) => Promise<
+				import("./recording/postRecordingTranscription").PostRecordingTranscriptionResult
+			>;
+			cancel: () => Promise<{ accepted: boolean }>;
+			onStatus: (
+				callback: (
+					event: import("./recording/postRecordingTranscription").PostRecordingTranscriptionStatus,
+				) => void,
+			) => () => void;
+		};
 		// CLI mode (hidden runner windows; see electron/cli/)
 		cliGetRequest: () => Promise<import("../src/lib/cliContracts").CliRequest>;
 		cliProgress: (progress: import("../src/lib/cliContracts").CliProgressEvent) => void;

@@ -92,7 +92,8 @@
 		"openFolder": "開啟資料夾",
 		"newCapture": "新錄製",
 		"edit": "編輯",
-		"retry": "重試"
+		"retry": "重試",
+		"transcriptionCancelled": "轉錄已取消"
 	},
 	"regionSelection": {
 		"tab": "區域",

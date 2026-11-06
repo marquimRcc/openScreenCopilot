@@ -17,3 +17,18 @@
 .error { color: #fca5a5; font-size: 14px; margin-bottom: 12px; }
 .previewNote { color: #a4adba; font-size: 12px; margin: 8px 0 16px; }
 .copyResult { font-size: 13px; color: #a7f3d0; overflow-wrap: anywhere; user-select: text; }
+.transcription { margin: 0 0 20px; padding: 16px; border: 1px solid #2b3340; border-radius: 12px; background: #11151c; }
+.transcriptionHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.transcriptionHeading h2 { margin: 0; font-size: 17px; }
+.transcriptionHeading p { margin: 5px 0 0; color: #a4adba; font-size: 12px; }
+.transcriptionHeading span { flex: none; border-radius: 999px; padding: 5px 9px; background: #202733; color: #cbd5e1; font-size: 12px; }
+.transcriptionHeading span[data-state="completed"] { color: #a7f3d0; }
+.transcriptionHeading span[data-state="failed"] { color: #fca5a5; }
+.transcriptionProgress { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.transcriptionProgress progress { width: 100%; accent-color: #10b981; }
+.transcription textarea { width: 100%; min-height: 120px; box-sizing: border-box; margin-top: 14px; padding: 10px; resize: vertical; border: 1px solid #333a45; border-radius: 8px; color: #e5e7eb; background: #0b0e13; font: inherit; }
+.transcriptionFiles { display: grid; gap: 8px; margin-top: 10px; }
+.transcriptionFiles label { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 8px; color: #a4adba; font-size: 12px; }
+.transcriptionFiles input { min-width: 0; padding: 7px 9px; border: 1px solid #333a45; border-radius: 7px; color: #dfe5ed; background: #151a22; font: inherit; }
+.transcriptionActions { margin-top: 14px; }
+.transcriptionActions button { border: 1px solid #3b4555; border-radius: 8px; padding: 8px 13px; color: #f5f7fa; background: #19202a; cursor: pointer; }

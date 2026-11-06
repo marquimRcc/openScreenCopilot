@@ -26,6 +26,10 @@ import {
 } from "../src/native/contracts";
 import type { RecordingPrefs } from "./ipc/handlers";
 import type {
+	PostRecordingTranscriptionResult,
+	PostRecordingTranscriptionStatus,
+} from "./recording/postRecordingTranscription";
+import type {
 	SttStatusEvent,
 	SttTranscribeRequest,
 	SttTranscribeResponse,
@@ -694,6 +698,21 @@ contextBridge.exposeInMainWorld("electronAPI", {
 			const listener = (_event: unknown, payload: SttStatusEvent) => callback(payload);
 			ipcRenderer.on("stt:status", listener);
 			return () => ipcRenderer.removeListener("stt:status", listener);
+		},
+	},
+	postRecordingTranscription: {
+		start: (expectedPath: string): Promise<PostRecordingTranscriptionResult> =>
+			ipcRenderer.invoke(
+				"start-post-recording-transcription",
+				expectedPath,
+			) as Promise<PostRecordingTranscriptionResult>,
+		cancel: (): Promise<{ accepted: boolean }> =>
+			ipcRenderer.invoke("cancel-post-recording-transcription") as Promise<{ accepted: boolean }>,
+		onStatus: (callback: (event: PostRecordingTranscriptionStatus) => void) => {
+			const listener = (_event: unknown, payload: PostRecordingTranscriptionStatus) =>
+				callback(payload);
+			ipcRenderer.on("post-recording-transcription-status", listener);
+			return () => ipcRenderer.removeListener("post-recording-transcription-status", listener);
 		},
 	},
 	// --- CLI mode (hidden runner windows; see electron/cli/) ---

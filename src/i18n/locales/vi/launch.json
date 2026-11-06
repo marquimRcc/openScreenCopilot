@@ -87,7 +87,8 @@
 		"openFolder": "Mở thư mục",
 		"newCapture": "Ghi mới",
 		"edit": "Chỉnh sửa",
-		"retry": "Thử lại"
+		"retry": "Thử lại",
+		"transcriptionCancelled": "Đã hủy phiên âm"
 	},
 	"regionSelection": {
 		"tab": "Vùng",

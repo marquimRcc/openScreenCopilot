@@ -87,7 +87,8 @@
 		"openFolder": "Открыть папку",
 		"newCapture": "Новая запись",
 		"edit": "Редактировать",
-		"retry": "Повторить"
+		"retry": "Повторить",
+		"transcriptionCancelled": "Расшифровка отменена"
 	},
 	"regionSelection": {
 		"tab": "Область",

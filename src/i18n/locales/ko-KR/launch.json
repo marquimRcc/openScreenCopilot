@@ -92,7 +92,8 @@
 		"openFolder": "폴더 열기",
 		"newCapture": "새 녹화",
 		"edit": "편집",
-		"retry": "다시 시도"
+		"retry": "다시 시도",
+		"transcriptionCancelled": "전사가 취소됨"
 	},
 	"regionSelection": {
 		"tab": "영역",

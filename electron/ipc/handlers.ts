@@ -156,6 +156,7 @@ import {
 	type NativeWindowsTakeSession,
 	queryTakeStatus,
 } from "../recording/nativeWindowsMidCaptureWatch";
+import { PostRecordingTranscriptions } from "../recording/postRecordingTranscription";
 import { removeEmptyCaptureOutput } from "../recording/removeEmptyCaptureOutput";
 import { createSavedRecordingActions } from "../recording/savedRecording";
 import {
@@ -198,6 +199,7 @@ import {
 	shouldEnumerateRecordingSources,
 	shouldPersistSelectedSource,
 } from "../recording-source-settings";
+import { getSttManager } from "../stt";
 import { createRegionIndicatorWindow, createRunnerWindow } from "../windows";
 import { getSourcesByType, shouldEnumerateSourceTypesSeparately } from "./desktopSourceTypes";
 import { registerNativeBridgeHandlers } from "./nativeBridge";
@@ -2690,8 +2692,13 @@ export function registerIpcHandlers(
 		return { opened: true };
 	});
 
+	let postRecordingTranscriptions: PostRecordingTranscriptions | null = null;
 	ipcMain.handle("switch-to-editor", () => {
-		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+		if (
+			savedRecordingCopies.isBusy() ||
+			savedRecordingGifs.isBusy() ||
+			!!postRecordingTranscriptions?.isBusy()
+		)
 			throw new Error("A recording derivative is still running.");
 		// createEditorWindow already closes the current mainWindow (the HUD) before
 		// opening the editor. Closing it here too double-closes, leaving ghost
@@ -2718,7 +2725,8 @@ export function registerIpcHandlers(
 			: null;
 	const savedRecordingCopies = new SavedRecordingCopies({
 		current: currentSavedSource,
-		isBusy: () => recordingBusy() || savedRecordingGifs.isBusy(),
+		isBusy: () =>
+			recordingBusy() || savedRecordingGifs.isBusy() || !!postRecordingTranscriptions?.isBusy(),
 		isOwnerCurrent: copyOwnerCurrent,
 		pick: async (owner, name, extension) => {
 			if (!copyOwnerCurrent(owner)) throw new Error("Recording result window changed.");
@@ -2735,7 +2743,8 @@ export function registerIpcHandlers(
 		ipc: ipcMain,
 		window: getMainWindow,
 		current: currentSavedSource,
-		isBusy: () => recordingBusy() || savedRecordingCopies.isBusy(),
+		isBusy: () =>
+			recordingBusy() || savedRecordingCopies.isBusy() || !!postRecordingTranscriptions?.isBusy(),
 		compositor: new CompositorViewService(),
 		pick: async (owner, name) => {
 			if (!copyOwnerCurrent(owner)) throw new Error("Recording result window changed.");
@@ -2747,6 +2756,14 @@ export function registerIpcHandlers(
 			});
 			return result.canceled || !result.filePath ? null : result.filePath;
 		},
+	});
+	postRecordingTranscriptions = new PostRecordingTranscriptions({
+		current: currentSavedSource,
+		isBusy: () => recordingBusy() || savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy(),
+		isAllowed: isPathAllowed,
+		isOwnerCurrent: copyOwnerCurrent,
+		engine: getSttManager,
+		emit: (owner, status) => owner.send("post-recording-transcription-status", status),
 	});
 	const savedRecordingActions = createSavedRecordingActions({
 		getCurrentPath: () => currentVideoPath,
@@ -2760,7 +2777,8 @@ export function registerIpcHandlers(
 			!!nativeMacCaptureProcess ||
 			!!linuxNativeCaptureSession ||
 			savedRecordingCopies.isBusy() ||
-			savedRecordingGifs.isBusy(),
+			savedRecordingGifs.isBusy() ||
+			!!postRecordingTranscriptions?.isBusy(),
 		isEditorDirty: () => editorHasUnsavedChanges?.() ?? false,
 		stat: (file) => fs.stat(file),
 		reveal: (file) => shell.showItemInFolder(file),
@@ -2788,9 +2806,23 @@ export function registerIpcHandlers(
 	ipcMain.handle("cancel-saved-recording-copy", (event) => ({
 		accepted: savedRecordingCopies.cancel(event.sender),
 	}));
+	ipcMain.handle("start-post-recording-transcription", (event, expectedPath: string) => {
+		if (event.senderFrame !== event.sender.mainFrame)
+			return { success: false, errorCode: "unavailable" };
+		return postRecordingTranscriptions?.start(event.sender, expectedPath);
+	});
+	ipcMain.handle("cancel-post-recording-transcription", (event) => ({
+		accepted:
+			event.senderFrame === event.sender.mainFrame &&
+			(postRecordingTranscriptions?.cancel(event.sender) ?? false),
+	}));
 
 	ipcMain.handle("switch-to-hud", () => {
-		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+		if (
+			savedRecordingCopies.isBusy() ||
+			savedRecordingGifs.isBusy() ||
+			!!postRecordingTranscriptions?.isBusy()
+		)
 			throw new Error("A recording derivative is still running.");
 		_switchToHud?.();
 		return { success: true };
@@ -2810,7 +2842,11 @@ export function registerIpcHandlers(
 		}
 	}
 	ipcMain.handle("start-new-recording", () => {
-		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+		if (
+			savedRecordingCopies.isBusy() ||
+			savedRecordingGifs.isBusy() ||
+			!!postRecordingTranscriptions?.isBusy()
+		)
 			throw new Error("A recording derivative is still running.");
 		startNewRecording();
 		return { success: true };
@@ -5884,10 +5920,12 @@ export function registerIpcHandlers(
 			const meter = windowsMeterCaptureGuard.pauseForQuit();
 			const copies = savedRecordingCopies.pauseAndDrain();
 			const gifs = savedRecordingGifs.pauseAndDrain();
+			const transcriptions = postRecordingTranscriptions?.pauseAndDrain();
 			return {
 				settled: Promise.all([
 					copies.settled,
 					gifs.settled,
+					transcriptions?.settled,
 					meter.settled,
 					orphanedWindowsCapture,
 				]).then(() => undefined),
@@ -5895,6 +5933,7 @@ export function registerIpcHandlers(
 					meter.resume();
 					copies.resume();
 					gifs.resume();
+					transcriptions?.resume();
 				},
 			};
 		},

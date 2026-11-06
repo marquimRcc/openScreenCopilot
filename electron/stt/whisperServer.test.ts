@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { writeSamplesAsWav } from "./wav";
-import { WhisperServerManager } from "./whisperServer";
+import { redactWhisperHelperPaths, WhisperServerManager } from "./whisperServer";
 
 vi.mock("node:child_process", async (importOriginal) => {
 	// `node:child_process` is CJS, so the ESM namespace also carries a `default`
@@ -17,6 +17,22 @@ vi.mock("node:child_process", async (importOriginal) => {
 	>();
 	const spawn = vi.fn();
 	return { ...actual, spawn, default: { ...(actual.default ?? {}), spawn } };
+});
+
+describe("redactWhisperHelperPaths", () => {
+	it("removes model, VAD and executable paths without hiding diagnostic text", () => {
+		const model = "C:\\Users\\person\\AppData\\models\\small.bin";
+		const vad = "C:\\Users\\person\\AppData\\models\\vad.bin";
+		const helper = "C:\\Private App\\whisper-stt-server.exe";
+		const output = redactWhisperHelperPaths(
+			`boot model=${model} vad=${vad.replace(/\\/g, "/")} helper=${helper} GPU ready`,
+			[model, vad, helper],
+		);
+		expect(output).toBe(
+			"boot model=[private-path] vad=[private-path] helper=[private-path] GPU ready",
+		);
+		expect(output).not.toContain("person");
+	});
 });
 
 describe("wav.writeSamplesAsWav", () => {

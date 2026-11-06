@@ -87,7 +87,8 @@
 		"openFolder": "فتح المجلد",
 		"newCapture": "تسجيل جديد",
 		"edit": "تحرير",
-		"retry": "إعادة المحاولة"
+		"retry": "إعادة المحاولة",
+		"transcriptionCancelled": "تم إلغاء النسخ"
 	},
 	"regionSelection": {
 		"tab": "منطقة",

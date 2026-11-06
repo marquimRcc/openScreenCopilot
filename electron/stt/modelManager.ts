@@ -385,6 +385,8 @@ async function ensureFile(
 
 export interface EnsureModelsOptions {
 	baseDir: string;
+	/** Abort model download/retry when the owning transcription is cancelled. */
+	signal?: AbortSignal;
 	/** Models to ensure; defaults to all (`whisper`, `silero-vad`). */
 	only?: SttModelId[];
 	onProgress?: (event: {
@@ -417,6 +419,7 @@ export async function ensureModels(opts: EnsureModelsOptions): Promise<void> {
 					totalBytes: file.approximateBytes,
 				}),
 			fetcher: opts.fetcher,
+			signal: opts.signal,
 		});
 	}
 }

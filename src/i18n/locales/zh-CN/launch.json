@@ -92,7 +92,8 @@
 		"openFolder": "打开文件夹",
 		"newCapture": "新录制",
 		"edit": "编辑",
-		"retry": "重试"
+		"retry": "重试",
+		"transcriptionCancelled": "转录已取消"
 	},
 	"regionSelection": {
 		"tab": "区域",
