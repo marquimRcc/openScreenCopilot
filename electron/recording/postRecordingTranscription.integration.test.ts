@@ -20,12 +20,12 @@ describe.skipIf(!enabled)("post-recording transcription real provider", () => {
 		const { SttManager } = await import("../stt");
 		manager = new SttManager();
 		await manager.init({ modelsBaseDir: path.resolve(modelsBaseDir as string) });
-	});
+	}, 120_000);
 
 	afterAll(async () => {
 		await manager?.shutdown();
 		await Promise.all(outputs.map((file) => fs.rm(file, { force: true })));
-	});
+	}, 120_000);
 
 	it("runs the authorized file through the real local helper and publishes TXT/JSON", async () => {
 		const owner: PostRecordingTranscriptionOwner = {

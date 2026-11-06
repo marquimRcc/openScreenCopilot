@@ -1,25 +1,20 @@
 # Estado atual — openScreenCopilot
 
-## Branch de transcrição pós-gravação — 2026-10-31
+## Branch de transcrição pós-gravação — 2026-11-06
 
 Por nova instrução explícita do usuário, a branch `feat/post-recording-transcription`
 implementa o primeiro corte utilizável separado da gravação. Essa autorização supera
 para esta branch a prioridade anterior que adiava ASR, sem autorizar transcrição ao
 vivo, release, instalador ou promoção.
 
-Checkpoint `58863d48` integra o resultado pós-gravação ao `SttManager`/Whisper local
-herdado: autorização main-owned da gravação corrente, estados preparar/transcrever/
-concluir/cancelar/falhar, progresso, cancelamento e retry, texto na UI e publicação
-atômica de TXT + JSON schema v1 ao lado do vídeo. Falha/cancelamento não alteram o
-vídeo e mensagens da UI não recebem erro cru, PCM ou texto em logs. Extração agora
-tem teto explícito de quatro horas/230.400.000 amostras; fonte do fluxo tem teto de
-8 GiB. Cópia/GIF/transcrição têm admissão mutuamente exclusiva.
-
-Validação local do checkpoint: 62 testes focados aprovados; typecheck app e testes,
-i18n (15 locales/1013 chaves), Biome dos arquivos alterados e diff-check aprovados.
-Lint completo sem erros e com os mesmos 26 avisos herdados. Ambiente disponível usa
-Node 24.19.0/npm 11.17.0, diferente do pin Node 22.22.1/npm 10.9.4; repetir a suíte
-final no toolchain fixado continua obrigatório.
+O corte integra o resultado pós-gravação ao `SttManager`/Whisper local herdado:
+autorização main-owned da gravação corrente, estados preparar/transcrever/concluir/
+cancelar/falhar, progresso, cancelamento e retry, texto na UI e publicação transacional
+de TXT + JSON schema v1 ao lado do vídeo. Falha/cancelamento não alteram o vídeo e
+mensagens da UI não recebem erro cru, PCM ou texto em logs. Extração tem teto explícito
+de quatro horas/230.400.000 amostras; fonte do fluxo tem teto de 8 GiB. Cópia, GIF e
+transcrição têm admissão mutuamente exclusiva. Troca de tela/nova captura são bloqueadas
+durante a operação; quit congela admissão, cancela e aguarda inferência/publicação/limpeza.
 
 Provider real validado isoladamente com WAV sintético pt-BR de 7,37 s: helper oficial
 OpenScreen v2.1.2 extraído sem instalar, modelo small-q8_0/Silero em cache, CPU, 15
@@ -30,20 +25,36 @@ os derivados anteriores; stderr conhecido teve caminhos privados redigidos.
 Evidência, contrato, limites e pendências
 em [POST-RECORDING-TRANSCRIPTION.md](POST-RECORDING-TRANSCRIPTION.md).
 
-Validação adicional em 06/11/2026 reconstruiu WGC, compositor e pacote Windows local
-com Node 22.22.1/npm 10.9.4. O staging e o `win-unpacked` têm o mesmo conjunto de 24
-recursos nativos; o helper Whisper empacotado foi executado dali sobre a amostra pt-BR
-e passou novamente (15 palavras, idioma `pt`, RTF 0,428). Instalador NSIS local de
-179.022.050 bytes, SHA-256 `BD132462…55DEB`, íntegro e `NotSigned`; nenhum instalador
-foi executado ou publicado. A suíte completa anterior ao novo ensaio opt-in terminou
-com 5.397 aprovados, 12 ignorados e zero falhas no toolchain fixado. Mídia de 125 s e
-teste opt-in para cancelamento durante chunk estão preparados, ainda não executados.
-E2E da interface, falhas/retry empacotados e nova suíte final continuam pendentes.
-Revisão adicional tornou a publicação TXT/JSON transacional como par, bloqueou troca
-de tela/nova captura durante a operação e integrou transcrição ao pause-and-drain do
-encerramento; testes focados, typechecks app/testes, Biome, docs e diff-check passaram.
+Em 06/11/2026, WGC, compositor e pacote Windows foram reconstruídos no Node
+22.22.1/npm 10.9.4 depois das correções finais. O build nativo passou 177 testes de
+áudio, 33 do encoder e as suítes auxiliares. Instalador NSIS local de 179.794.754 bytes,
+SHA-256 `323FD9BB…F5DB`; `app.asar` 20.185.363 bytes, SHA-256 `8E945F43…F03A`;
+executável unpacked SHA-256 `AE292B17…DDC3`. O teste 7-Zip terminou `Everything is Ok`;
+o pacote continua `NotSigned`, não instalado nem publicado.
 
-Branch enviada ao remoto; nenhum PR, release, instalador ou publicação foi criado.
+E2E real da interface pós-gravação em perfil isolado aprovou gravação→resultado,
+falha de cache/modelo, falha de helper, retry, transcrição Vulkan, texto visível e
+publicação TXT/JSON schema v1 sem temporários/backups residuais. Para não captar áudio
+privado, a gravação foi feita sem áudio e recebeu depois a amostra sintética pt-BR; o
+original silencioso foi preservado. O texto conhecido saiu exato e o log registrou
+7,4 s em 1,9 s (RTF 0,26). O teste opt-in de 125 s cancelou durante inferência real e
+preservou os derivados anteriores. Zero processos próprios ficaram ativos no final.
+
+Um smoke no pacote final pós-rebuild repetiu a transcrição e mostrou `Transcript ready`
+com TXT/JSON idênticos. Como o HUD ficou input-transparent para a automação remota, o
+helper WGC conferido foi encerrado e a recuperação suportada abriu o resultado; portanto
+o smoke final aprova a transcrição e a recuperação, não um novo teste de Stop normal.
+
+Limitação observada: o picker visual permaneceu carregando embora o main retornasse
+sete fontes; a fonte de tela foi pré-configurada a partir do CLI empacotado. Assim, esta
+rodada aprova o fluxo pós-gravação, não a checklist global de captura/picker.
+
+Suíte final no toolchain fixado: 5.402 aprovados, 13 ignorados, zero falhas. Typechecks
+app/testes, i18n, docs, lint (26 avisos herdados), Biome e diff-check passaram. Evidência
+completa, hashes e limites estão em
+[POST-RECORDING-TRANSCRIPTION.md](POST-RECORDING-TRANSCRIPTION.md).
+
+Branch pronta para commit/push e PR; nenhum release, instalação ou publicação foi feito.
 
 ## Decisão vigente — primeira versão Windows (2026-10-29)
 

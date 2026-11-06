@@ -1,8 +1,9 @@
 # Transcrição local pós-gravação
 
-Estado em 2026-10-31: primeiro corte vertical implementado na branch
-`feat/post-recording-transcription`; validação automatizada e provider real aprovados.
-Ainda não é release, instalador homologado nem transcrição durante a gravação.
+Estado em 2026-11-06: primeiro corte vertical implementado e validado na branch
+`feat/post-recording-transcription`; provider real, pacote Windows local e E2E pós-gravação
+aprovados no escopo descrito abaixo. Ainda não é release, instalador assinado nem
+transcrição durante a gravação.
 
 ## Corte implementado
 
@@ -88,9 +89,9 @@ concluídos. O host também passou a redigir os caminhos conhecidos do helper/mo
 antes de encaminhar ou reter stderr; o mesmo teste real mostrou `[private-path]` nos
 lugares antes ocupados pelos caminhos locais.
 
-Essa evidência qualifica o provider concreto e a amostra conhecida. O helper veio de
-um release upstream, não de um pacote desta branch; portanto não comprova staging,
-empacotamento ou E2E da interface desta branch.
+Essa primeira evidência qualificou o provider concreto e a amostra conhecida. O helper
+veio de um release upstream; staging, empacotamento e E2E da branch foram validados
+separadamente na etapa seguinte.
 
 ## Validação do pacote local da branch
 
@@ -99,13 +100,16 @@ repositório (Node 22.22.1/npm 10.9.4). O build nativo WGC passou seus 177 teste
 áudio, 33 testes do encoder e as suítes auxiliares de região, webcam, visibilidade,
 relógio e ciclo de fonte; o compositor Rust e o instalador NSIS também foram gerados.
 
-O pacote local `0.1.0-alpha.1` ficou identificado como `openScreenCopilot`, sem
-assinatura Authenticode e sem publicação:
+O pacote final local `0.1.0-alpha.1`, reconstruído depois das correções de publicação
+atômica e encerramento, ficou identificado como `openScreenCopilot`, sem assinatura
+Authenticode e sem publicação:
 
-- instalador: 179.022.050 bytes, SHA-256
-  `BD1324626023AFA127698E7B27F46C4B63AC284B72201A7DEEE77C651CA55DEB`;
-- `app.asar`: 15.898.619 bytes, SHA-256
-  `0023953E627E622B2998C437514FD8E13649002CE4B5ADA5F49D30FF13333551`;
+- instalador: 179.794.754 bytes, SHA-256
+  `323FD9BB9F3E4DC45C0797E76524849639AF95CAD40449B4B94B8EF874E8F5DB`;
+- `app.asar`: 20.185.363 bytes, SHA-256
+  `8E945F43C3D20965708492F89EBD4AAA839D6191DEDADE5B8B1CA96AB5E5F03A`;
+- executável unpacked: 223.298.048 bytes, SHA-256
+  `AE292B17807F1743845214E22A0267DA434FD61013065570816AE98F420DDDC3`;
 - 24 recursos nativos destinados ao pacote conferidos bidirecionalmente e byte a
   byte contra o staging, sem ausentes ou extras;
 - helper Whisper empacotado: SHA-256
@@ -119,24 +123,61 @@ assinatura Authenticode e sem publicação:
 O helper executado diretamente **do diretório `win-unpacked`** processou novamente o
 WAV pt-BR de 7,37 s em CPU: 1 segmento/15 palavras, idioma `pt`, guardrail DTW,
 intervalos de fala, limites e monotonicidade aprovados; 3,16 s, RTF 0,428. Isso fecha
-staging, DLLs e execução real do provider no pacote, mas ainda não substitui o E2E da
-interface Electron.
+staging, DLLs e execução real do provider no pacote.
 
-Antes da adição do ensaio opt-in de cancelamento longo, a suíte completa no toolchain
-fixado terminou com 5.397 testes aprovados, 12 ignorados e zero falhas; typechecks de
-app/testes, i18n e lint também passaram (os mesmos 26 avisos herdados). O novo ensaio
-opt-in passa typecheck/Biome e fica ignorado sem a mídia longa explícita; a suíte final
-será repetida depois de executá-lo.
+## E2E pós-gravação no pacote Windows
 
-## Ainda pendente antes de declarar a branch concluída
+Em perfil isolado, o pacote `win-unpacked` gravou a tela inteira por 20 s com áudio do
+sistema, microfone e câmera desligados. O resultado foi salvo normalmente. Para manter
+o ensaio determinístico e sem captar voz ou áudio privado, o MP4 silencioso original foi
+preservado como `recording-1793986070634.silent-original.mp4` (2.737.839 bytes,
+SHA-256 `6CE8F3A1…C979`) e uma cópia da gravação recebeu a amostra pt-BR sintética conhecida.
+O MP4 autorizado resultante tem 1.147.410 bytes, SHA-256 `DEA3A1A9…2236`, H.264
+1920×1200 e AAC mono 16 kHz. A decodificação completa terminou com exit 0; o muxer
+avisou um DTS não monotônico herdado do timing da fonte, portanto esta rodada não afirma
+container temporalmente limpo.
 
-- validar o fluxo completo em uma gravação sintética encerrada no aplicativo;
-- testar cancelamento real durante um chunk Whisper longo (cancelamento após extração
-  e antes do chunk já foi validado); a mídia sintética de 125 s e o teste opt-in estão
-  preparados, ainda não executados;
-- validar falhas reais de helper/modelo/caminho no runtime empacotado;
-- repetir a suíte completa depois do ensaio longo e registrar o resultado final;
-- confirmar salvamento TXT/JSON e retry pela interface em build desta branch.
+Pela interface real pós-gravação:
+
+- um `stt-models` inválido produziu `Transcription failed` sem expor caminho privado;
+- um helper deliberadamente inválido produziu falha, e `Retry` iniciou nova tentativa;
+- com modelos e helper restaurados, `Retry` concluiu como `Transcript ready` e mostrou
+  exatamente “Olá, esta é uma gravação de teste em português brasileiro para validar a
+  transcrição local.”;
+- TXT e JSON foram relidos do disco; o JSON tem schema
+  `openscreencopilot.post-recording-transcript`, versão 1, idioma `pt`, backend
+  `whispercpp-vulkan` e um segmento; não restaram `.tmp` ou `.bak`;
+- o log registrou 7,4 s de áudio em 1,9 s (RTF 0,26; 3,8× tempo real) e redigiu os
+  caminhos conhecidos como `[private-path]`;
+- app, helper e captura foram encerrados, com zero processo residual.
+
+Depois do rebuild final, um smoke adicional repetiu o caminho no pacote identificado
+pelos hashes desta seção. A automação remota não conseguiu atingir o botão Stop porque
+o HUD ficou input-transparent; o helper WGC exato foi então encerrado para exercer a
+recuperação suportada. O resultado salvou 2:18/22,6 MB, o original silencioso foi
+preservado (SHA-256 `4EB5C3E5…24AC7`) e a cópia autorizada recebeu a mesma amostra
+sintética (SHA-256 `A7933D4B…74F24`). A UI do pacote final mostrou `Transcript ready`
+com o texto exato; TXT (`81E40047…A7B1`) e JSON (`E6B042FE…BAB1`) repetiram schema,
+idioma, backend e ausência de temporários/backups. O encerramento final deixou zero
+processo próprio. Esse smoke confirma a transcrição no pacote final, mas não conta como
+novo aceite do Stop normal do HUD.
+
+O seletor visual permaneceu em “Loading screens and windows...” apesar de o main ter
+retornado sete fontes em 5,973 s e o Chromium ter registrado timeout do primeiro frame
+WGC. O ensaio prosseguiu com a fonte `screen:0:0` descoberta pelo CLI empacotado e salva
+no perfil isolado. Isso é uma limitação observada do picker e impede chamar esta rodada
+de homologação global da captura; não invalida o fluxo pós-gravação exercitado.
+
+O teste opt-in real também processou a mídia sintética de 125 s e cancelou depois que a
+inferência Whisper começou: três casos passaram em 39,8 s, com o cancelamento longo em
+22,679 s e preservação dos derivados anteriores. A suíte final no Node 22.22.1/npm
+10.9.4 terminou com 5.402 testes aprovados, 13 ignorados e zero falhas; os dois
+typechecks, i18n, docs, lint (26 avisos herdados), Biome dos arquivos alterados e
+`git diff --check` passaram.
+
+Os gates desta branch para transcrição pós-gravação estão satisfeitos. A limitação do
+picker acima e a checklist global de captura permanecem trabalhos separados; não são
+reclassificados como aprovados por esta validação direcionada.
 
 Transcrição ao vivo, parciais, journal/recovery, diarização, resumo e tarefas continuam
 fora deste corte.
