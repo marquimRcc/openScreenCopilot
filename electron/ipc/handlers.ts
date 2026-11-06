@@ -2692,8 +2692,13 @@ export function registerIpcHandlers(
 		return { opened: true };
 	});
 
+	let postRecordingTranscriptions: PostRecordingTranscriptions | null = null;
 	ipcMain.handle("switch-to-editor", () => {
-		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+		if (
+			savedRecordingCopies.isBusy() ||
+			savedRecordingGifs.isBusy() ||
+			!!postRecordingTranscriptions?.isBusy()
+		)
 			throw new Error("A recording derivative is still running.");
 		// createEditorWindow already closes the current mainWindow (the HUD) before
 		// opening the editor. Closing it here too double-closes, leaving ghost
@@ -2711,7 +2716,6 @@ export function registerIpcHandlers(
 		(editorHasUnsavedChanges?.() ?? false);
 	const copyOwnerCurrent = (owner: SavedRecordingCopyOwner) =>
 		isRecordingResultOwner(getMainWindow(), owner);
-	let postRecordingTranscriptions: PostRecordingTranscriptions | null = null;
 	const currentSavedSource = () =>
 		currentVideoPath && isPathAllowed(currentVideoPath)
 			? {
@@ -2773,7 +2777,8 @@ export function registerIpcHandlers(
 			!!nativeMacCaptureProcess ||
 			!!linuxNativeCaptureSession ||
 			savedRecordingCopies.isBusy() ||
-			savedRecordingGifs.isBusy(),
+			savedRecordingGifs.isBusy() ||
+			!!postRecordingTranscriptions?.isBusy(),
 		isEditorDirty: () => editorHasUnsavedChanges?.() ?? false,
 		stat: (file) => fs.stat(file),
 		reveal: (file) => shell.showItemInFolder(file),
@@ -2813,7 +2818,11 @@ export function registerIpcHandlers(
 	}));
 
 	ipcMain.handle("switch-to-hud", () => {
-		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+		if (
+			savedRecordingCopies.isBusy() ||
+			savedRecordingGifs.isBusy() ||
+			!!postRecordingTranscriptions?.isBusy()
+		)
 			throw new Error("A recording derivative is still running.");
 		_switchToHud?.();
 		return { success: true };
@@ -2833,7 +2842,11 @@ export function registerIpcHandlers(
 		}
 	}
 	ipcMain.handle("start-new-recording", () => {
-		if (savedRecordingCopies.isBusy() || savedRecordingGifs.isBusy())
+		if (
+			savedRecordingCopies.isBusy() ||
+			savedRecordingGifs.isBusy() ||
+			!!postRecordingTranscriptions?.isBusy()
+		)
 			throw new Error("A recording derivative is still running.");
 		startNewRecording();
 		return { success: true };
@@ -5907,10 +5920,12 @@ export function registerIpcHandlers(
 			const meter = windowsMeterCaptureGuard.pauseForQuit();
 			const copies = savedRecordingCopies.pauseAndDrain();
 			const gifs = savedRecordingGifs.pauseAndDrain();
+			const transcriptions = postRecordingTranscriptions?.pauseAndDrain();
 			return {
 				settled: Promise.all([
 					copies.settled,
 					gifs.settled,
+					transcriptions?.settled,
 					meter.settled,
 					orphanedWindowsCapture,
 				]).then(() => undefined),
@@ -5918,6 +5933,7 @@ export function registerIpcHandlers(
 					meter.resume();
 					copies.resume();
 					gifs.resume();
+					transcriptions?.resume();
 				},
 			};
 		},

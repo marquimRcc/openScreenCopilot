@@ -8,6 +8,7 @@ const wavPath = process.env.OPENSCREEN_POST_RECORDING_STT_WAV;
 const modelsBaseDir = process.env.OPENSCREEN_POST_RECORDING_STT_MODELS;
 const helperPath = process.env.OPENSCREEN_WHISPER_SERVER_EXE;
 const ffmpegPath = process.env.OPENSCREEN_FFMPEG_PATH;
+const longWavPath = process.env.OPENSCREEN_POST_RECORDING_STT_LONG_WAV;
 const enabled = Boolean(wavPath && modelsBaseDir && helperPath && ffmpegPath);
 
 describe.skipIf(!enabled)("post-recording transcription real provider", () => {
@@ -88,4 +89,53 @@ describe.skipIf(!enabled)("post-recording transcription real provider", () => {
 		expect(await fs.readFile(txtPath)).toEqual(before[0]);
 		expect(await fs.readFile(jsonPath)).toEqual(before[1]);
 	}, 120_000);
+
+	it.skipIf(!longWavPath)(
+		"cancels a real Whisper request after inference has started",
+		async () => {
+			const longSourcePath = path.resolve(longWavPath as string);
+			const owner: PostRecordingTranscriptionOwner = {
+				isDestroyed: () => false,
+				send: vi.fn(),
+				once: vi.fn(),
+				removeListener: vi.fn(),
+			};
+			const source = { key: `fixture:${longSourcePath}`, path: longSourcePath };
+			let service!: PostRecordingTranscriptions;
+			let cancelScheduled = false;
+			let cancelAccepted = false;
+			let cancelTimer: ReturnType<typeof setTimeout> | null = null;
+			service = new PostRecordingTranscriptions({
+				current: () => source,
+				isBusy: () => false,
+				isAllowed: (file) => file === longSourcePath,
+				isOwnerCurrent: () => true,
+				engine: () => manager as import("../stt").SttManager,
+				emit: (_owner, event) => {
+					if (event.phase !== "transcribing" || event.completedSec !== 0 || cancelScheduled) {
+						return;
+					}
+					cancelScheduled = true;
+					// completedSec=0 is emitted after real extraction and immediately before the
+					// first helper request. Waiting here makes Cancel land while Whisper owns the
+					// bounded chunk, rather than in the already-covered pre-inference window.
+					cancelTimer = setTimeout(() => {
+						cancelAccepted = service.cancel(owner);
+					}, 2_000);
+				},
+			});
+
+			try {
+				expect(await service.start(owner, longSourcePath)).toEqual({
+					success: false,
+					cancelled: true,
+				});
+				expect(cancelScheduled).toBe(true);
+				expect(cancelAccepted).toBe(true);
+			} finally {
+				if (cancelTimer) clearTimeout(cancelTimer);
+			}
+		},
+		120_000,
+	);
 });

@@ -30,6 +30,19 @@ os derivados anteriores; stderr conhecido teve caminhos privados redigidos.
 Evidência, contrato, limites e pendências
 em [POST-RECORDING-TRANSCRIPTION.md](POST-RECORDING-TRANSCRIPTION.md).
 
+Validação adicional em 06/11/2026 reconstruiu WGC, compositor e pacote Windows local
+com Node 22.22.1/npm 10.9.4. O staging e o `win-unpacked` têm o mesmo conjunto de 24
+recursos nativos; o helper Whisper empacotado foi executado dali sobre a amostra pt-BR
+e passou novamente (15 palavras, idioma `pt`, RTF 0,428). Instalador NSIS local de
+179.022.050 bytes, SHA-256 `BD132462…55DEB`, íntegro e `NotSigned`; nenhum instalador
+foi executado ou publicado. A suíte completa anterior ao novo ensaio opt-in terminou
+com 5.397 aprovados, 12 ignorados e zero falhas no toolchain fixado. Mídia de 125 s e
+teste opt-in para cancelamento durante chunk estão preparados, ainda não executados.
+E2E da interface, falhas/retry empacotados e nova suíte final continuam pendentes.
+Revisão adicional tornou a publicação TXT/JSON transacional como par, bloqueou troca
+de tela/nova captura durante a operação e integrou transcrição ao pause-and-drain do
+encerramento; testes focados, typechecks app/testes, Biome, docs e diff-check passaram.
+
 Branch enviada ao remoto; nenhum PR, release, instalador ou publicação foi criado.
 
 ## Decisão vigente — primeira versão Windows (2026-10-29)

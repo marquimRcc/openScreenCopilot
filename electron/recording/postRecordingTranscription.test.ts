@@ -119,6 +119,77 @@ describe("PostRecordingTranscriptions", () => {
 		expect(f.deps.emit).toHaveBeenLastCalledWith(f.owner, { phase: "cancelled" });
 	});
 
+	it("pauses admission, cancels and drains the active run, then allows retry on resume", async () => {
+		const f = await fixture();
+		f.engine.transcribe.mockImplementation(
+			() =>
+				new Promise((_resolve, reject) => {
+					f.engine.cancel.mockImplementation(() => {
+						const error = new Error("cancelled for quit");
+						error.name = "AbortError";
+						reject(error);
+					});
+				}),
+		);
+		const pending = f.service.start(f.owner, f.sourcePath);
+		await vi.waitFor(() => expect(f.engine.transcribe).toHaveBeenCalledOnce());
+
+		const pause = f.service.pauseAndDrain();
+		expect(await pending).toEqual({ success: false, cancelled: true });
+		await expect(pause.settled).resolves.toBeUndefined();
+		expect(await f.service.start(f.owner, f.sourcePath)).toEqual({
+			success: false,
+			errorCode: "unavailable",
+		});
+
+		pause.resume();
+		f.engine.transcribe.mockResolvedValue(f.response);
+		await expect(f.service.start(f.owner, f.sourcePath)).resolves.toMatchObject({ success: true });
+	});
+
+	it("waits for an in-flight publication when quit drainage can no longer cancel", async () => {
+		const f = await fixture();
+		const jsonPath = path.join(f.root, "take.transcript.json");
+		const realRename = fs.rename.bind(fs);
+		let enteredPublish!: () => void;
+		const publishing = new Promise<void>((resolve) => {
+			enteredPublish = resolve;
+		});
+		let releasePublish!: () => void;
+		const release = new Promise<void>((resolve) => {
+			releasePublish = resolve;
+		});
+		const rename = vi.spyOn(fs, "rename").mockImplementation(async (source, target) => {
+			if (String(source).endsWith(".tmp") && String(target) === jsonPath) {
+				enteredPublish();
+				await release;
+			}
+			return realRename(source, target);
+		});
+
+		try {
+			const pending = f.service.start(f.owner, f.sourcePath);
+			await publishing;
+			const pause = f.service.pauseAndDrain();
+			let drained = false;
+			void pause.settled.then(() => {
+				drained = true;
+			});
+			await Promise.resolve();
+			expect(drained).toBe(false);
+			expect(f.engine.cancel).not.toHaveBeenCalled();
+
+			releasePublish();
+			await expect(pending).resolves.toMatchObject({ success: true });
+			await expect(pause.settled).resolves.toBeUndefined();
+			expect(drained).toBe(true);
+			pause.resume();
+		} finally {
+			releasePublish?.();
+			rename.mockRestore();
+		}
+	});
+
 	it("reports a sanitized failure without publishing transcript files", async () => {
 		const f = await fixture();
 		f.engine.transcribe.mockRejectedValue(new Error(`private path ${f.sourcePath}`));
@@ -130,5 +201,81 @@ describe("PostRecordingTranscriptions", () => {
 		await expect(fs.stat(path.join(f.root, "take.transcript.txt"))).rejects.toMatchObject({
 			code: "ENOENT",
 		});
+	});
+
+	it("rolls back both existing derivatives when the second publication fails", async () => {
+		const f = await fixture();
+		const txtPath = path.join(f.root, "take.transcript.txt");
+		const jsonPath = path.join(f.root, "take.transcript.json");
+		await fs.writeFile(txtPath, "previous text\n");
+		await fs.writeFile(jsonPath, '{"previous":true}\n');
+		const realRename = fs.rename.bind(fs);
+		const rename = vi.spyOn(fs, "rename").mockImplementation(async (source, target) => {
+			if (String(source).endsWith(".tmp") && String(target) === txtPath) {
+				throw Object.assign(new Error("injected second publish failure"), { code: "EACCES" });
+			}
+			return realRename(source, target);
+		});
+
+		try {
+			expect(await f.service.start(f.owner, f.sourcePath)).toEqual({
+				success: false,
+				errorCode: "failed",
+			});
+		} finally {
+			rename.mockRestore();
+		}
+
+		expect(await fs.readFile(txtPath, "utf8")).toBe("previous text\n");
+		expect(await fs.readFile(jsonPath, "utf8")).toBe('{"previous":true}\n');
+		expect((await fs.readdir(f.root)).filter((name) => /\.(tmp|bak)$/.test(name))).toEqual([]);
+	});
+
+	it("removes a newly published sibling when the second publication fails", async () => {
+		const f = await fixture();
+		const txtPath = path.join(f.root, "take.transcript.txt");
+		const jsonPath = path.join(f.root, "take.transcript.json");
+		const realRename = fs.rename.bind(fs);
+		const rename = vi.spyOn(fs, "rename").mockImplementation(async (source, target) => {
+			if (String(source).endsWith(".tmp") && String(target) === txtPath) {
+				throw Object.assign(new Error("injected second publish failure"), { code: "EACCES" });
+			}
+			return realRename(source, target);
+		});
+
+		try {
+			expect(await f.service.start(f.owner, f.sourcePath)).toEqual({
+				success: false,
+				errorCode: "failed",
+			});
+		} finally {
+			rename.mockRestore();
+		}
+
+		await expect(fs.stat(txtPath)).rejects.toMatchObject({ code: "ENOENT" });
+		await expect(fs.stat(jsonPath)).rejects.toMatchObject({ code: "ENOENT" });
+		expect((await fs.readdir(f.root)).filter((name) => /\.(tmp|bak)$/.test(name))).toEqual([]);
+	});
+
+	it("removes the first staged file when staging the second derivative fails", async () => {
+		const f = await fixture();
+		const realWriteFile = fs.writeFile.bind(fs);
+		const writeFile = vi.spyOn(fs, "writeFile").mockImplementation(async (file, data, options) => {
+			if (String(file).includes(".transcript.txt.") && String(file).endsWith(".tmp")) {
+				throw Object.assign(new Error("injected second staging failure"), { code: "ENOSPC" });
+			}
+			return realWriteFile(file, data, options);
+		});
+
+		try {
+			expect(await f.service.start(f.owner, f.sourcePath)).toEqual({
+				success: false,
+				errorCode: "failed",
+			});
+		} finally {
+			writeFile.mockRestore();
+		}
+
+		expect((await fs.readdir(f.root)).filter((name) => /\.(tmp|bak)$/.test(name))).toEqual([]);
 	});
 });

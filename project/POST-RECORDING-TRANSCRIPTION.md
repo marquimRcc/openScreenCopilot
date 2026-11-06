@@ -37,9 +37,10 @@ reutiliza o engine Whisper já integrado ao aplicativo e sua supervisão de proc
 ```
 
 Somente segmentos finais são publicados. Falha ou cancelamento não anuncia conclusão.
-Arquivos são preparados com nome temporário exclusivo e substituídos por rename com
-backup/rollback do destino anterior. A fase curta de publicação não aceita cancelamento,
-para não prometer cancelamento depois de um derivado já ter sido publicado.
+TXT e JSON são preparados juntos com nomes temporários exclusivos e substituídos por
+rename com backup/rollback do par anterior; uma falha na segunda publicação restaura
+ou remove os dois lados. A fase curta de publicação não aceita cancelamento, para não
+prometer cancelamento depois de um derivado já ter sido publicado.
 
 ## Limites e segurança
 
@@ -48,6 +49,9 @@ para não prometer cancelamento depois de um derivado já ter sido publicado.
 - extração: timeout herdado de 60 s e `SIGKILL` em timeout, cancelamento ou excesso;
 - uma transcrição completa por vez no singleton existente;
 - cópia/GIF e transcrição do resultado têm admissão mutuamente exclusiva;
+- troca de tela e início de nova captura são recusados enquanto a transcrição está ativa;
+- encerramento congela nova admissão, solicita cancelamento e aguarda inferência,
+  publicação e limpeza terminarem antes de prosseguir;
 - helper iniciado sem shell pelo caminho já validado pelo runtime herdado;
 - eventos e erros enviados à UI não incluem texto transcrito, PCM, caminho privado ou
   mensagem crua do helper;
@@ -88,14 +92,50 @@ Essa evidência qualifica o provider concreto e a amostra conhecida. O helper ve
 um release upstream, não de um pacote desta branch; portanto não comprova staging,
 empacotamento ou E2E da interface desta branch.
 
+## Validação do pacote local da branch
+
+Em 2026-11-06, a branch foi reconstruída no Windows com o toolchain fixado pelo
+repositório (Node 22.22.1/npm 10.9.4). O build nativo WGC passou seus 177 testes de
+áudio, 33 testes do encoder e as suítes auxiliares de região, webcam, visibilidade,
+relógio e ciclo de fonte; o compositor Rust e o instalador NSIS também foram gerados.
+
+O pacote local `0.1.0-alpha.1` ficou identificado como `openScreenCopilot`, sem
+assinatura Authenticode e sem publicação:
+
+- instalador: 179.022.050 bytes, SHA-256
+  `BD1324626023AFA127698E7B27F46C4B63AC284B72201A7DEEE77C651CA55DEB`;
+- `app.asar`: 15.898.619 bytes, SHA-256
+  `0023953E627E622B2998C437514FD8E13649002CE4B5ADA5F49D30FF13333551`;
+- 24 recursos nativos destinados ao pacote conferidos bidirecionalmente e byte a
+  byte contra o staging, sem ausentes ou extras;
+- helper Whisper empacotado: SHA-256
+  `9A5A0740BEAB8E70C5F792251300B28737D019742122248A117175401295AE36`,
+  idêntico ao extraído do instalador oficial OpenScreen v2.1.2 já registrado acima;
+- bundles main/preload/renderer dentro do `app.asar` contêm os três canais IPC, o
+  schema JSON v1 e o componente da interface pós-gravação;
+- teste de integridade 7-Zip do NSIS concluiu `Everything is Ok` (o aviso de dados
+  após o arquivo 7z é o envelope executável normal do NSIS).
+
+O helper executado diretamente **do diretório `win-unpacked`** processou novamente o
+WAV pt-BR de 7,37 s em CPU: 1 segmento/15 palavras, idioma `pt`, guardrail DTW,
+intervalos de fala, limites e monotonicidade aprovados; 3,16 s, RTF 0,428. Isso fecha
+staging, DLLs e execução real do provider no pacote, mas ainda não substitui o E2E da
+interface Electron.
+
+Antes da adição do ensaio opt-in de cancelamento longo, a suíte completa no toolchain
+fixado terminou com 5.397 testes aprovados, 12 ignorados e zero falhas; typechecks de
+app/testes, i18n e lint também passaram (os mesmos 26 avisos herdados). O novo ensaio
+opt-in passa typecheck/Biome e fica ignorado sem a mídia longa explícita; a suíte final
+será repetida depois de executá-lo.
+
 ## Ainda pendente antes de declarar a branch concluída
 
 - validar o fluxo completo em uma gravação sintética encerrada no aplicativo;
-- confirmar o helper e suas DLLs no pacote produzido a partir desta branch;
 - testar cancelamento real durante um chunk Whisper longo (cancelamento após extração
-  e antes do chunk já foi validado);
+  e antes do chunk já foi validado); a mídia sintética de 125 s e o teste opt-in estão
+  preparados, ainda não executados;
 - validar falhas reais de helper/modelo/caminho no runtime empacotado;
-- executar suíte completa relevante e registrar o resultado final;
+- repetir a suíte completa depois do ensaio longo e registrar o resultado final;
 - confirmar salvamento TXT/JSON e retry pela interface em build desta branch.
 
 Transcrição ao vivo, parciais, journal/recovery, diarização, resumo e tarefas continuam

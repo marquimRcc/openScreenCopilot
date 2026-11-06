@@ -85,28 +85,66 @@ function transcriptTargets(sourcePath: string) {
 	return { txtPath: `${stem}.txt`, jsonPath: `${stem}.json` };
 }
 
-async function replaceAtomically(target: string, contents: string): Promise<void> {
+async function replaceAtomically(
+	replacements: readonly { target: string; contents: string }[],
+): Promise<void> {
 	const token = randomUUID();
-	const temporary = `${target}.${token}.tmp`;
-	const backup = `${target}.${token}.bak`;
-	let backedUp = false;
-	await fs.writeFile(temporary, contents, { encoding: "utf8", flag: "wx" });
+	const entries = replacements.map(({ target, contents }) => ({
+		target,
+		contents,
+		temporary: `${target}.${token}.tmp`,
+		backup: `${target}.${token}.bak`,
+		backedUp: false,
+		published: false,
+	}));
 	try {
-		try {
-			await fs.rename(target, backup);
-			backedUp = true;
-		} catch (error) {
-			if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+		for (const entry of entries) {
+			await fs.writeFile(entry.temporary, entry.contents, { encoding: "utf8", flag: "wx" });
 		}
-		try {
-			await fs.rename(temporary, target);
-		} catch (error) {
-			if (backedUp) await fs.rename(backup, target).catch(() => undefined);
-			throw error;
+		for (const entry of entries) {
+			try {
+				await fs.rename(entry.target, entry.backup);
+				entry.backedUp = true;
+			} catch (error) {
+				if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+			}
 		}
-		if (backedUp) await fs.rm(backup, { force: true });
+		for (const entry of entries) {
+			await fs.rename(entry.temporary, entry.target);
+			entry.published = true;
+		}
+		await Promise.all(
+			entries
+				.filter((entry) => entry.backedUp)
+				.map((entry) => fs.rm(entry.backup, { force: true }).catch(() => undefined)),
+		);
+	} catch (error) {
+		let rollbackError: unknown;
+		for (const entry of [...entries].reverse()) {
+			if (entry.published) {
+				await fs.rm(entry.target, { force: true }).catch((failure) => {
+					rollbackError ??= failure;
+				});
+			}
+		}
+		for (const entry of entries) {
+			if (entry.backedUp) {
+				await fs.rename(entry.backup, entry.target).catch((failure) => {
+					rollbackError ??= failure;
+				});
+			}
+		}
+		if (rollbackError) {
+			throw Object.assign(new Error("Transcript publication rollback failed."), {
+				cause: error,
+				rollbackError,
+			});
+		}
+		throw error;
 	} finally {
-		await fs.rm(temporary, { force: true }).catch(() => undefined);
+		await Promise.all(
+			entries.map((entry) => fs.rm(entry.temporary, { force: true }).catch(() => undefined)),
+		);
 	}
 }
 
@@ -115,7 +153,11 @@ export class PostRecordingTranscriptions {
 		owner: PostRecordingTranscriptionOwner;
 		abort: AbortController;
 		publishing: boolean;
+		engine: Engine;
+		done: Promise<void>;
+		finish(): void;
 	} | null = null;
+	private pauses = 0;
 
 	constructor(private readonly deps: Deps) {}
 
@@ -123,10 +165,30 @@ export class PostRecordingTranscriptions {
 		return this.active !== null;
 	}
 
+	/** Freeze admission synchronously and wait for inference/publication cleanup before quit. */
+	pauseAndDrain() {
+		this.pauses++;
+		const job = this.active;
+		if (job) this.cancel(job.owner);
+		let resumed = false;
+		return {
+			settled: job?.done ?? Promise.resolve(),
+			resume: () => {
+				if (resumed) return;
+				resumed = true;
+				this.pauses--;
+			},
+		};
+	}
+
 	cancel(owner: PostRecordingTranscriptionOwner): boolean {
 		if (!this.active || this.active.owner !== owner || this.active.publishing) return false;
 		this.active.abort.abort();
-		this.deps.engine().cancel();
+		try {
+			this.active.engine.cancel();
+		} catch {
+			/* Keep abort set and let the owned run settle even if engine cancellation throws. */
+		}
 		return true;
 	}
 
@@ -136,6 +198,7 @@ export class PostRecordingTranscriptions {
 	): Promise<PostRecordingTranscriptionResult> {
 		const source = this.deps.current();
 		if (
+			this.pauses > 0 ||
 			this.active ||
 			this.deps.isBusy() ||
 			!source ||
@@ -147,27 +210,20 @@ export class PostRecordingTranscriptions {
 			return { success: false, errorCode: this.active ? "busy" : "unavailable" };
 		}
 
-		const abort = new AbortController();
-		this.active = { owner, abort, publishing: false };
-		const onDestroyed = () => this.cancel(owner);
-		owner.once("destroyed", onDestroyed);
 		const engine = this.deps.engine();
+		const abort = new AbortController();
+		let finish!: () => void;
+		const done = new Promise<void>((resolve) => {
+			finish = resolve;
+		});
+		const job = { owner, abort, publishing: false, engine, done, finish };
+		this.active = job;
+		const onDestroyed = () => this.cancel(owner);
+		let ownerListenerAttached = false;
 		const emit = (event: PostRecordingTranscriptionStatus) => {
 			if (!owner.isDestroyed() && this.deps.isOwnerCurrent(owner)) this.deps.emit(owner, event);
 		};
-		const detach = engine.addStatusSink((status) => {
-			emit(
-				status.phase === "model"
-					? { phase: "preparing" }
-					: {
-							phase: "transcribing",
-							completedSec: status.completedSec,
-							totalSec: status.totalSec,
-							backend: status.backend,
-							rtf: status.rtf,
-						},
-			);
-		});
+		let detach: () => void = () => undefined;
 
 		const assertCurrent = () => {
 			abort.signal.throwIfAborted();
@@ -183,6 +239,21 @@ export class PostRecordingTranscriptions {
 		};
 
 		try {
+			owner.once("destroyed", onDestroyed);
+			ownerListenerAttached = true;
+			detach = engine.addStatusSink((status) => {
+				emit(
+					status.phase === "model"
+						? { phase: "preparing" }
+						: {
+								phase: "transcribing",
+								completedSec: status.completedSec,
+								totalSec: status.totalSec,
+								backend: status.backend,
+								rtf: status.rtf,
+							},
+				);
+			});
 			emit({ phase: "preparing" });
 			const before = await fs.stat(source.path);
 			if (!before.isFile() || before.size <= 0 || before.size > MAX_SOURCE_BYTES) {
@@ -214,9 +285,11 @@ export class PostRecordingTranscriptions {
 			const text = plainText(response);
 			const { txtPath, jsonPath } = transcriptTargets(source.path);
 			assertCurrent();
-			if (this.active?.owner === owner) this.active.publishing = true;
-			await replaceAtomically(jsonPath, `${JSON.stringify(document, null, 2)}\n`);
-			await replaceAtomically(txtPath, text ? `${text}\n` : "");
+			if (this.active === job) this.active.publishing = true;
+			await replaceAtomically([
+				{ target: jsonPath, contents: `${JSON.stringify(document, null, 2)}\n` },
+				{ target: txtPath, contents: text ? `${text}\n` : "" },
+			]);
 			emit({ phase: "completed" });
 			return { success: true, text, txtPath, jsonPath, document };
 		} catch (error) {
@@ -227,9 +300,20 @@ export class PostRecordingTranscriptions {
 			emit({ phase: "failed" });
 			return { success: false, errorCode: "failed" };
 		} finally {
-			detach();
-			owner.removeListener("destroyed", onDestroyed);
-			if (this.active?.owner === owner) this.active = null;
+			try {
+				detach();
+			} catch {
+				/* Cleanup must not leave quit drainage waiting forever. */
+			}
+			if (ownerListenerAttached) {
+				try {
+					owner.removeListener("destroyed", onDestroyed);
+				} catch {
+					/* The owner may already be gone; the job is still settled below. */
+				}
+			}
+			if (this.active === job) this.active = null;
+			job.finish();
 		}
 	}
 }
